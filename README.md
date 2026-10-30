@@ -2,16 +2,30 @@
 
 Bộ luyện tập *Database System Concepts* (7th Ed.) bám theo lịch học CS4420. Mọi câu SQL chạy trên PostgreSQL thật ngay trong trình duyệt (PGlite), bài tập tự chấm.
 
-| Part | Nội dung | Tuần |
+Nội dung chia theo đúng **10 part của sách** (slide db-book.com); ôn thi là mục riêng.
+
+| Part | Chương | Tuần |
 |---|---|---|
-| [Part 1](part_1/README.md) | Chương 1–5: Introduction, Relational Model, Intro SQL, Intermediate SQL, Advanced SQL | 1–7 |
-| [Part 2](part_2/README.md) | Chương 6–7: E-R Model, Normalization (kèm công cụ Phụ thuộc hàm) | 9–12 |
-| [Part 3](part_3/README.md) | **Ôn tập giữa kỳ**: toàn bộ Practice Exercises chương 1–4 + đề thi thử | 7–8 |
-| [Part 4](part_4/README.md) | **Ôn tập cuối kỳ**: toàn bộ Practice Exercises chương 6–7, ôn nhanh SQL + đề thi thử | 13–15 |
+| [Part 1](part_1/README.md) | 1–5: Introduction, Relational Model, Intro SQL, Intermediate SQL, Advanced SQL | 1–7 |
+| [Part 2](part_2/README.md) | 6–7: E-R Model, Normalization (kèm công cụ Phụ thuộc hàm) | 9–12 |
+| [Part 3](part_3/README.md) | 8–9: Complex Data Types, Application Development | ngoài lịch |
+| [Part 4](part_4/README.md) | 10–11: Big Data, Data Analysis | ngoài lịch |
+| [Part 5](part_5/README.md) | 12–14: Physical Storage, Data Storage Structures, Indexing | ngoài lịch |
+| [Part 6](part_6/README.md) | 15–16: Query Processing, Query Optimization | ngoài lịch |
+| [Part 7](part_7/README.md) | 17–19: Transactions, Concurrency Control, Recovery | ngoài lịch |
+| [Part 8](part_8/README.md) | 20–23: Architectures, Parallel & Distributed Storage / Query / Transactions | ngoài lịch |
+| [Part 9](part_9/README.md) | 24–26: Advanced Indexing, Advanced Application Development, Blockchain | ngoài lịch |
+
+Part 10 của sách (các chương online 27–32) chưa có.
+
+| Ôn thi | Nội dung | Tuần |
+|---|---|---|
+| [Ôn giữa kỳ](midterm/README.md) | Toàn bộ Practice Exercises chương 1–4 + đề thi thử | 7–8 |
+| [Ôn cuối kỳ](final/README.md) | Toàn bộ Practice Exercises chương 6–7, ôn nhanh SQL + đề thi thử | 13–15 |
 
 Trang tổng [`index.html`](index.html) liệt kê các part và **lịch học & kế hoạch thi** (tuần 8 thi giữa kỳ, tuần 15 thi cuối kỳ), mỗi tuần có liên kết thẳng tới phần luyện tập tương ứng. Lịch nằm trong [`lab/schedule.mjs`](lab/schedule.mjs).
 
-Nguồn: slide <https://www.db-book.com/slides-dir/index.html> và Practice Exercises <https://www.db-book.com/Practice-Exercises/index-solu.html>. Đề thi chủ yếu lấy từ Practice Exercises, nên Part 3 và Part 4 đi qua **từng** Practice Exercise (đánh số đúng như sách) và cho chạy được trên dữ liệu mẫu.
+Nguồn: slide <https://www.db-book.com/slides-dir/index.html> và Practice Exercises <https://www.db-book.com/Practice-Exercises/index-solu.html>. Đề thi chủ yếu lấy từ Practice Exercises, nên hai mục ôn thi đi qua **từng** Practice Exercise (đánh số đúng như sách) và cho chạy được trên dữ liệu mẫu. Đề gốc của mọi Practice Exercise nằm trong [`lab/pe/`](lab/pe/README.md).
 
 ## Chạy cục bộ
 ```bash
@@ -25,9 +39,9 @@ Các lệnh khác (đều chạy trong `lab/`):
 
 | Lệnh | Việc |
 |---|---|
-| `npm run grade -- ch3` | chấm `my_answers.sql` của một chương/phần (`ch1`…`ch7`, `gk1`…`gk4`, `ck1`…`ck4`) |
-| `npm run sql` | SQL shell có bảng của mọi part (`-- --part 3` để chỉ nạp Part 3) |
-| `npm run verify` | kiểm tra mọi đáp án (`-- --part 2` cho một part) |
+| `npm run grade -- ch3` | chấm `my_answers.sql` của một chương/phần (`ch1`…`ch26`, `gk1`…`gk4`, `ck1`…`ck4`) |
+| `npm run sql` | SQL shell có bảng của mọi part (`-- --part 3` chỉ nạp Part 3, `-- --part midterm` chỉ nạp mục ôn giữa kỳ) |
+| `npm run verify` | kiểm tra mọi đáp án (`-- --part 2` hoặc `-- --part final` cho một mục) |
 | `npm run build` | sinh lại `playground.html`, README/SQL của từng chương và `index.html` |
 | `npm run demo` | demo JDBC/SQL injection của chương 5 |
 
@@ -35,7 +49,7 @@ Các lệnh khác (đều chạy trong `lab/`):
 ```
 index.html            trang tổng (được sinh ra)
 lab/                  dùng chung: package.json, tools/ (build, chấm, shell, server, fd.mjs), db/ (schema + dữ liệu), schedule.mjs
-part_N/
+part_N/, midterm/, final/
 ├── part.mjs          cấu hình part: tiêu đề, các chương/phần, file dữ liệu cần nạp
 ├── content/*.mjs     NGUỒN nội dung (tóm tắt, trắc nghiệm, tự luận, bài SQL + đáp án)
 ├── <chương>/         README.md · exercises.sql · solutions.sql · my_answers.sql (được sinh ra; my_answers.sql không bao giờ bị ghi đè)

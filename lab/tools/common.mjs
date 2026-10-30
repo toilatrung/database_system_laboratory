@@ -48,36 +48,45 @@ function normalizeChapter(mod, part) {
   };
 }
 
-// Every folder named part_<n> with a part.mjs is a part, ordered by number.
+// Every folder named part_<n> (a part of the book) or midterm/final (exam review)
+// with a part.mjs is a part: book parts by number first, then the review sections.
 // Chapter content is imported only for parts accepted by `filter`; the others
 // keep just their configuration (chapter names, titles).
 export async function loadParts(filter = () => true) {
   const dirs = readdirSync(REPO, { withFileTypes: true })
-    .filter(d => d.isDirectory() && /^part_\d+$/.test(d.name) && existsSync(path.join(REPO, d.name, 'part.mjs')))
+    .filter(d => d.isDirectory() && /^(part_\d+|midterm|final)$/.test(d.name) && existsSync(path.join(REPO, d.name, 'part.mjs')))
     .map(d => d.name);
   const parts = [];
   for (const dir of dirs) {
     const cfg = (await import(pathToFileURL(path.join(REPO, dir, 'part.mjs')).href)).default;
-    const part = { ...cfg, dir: path.join(REPO, dir), slug: dir, unit: cfg.unit || 'Chương' };
+    const part = { ...cfg, dir: path.join(REPO, dir), slug: dir, unit: cfg.unit || 'Chương', group: cfg.group === 'exam' ? 'exam' : 'book', label: cfg.label || `Part ${cfg.number}` };
+    part.review = part.group === 'exam'; part.short = part.label; // aliases
     part.chapters = [];
     part.loaded = filter(part);
     if (!part.loaded) { parts.push(part); continue; }
-    for (const name of cfg.chapters) {
-      const mod = (await import(pathToFileURL(path.join(part.dir, 'content', `${name}.mjs`)).href)).default;
-      part.chapters.push(normalizeChapter(mod, part));
+    // A part whose content does not load yet (being written) is skipped with a
+    // warning, so it does not block building or grading the other parts.
+    try {
+      for (const name of cfg.chapters) {
+        const mod = (await import(pathToFileURL(path.join(part.dir, 'content', `${name}.mjs`)).href)).default;
+        part.chapters.push(normalizeChapter(mod, part));
+      }
+    } catch (err) {
+      console.warn(`[skip] ${dir}: ${err.message.split('\n')[0]}`);
+      continue;
     }
     parts.push(part);
   }
-  return parts.sort((a, b) => a.number - b.number);
+  return parts.sort((a, b) => (a.review - b.review) || ((a.number ?? a.order ?? 0) - (b.number ?? b.order ?? 0)));
 }
 
-// `--part 2` / `--part=2` / `-p 2` on the command line limits a tool to one part.
+// `--part 2` / `--part=2` / `-p 2` / `--part midterm` on the command line limits a tool to one part.
 export function partFilter(argv) {
   const i = argv.findIndex(a => a === '--part' || a === '-p' || a.startsWith('--part='));
   if (i < 0) return { filter: () => true, rest: argv };
   const value = argv[i].includes('=') ? argv[i].split('=')[1] : argv[i + 1];
   const rest = argv.filter((_, j) => j !== i && (argv[i].includes('=') || j !== i + 1));
-  return { filter: p => String(p.number) === String(value).replace(/^part_?/, ''), rest };
+  return { filter: p => p.slug === value || (!p.review && String(p.number) === String(value).replace(/^part_?/, '')), rest };
 }
 
 // Accepts a chapter key ("ch3", "3", "gk2"), a chapter folder or a file path.

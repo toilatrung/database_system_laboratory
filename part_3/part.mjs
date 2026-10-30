@@ -1,22 +1,19 @@
-// Cấu hình Part 3 — ôn thi giữa kỳ (tuần 8: Chương 1–4).
+// Cấu hình Part 3 — đọc bởi lab/tools (build, verify, grade, sql).
 export default {
   number: 3,
-  title: 'Part 3 — Ôn tập giữa kỳ',
-  subtitle: 'Chương 1–4 theo Practice Exercises của sách + đề thi thử',
-  lead: 'Thi giữa kỳ ở tuần 8, phạm vi Chương 1–4. Đề thi không có trắc nghiệm: gồm tự luận lý thuyết và viết SQL, chủ yếu lấy từ Practice Exercises của sách. Vì vậy mỗi phần ở đây đi qua toàn bộ Practice Exercises của chương: câu lý thuyết (kèm đề gốc tiếng Anh) để tự viết ra giấy, câu SQL để chạy và chấm trên dữ liệu mẫu. Phần cuối là đề thi thử 90 phút.',
-  weeks: 'Tuần 7–8',
-  storage: 'cs4420p3',
-  unit: 'Phần',
-  // Exam format: no multiple choice. Essays and SQL first, the cheat sheet last.
-  steps: ['questions', 'ex', 'summary'],
-  stepLabels: { questions: 'Tự luận lý thuyết', ex: 'Bài tập SQL', summary: 'Ghi nhớ nhanh' },
-  setup: ['university_schema.sql', 'university_data.sql', 'extra_tables.sql', 'practice_datasets.sql'],
-  chapters: ['gk1', 'gk2', 'gk3', 'gk4'],
+  title: 'Part 3 — Chương 8 và 9',
+  subtitle: 'Kiểu dữ liệu phức tạp (JSON, mảng, kiểu đối tượng, RDF, văn bản, không gian) · Phát triển ứng dụng',
+  lead: 'Chương 8 mở rộng mô hình quan hệ cho dữ liệu bán cấu trúc (JSON, XML), kiểu do người dùng định nghĩa, kế thừa, RDF, truy vấn văn bản và dữ liệu không gian. Chương 9 nhìn CSDL từ phía ứng dụng web: cách ứng dụng gửi SQL, phân trang, cache, giao dịch cho mỗi request, và bảo mật (SQL injection, phân quyền, mật khẩu, mã hoá). Bài SQL chạy trên PostgreSQL thật: jsonb, mảng, composite type, kiểu hình học thay cho PostGIS, prepared statement, upsert, row-level security.',
+  weeks: 'Ngoài lịch học',
+  storage: 'cs4420part3',
+  unit: 'Chương',
+  setup: ['university_schema.sql', 'university_data.sql', 'extra_tables.sql', 'practice_datasets.sql', 'p3_complex.sql', 'p3_app.sql'],
+  chapters: ['ch8', 'ch9'],
   schemaGroups: [
     { title: 'University database (theo sách)', core: true },
-    { title: 'Employee database (Figure 2.17, 3.19, 4.12)', tables: ['employee', 'works', 'company', 'manages'] },
-    { title: 'Bank database (Figure 2.18, 3.18)', tables: ['branch', 'customer', 'loan', 'borrower', 'account', 'depositor'] },
-    { title: 'Insurance database (Figure 3.17)', tables: ['person', 'car', 'accident', 'owns', 'participated'] },
-    { title: 'Bảng khác (marks, grade_points, Exercise 4.10, bảng phụ)' },
+    { title: 'Bảng cho bài tập Chương 8 (Complex Data Types)', tables: [], prefix: 'cx_' },
+    { title: 'Bảng cho bài tập Chương 9 (Application Development)', tables: [], prefix: 'app_' },
+    { title: 'Employee database (Figure 8.8 / Practice Exercises chương 2–4)', tables: ['employee', 'works', 'company', 'manages'] },
+    { title: 'Bảng phụ khác' },
   ],
 };
