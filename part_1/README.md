@@ -21,13 +21,15 @@ Mở **[`playground.html`](playground.html)** bằng Chrome/Edge/Firefox (double
 - **SQL tự do (sandbox)** để thử nghiệm thoải mái; **Lược đồ CSDL** để tra cứu bảng/cột.
 - Tiến độ và code được lưu trong trình duyệt.
 
-Nếu trình duyệt chặn trang mở trực tiếp từ ổ đĩa, chạy server cục bộ rồi vào http://localhost:4420:
+Nếu trình duyệt chặn trang mở trực tiếp từ ổ đĩa, chạy server cục bộ (thư mục [`lab/`](../lab) ở gốc repo chứa công cụ dùng chung cho mọi part) rồi vào http://localhost:4420:
 ```bash
+cd ../lab
+npm install      # lần đầu
 npm run serve
 ```
 
 ### Cách 2 — Làm bài trong file `.sql` và chấm bằng terminal
-Mỗi chương có `my_answers.sql` (bản để bạn viết), `exercises.sql` (đề gốc) và `solutions.sql` (đáp án). Viết câu trả lời ngay dưới dòng `-- @ex ...`, sau đó chấm:
+Mỗi chương có `my_answers.sql` (bản để bạn viết), `exercises.sql` (đề gốc) và `solutions.sql` (đáp án). Viết câu trả lời ngay dưới dòng `-- @ex ...`, sau đó chấm (trong thư mục `lab/`):
 ```bash
 npm run grade -- ch3
 ```
@@ -37,20 +39,20 @@ npm run grade -- ch3
   ✗  3.06 [order by] — Đúng các dòng nhưng SAI THỨ TỰ — kiểm tra lại order by.
 Đúng: 1   Sai: 2   Chưa làm: 47
 ```
-(Mở VS Code ở thư mục này để vừa viết SQL vừa chạy lệnh. Lần đầu trên máy khác: `npm install`.)
+(Mở VS Code ở thư mục gốc repo để vừa viết SQL vừa chạy lệnh trong `lab/`. Lần đầu trên máy khác: `cd lab && npm install`.)
 
 ### Cách 3 — SQL shell trên terminal
 ```bash
-npm run sql
+npm run sql              # trong lab/; nạp bảng của mọi part — chỉ Part 1: npm run sql -- --part 1
 ```
 Gõ câu SQL kết thúc bằng `;`. Lệnh: `\d` (liệt kê bảng), `\d instructor`, `\reset` (nạp lại dữ liệu), `\q`. Chạy cả một file: `npm run sql -- path/to/file.sql`.
 
 ### Cách 4 — PostgreSQL / pgAdmin / DBeaver thật
-Tạo database `university` rồi chạy lần lượt `db/university_schema.sql`, `db/university_data.sql`, `db/extra_tables.sql`. Mọi đáp án đều là PostgreSQL chuẩn (12+).
+Tạo database `university` rồi chạy lần lượt `lab/db/university_schema.sql`, `lab/db/university_data.sql`, `lab/db/extra_tables.sql`. Mọi đáp án đều là PostgreSQL chuẩn (12+).
 
 ### Demo chương 5 (JDBC, prepared statement, SQL injection, transaction, metadata)
 ```bash
-npm run demo
+npm run demo             # trong lab/
 ```
 Bản Java/Python tương ứng (cần server PostgreSQL): [`ch5_advanced_sql/app/`](ch5_advanced_sql/app).
 
@@ -94,24 +96,24 @@ Slide dùng cú pháp chuẩn SQL; PostgreSQL khác ở vài chỗ:
 
 ## Dữ liệu
 - **University database** (11 bảng) giống hệt dữ liệu mẫu trong slide: `classroom, department, course, instructor, section, teaches, student, takes, advisor, time_slot, prereq`.
-- **Bảng phụ** (`db/extra_tables.sql`): `emp_super` (self join, recursion), `grade_points`, `student_grades`, `dept_grades` (ranking), `sales`, `itemcategory` (OLAP), `daily_sales`, `account_txn` (windowing).
+- **Bảng phụ** (`lab/db/extra_tables.sql`): `emp_super` (self join, recursion), `grade_points`, `student_grades`, `dept_grades` (ranking), `sales`, `itemcategory` (OLAP), `daily_sales`, `account_txn` (windowing).
 
 ## Cấu trúc thư mục
 ```
 part_1/
 ├── playground.html          Practice Lab (được sinh ra — đừng sửa tay)
 ├── README.md
-├── db/                      schema + dữ liệu (PostgreSQL)
+├── part.mjs                 cấu hình part (tiêu đề, danh sách chương, file dữ liệu)
 ├── ch1_introduction/        README.md (tóm tắt, trắc nghiệm, tự luận) · exercises.sql · solutions.sql · my_answers.sql
 ├── ch2_relational_model/
 ├── ch3_intro_sql/
 ├── ch4_intermediate_sql/
 ├── ch5_advanced_sql/        ... + app/ (demo JDBC/Python/Node)
-├── content/ch1..ch5.mjs     NGUỒN của toàn bộ nội dung
-└── tools/                   build, chấm bài, SQL shell, server
+└── content/ch1..ch5.mjs     NGUỒN của toàn bộ nội dung
+lab/                         dùng chung cho mọi part: db/ (schema + dữ liệu), tools/ (build, chấm bài, SQL shell, server)
 ```
 
 ## Thêm / sửa bài tập
 1. Sửa `content/chN.mjs` (mỗi bài: `id`, `topic`, `level`, `prompt`, `hint`, `solution`, tuỳ chọn `check`, `ordered`, `fresh`).
-2. `npm run verify` — kiểm tra mọi đáp án chạy được.
-3. `npm run build` — sinh lại `playground.html`, README và các file `.sql` của chương. **`my_answers.sql` không bao giờ bị ghi đè.**
+2. Trong `lab/`: `npm run verify -- --part 1` — kiểm tra mọi đáp án chạy được.
+3. Trong `lab/`: `npm run build` — sinh lại `playground.html`, README và các file `.sql` của chương. **`my_answers.sql` không bao giờ bị ghi đè.**

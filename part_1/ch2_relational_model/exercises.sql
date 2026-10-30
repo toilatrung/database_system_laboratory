@@ -1,10 +1,10 @@
 -- =====================================================================
 -- CS4420 · Chương 2 — Mô hình quan hệ & Đại số quan hệ (Intro to Relational Model)
--- Dialect: PostgreSQL. Database: University (db/*.sql)
+-- Dialect: PostgreSQL. Database: xem lab/db/*.sql
 -- =====================================================================
 
 -- Viết câu trả lời ngay dưới mỗi đề (giữ nguyên dòng "-- @ex ...").
--- Chấm tự động:   npm run grade -- ch2
+-- Chấm tự động (trong thư mục lab/):   npm run grade -- ch2
 -- Bài tự chấm chạy trong một transaction rồi rollback, nên dữ liệu gốc không đổi.
 -- Bài có "check" (DDL, insert, update...) được chấm bằng một câu truy vấn kiểm tra sau khi chạy.
 

@@ -5,17 +5,20 @@
 //  thay bằng thư viện `pg` — API gần như giống hệt.)
 import { readFileSync } from 'node:fs';
 import path from 'node:path';
-import { fileURLToPath } from 'node:url';
-import { PGlite } from '@electric-sql/pglite';
+import { fileURLToPath, pathToFileURL } from 'node:url';
+import { createRequire } from 'node:module';
 
-const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
+// PGlite và các file .sql nằm trong thư mục lab/ dùng chung của repo.
+const LAB = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..', '..', 'lab');
+const pglitePath = createRequire(path.join(LAB, 'package.json')).resolve('@electric-sql/pglite').replace(/index\.cjs$/, 'index.js');
+const { PGlite } = await import(pathToFileURL(pglitePath).href);
 const title = s => console.log(`\n=== ${s} ${'='.repeat(Math.max(0, 66 - s.length))}`);
 
 // 1. "Open a connection" ----------------------------------------------------
 title('1. Kết nối & chạy truy vấn (Connection / Statement / ResultSet)');
 const conn = new PGlite();
 for (const f of ['university_schema.sql', 'university_data.sql']) {
-  await conn.exec(readFileSync(path.join(ROOT, 'db', f), 'utf8'));
+  await conn.exec(readFileSync(path.join(LAB, 'db', f), 'utf8'));
 }
 const rset = await conn.query('select dept_name, avg(salary) as avg_salary from instructor group by dept_name order by dept_name');
 for (const row of rset.rows) {                       // while (rset.next())

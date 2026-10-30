@@ -1,11 +1,11 @@
 -- =====================================================================
 -- CS4420 · Chương 5 — SQL nâng cao (Advanced SQL)
--- Dialect: PostgreSQL. Database: University (db/*.sql)
+-- Dialect: PostgreSQL. Database: xem lab/db/*.sql
 -- =====================================================================
 
 -- ĐÁP ÁN. Hãy tự làm trước khi xem!
 -- Mỗi bài độc lập với nhau: chạy TỪNG bài (bôi đen rồi chạy). Chạy cả file một lần
--- sẽ thay đổi dữ liệu và tạo trùng tên object. Muốn về dữ liệu gốc: chạy lại db/*.sql.
+-- sẽ thay đổi dữ liệu và tạo trùng tên object. Muốn về dữ liệu gốc: chạy lại lab/db/*.sql.
 
 -- @ex 5.01  [function]  ★★☆
 -- Tạo function `dept_count(dname varchar(20)) returns integer` (PL/pgSQL) trả về số instructor của khoa. Sau đó dùng nó tìm dept_name, budget của các khoa có hơn 2 instructor.

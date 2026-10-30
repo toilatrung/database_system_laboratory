@@ -2,7 +2,7 @@
 
 *Intermediate SQL · Database System Concepts, 7th Ed.*
 
-> **Cách học:** đọc *Tóm tắt kiến thức* → làm *Trắc nghiệm* → trả lời *Câu hỏi tự luận* → làm *Bài tập SQL* trong [`playground.html`](../playground.html) hoặc [`my_answers.sql`](my_answers.sql) (chấm bằng `npm run grade -- ch4`). Đáp án SQL: [`solutions.sql`](solutions.sql).
+> **Cách học:** đọc *Tóm tắt kiến thức* → làm *Trắc nghiệm* → trả lời *Câu hỏi tự luận* → làm *Bài tập SQL* trong [`playground.html`](../playground.html) hoặc [`my_answers.sql`](my_answers.sql) (chấm trong thư mục `lab/` bằng `npm run grade -- ch4`). Đáp án SQL: [`solutions.sql`](solutions.sql).
 
 ## 1. Tóm tắt kiến thức
 

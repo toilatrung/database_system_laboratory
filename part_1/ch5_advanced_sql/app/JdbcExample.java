@@ -1,5 +1,5 @@
 // Chương 5 — JDBC (tham khảo). Cần: JDK 11+, server PostgreSQL có University
-// database (chạy db/university_schema.sql + db/university_data.sql), và
+// database (chạy lab/db/university_schema.sql + lab/db/university_data.sql), và
 // PostgreSQL JDBC driver (https://jdbc.postgresql.org).
 //
 //   javac JdbcExample.java

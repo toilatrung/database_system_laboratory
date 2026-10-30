@@ -1,11 +1,11 @@
 -- =====================================================================
 -- CS4420 · Chương 3 — Nhập môn SQL (Introduction to SQL)
--- Dialect: PostgreSQL. Database: University (db/*.sql)
+-- Dialect: PostgreSQL. Database: xem lab/db/*.sql
 -- =====================================================================
 
 -- ĐÁP ÁN. Hãy tự làm trước khi xem!
 -- Mỗi bài độc lập với nhau: chạy TỪNG bài (bôi đen rồi chạy). Chạy cả file một lần
--- sẽ thay đổi dữ liệu và tạo trùng tên object. Muốn về dữ liệu gốc: chạy lại db/*.sql.
+-- sẽ thay đổi dữ liệu và tạo trùng tên object. Muốn về dữ liệu gốc: chạy lại lab/db/*.sql.
 
 -- @ex 3.01  [select]  ★☆☆
 -- Tìm tên của tất cả instructor.

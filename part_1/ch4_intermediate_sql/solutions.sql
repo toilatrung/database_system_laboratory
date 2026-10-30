@@ -1,11 +1,11 @@
 -- =====================================================================
 -- CS4420 · Chương 4 — SQL trung cấp (Intermediate SQL)
--- Dialect: PostgreSQL. Database: University (db/*.sql)
+-- Dialect: PostgreSQL. Database: xem lab/db/*.sql
 -- =====================================================================
 
 -- ĐÁP ÁN. Hãy tự làm trước khi xem!
 -- Mỗi bài độc lập với nhau: chạy TỪNG bài (bôi đen rồi chạy). Chạy cả file một lần
--- sẽ thay đổi dữ liệu và tạo trùng tên object. Muốn về dữ liệu gốc: chạy lại db/*.sql.
+-- sẽ thay đổi dữ liệu và tạo trùng tên object. Muốn về dữ liệu gốc: chạy lại lab/db/*.sql.
 
 -- @ex 4.01  [natural join]  ★☆☆
 -- Dùng natural join: name của sinh viên và course_id các môn họ đã học.

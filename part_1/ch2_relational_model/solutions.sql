@@ -1,11 +1,11 @@
 -- =====================================================================
 -- CS4420 · Chương 2 — Mô hình quan hệ & Đại số quan hệ (Intro to Relational Model)
--- Dialect: PostgreSQL. Database: University (db/*.sql)
+-- Dialect: PostgreSQL. Database: xem lab/db/*.sql
 -- =====================================================================
 
 -- ĐÁP ÁN. Hãy tự làm trước khi xem!
 -- Mỗi bài độc lập với nhau: chạy TỪNG bài (bôi đen rồi chạy). Chạy cả file một lần
--- sẽ thay đổi dữ liệu và tạo trùng tên object. Muốn về dữ liệu gốc: chạy lại db/*.sql.
+-- sẽ thay đổi dữ liệu và tạo trùng tên object. Muốn về dữ liệu gốc: chạy lại lab/db/*.sql.
 
 -- @ex 2.01  [σ select]  ★☆☆
 -- Viết SQL tương đương với σ[dept_name="Physics"](instructor).

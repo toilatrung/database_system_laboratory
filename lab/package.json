@@ -1,0 +1,18 @@
+{
+  "name": "cs4420-practice-lab",
+  "version": "2.0.0",
+  "private": true,
+  "type": "module",
+  "description": "CS4420 Database Systems - Practice Lab tooling shared by every part (build, grade, verify, SQL shell)",
+  "scripts": {
+    "build": "node tools/build.mjs",
+    "serve": "node tools/serve.mjs",
+    "sql": "node tools/run.mjs",
+    "grade": "node tools/grade.mjs",
+    "verify": "node tools/verify.mjs",
+    "demo": "node ../part_1/ch5_advanced_sql/app/injection_demo.mjs"
+  },
+  "dependencies": {
+    "@electric-sql/pglite": "0.5.8"
+  }
+}
