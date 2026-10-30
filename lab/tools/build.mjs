@@ -178,9 +178,12 @@ for (const part of allParts.filter(filter)) {
 // exercise IDs and storage prefix, the schedule with resolved links) is embedded
 // as JSON and rendered in the browser, so progress saved by each part shows here.
 if (!buildHub) { console.log(`Built ${built} part(s), ${total} exercises (index.html not rebuilt: run without --part)`); process.exit(0); }
+// Fonts plus the theme script (it sits between the font links and <style>).
 const fonts = template.slice(template.indexOf('<link rel="preconnect"'), template.indexOf('<style>'));
 const css = template.match(/<style>[\s\S]*?<\/style>/)[0];
 const brandSvg = template.match(/<span class="lx-brand__mark">(<svg[\s\S]*?<\/svg>)<\/span>/)[1];
+const themeBtn = template.match(/<button class="lx-iconbtn lx-theme"[\s\S]*?<\/button>/)[0];
+const syncBtn = template.match(/<button class="lx-iconbtn lx-sync[\s\S]*?<\/button>/)[0];
 const escHtml = s => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 const groupOf = p => p.group || (p.review ? 'exam' : /^part_\d+$/.test(p.slug) ? 'book' : 'exam');
 const labelOf = p => p.label || p.short || `Part ${p.number}`;
@@ -233,6 +236,7 @@ ${fonts}${css}
   .hub-row .r small { color: var(--muted); font-size: 12px; }
   .hub-row .lx-cellmap { gap: 2px; }
   .hub-row .lx-cellmap a { width: 10px; height: 10px; }
+  .lx-sidebar__note { flex: 1; padding: 0 8px; color: var(--muted); font-size: 12px; }
   .hub-empty { padding: 4px 20px 20px; color: var(--muted); }
   .hub-word { font-family: var(--font); font-weight: 600; letter-spacing: -.01em; }
   .lx-week__t { -webkit-line-clamp: 3; }
@@ -252,6 +256,7 @@ ${fonts}${css}
   <header class="lx-mbar">
     <button class="lx-iconbtn" type="button" id="menuBtn" aria-controls="sidebar" aria-expanded="false" aria-label="Mở menu"><svg class="i" viewBox="0 0 16 16" aria-hidden="true"><path d="M2.5 4.5h11M2.5 8h11M2.5 11.5h11"/></svg></button>
     <span class="lx-brand__mark">${brandSvg}</span><span class="lx-mbar__title">CS4420 Practice Lab</span>
+    ${themeBtn}
   </header>
   <aside class="lx-sidebar" id="sidebar">
     <a class="lx-brand" href="index.html"><span class="lx-brand__mark">${brandSvg}</span><span class="lx-brand__name">Practice Lab<span>CS4420 · Database Systems</span></span></a>
@@ -260,6 +265,7 @@ ${fonts}${css}
       ${navGroup('Theo sách', bookParts)}
       ${navGroup('Ôn thi', examParts)}
     </nav>
+    <div class="lx-sidebar__foot">${syncBtn}<span class="lx-sidebar__note" data-sync-text>Đang đồng bộ…</span>${themeBtn}</div>
   </aside>
   <div class="lx-content"><main class="lx-page" id="main">
     <div class="lx-head"><div class="lx-head__text">
@@ -341,11 +347,12 @@ ${fonts}${css}
     $('#book').innerHTML = '<div class="lx-card__head"><h2 class="lx-h2">Theo sách</h2><span class="lx-card__meta">' + books.length + ' part · học theo chương: tóm tắt, trắc nghiệm, tự luận, bài SQL</span></div><div class="hub-rows">' + head('Part') + partRows(books) + '</div>';
     if ($('#exam')) $('#exam').innerHTML = '<div class="lx-card__head"><h2 class="lx-h2">Ôn thi</h2><span class="lx-card__meta">Toàn bộ Practice Exercises của các chương thi, kèm đề thi thử</span></div><div class="hub-rows">' + head('Phần') + partRows(exams) + '</div>';
   }
-  const setWeek = n => { week = Math.min(HUB.schedule.length, Math.max(1, n)); try { localStorage.setItem('cs4420:week', JSON.stringify(week)); } catch {} render(); };
+  const setWeek = n => { week = Math.min(HUB.schedule.length, Math.max(1, n)); lxStore.set('cs4420:week', JSON.stringify(week)); render(); };
   $('#weekPrev').addEventListener('click', () => setWeek(week - 1));
   $('#weekNext').addEventListener('click', () => setWeek(week + 1));
   $('#weeks').addEventListener('click', e => { const b = e.target.closest('[data-week]'); if (b) setWeek(+b.dataset.week); });
   render();
+  addEventListener('lx:synced', () => { week = Math.min(15, Math.max(1, Number(get('cs4420:week', 1)) || 1)); render(); });
   const app = $('#app'), btn = $('#menuBtn');
   btn.addEventListener('click', () => { const open = !app.classList.contains('is-navopen'); app.classList.toggle('is-navopen', open); btn.setAttribute('aria-expanded', String(open)); });
 })();

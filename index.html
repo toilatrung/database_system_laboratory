@@ -8,6 +8,136 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap">
+<script>
+// Theme: the saved choice, else the OS setting; applied before first paint. Any [data-theme-toggle] flips it.
+(() => {
+  const KEY = 'cs4420:theme', root = document.documentElement;
+  const saved = () => { try { return JSON.parse(localStorage.getItem(KEY)); } catch { return null; } };
+  const system = () => (matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark');
+  const label = t => (t === 'light' ? 'Chuyển sang giao diện tối' : 'Chuyển sang giao diện sáng');
+  const apply = t => {
+    root.dataset.theme = t;
+    document.querySelectorAll('[data-theme-toggle]').forEach(b => { b.setAttribute('aria-label', label(t)); b.dataset.tip = label(t); });
+  };
+  apply(saved() || system());
+  matchMedia('(prefers-color-scheme: light)').addEventListener('change', () => { if (!saved()) apply(system()); });
+  addEventListener('storage', e => { if (e.key === KEY) apply(saved() || system()); });
+  document.addEventListener('DOMContentLoaded', () => apply(root.dataset.theme));
+  document.addEventListener('click', e => {
+    if (!e.target.closest('[data-theme-toggle]')) return;
+    const t = root.dataset.theme === 'light' ? 'dark' : 'light';
+    try { localStorage.setItem(KEY, JSON.stringify(t)); } catch { /* storage unavailable */ }
+    apply(t);
+  });
+})();
+
+// Online sync: every cs4420* key (except the per-device theme) is mirrored to /api/sync (api/sync.js).
+// Pages write through lxStore so each change is stamped and queued; the newest write per key wins.
+// Without the API (local serve, or Redis not configured) everything stays in this browser only.
+(() => {
+  const API = '/api/sync', PENDING = 'lxsync:pending', STAMPS = 'lxsync:stamps', INIT = 'lxsync:init';
+  const syncable = k => k.startsWith('cs4420') && k !== 'cs4420:theme';
+  const load = k => { try { return JSON.parse(localStorage.getItem(k)) || {}; } catch { return {}; } };
+  const save = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch { /* storage unavailable */ } };
+  let state = 'busy', lastSync = 0, lastPull = 0, disabled = false, pushing = false, timer = 0;
+
+  const TEXT = {
+    busy: ['Đang đồng bộ…', 'Đang đồng bộ tiến độ lên online…'],
+    ok: ['Đã lưu online', 'Đã lưu online lúc '],
+    err: ['Lỗi đồng bộ', 'Chưa lưu online được, sẽ thử lại. Bấm để thử ngay.'],
+    local: ['Chỉ lưu trên máy này', 'Chỉ lưu trong trình duyệt này: lưu online chưa được bật.'],
+  };
+  const show = s => {
+    state = s;
+    const [short, long] = TEXT[s];
+    const tip = s === 'ok' ? long + new Date(lastSync).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }) + '. Bấm để đồng bộ ngay.' : long;
+    document.querySelectorAll('[data-sync]').forEach(b => { b.className = b.className.replace(/\bis-(busy|ok|err|local)\b/g, '').trim() + ' is-' + s; b.dataset.tip = tip; b.setAttribute('aria-label', tip); });
+    document.querySelectorAll('[data-sync-text]').forEach(el => { el.textContent = short; });
+  };
+
+  const record = (k, v) => {
+    if (!syncable(k)) return;
+    const pending = load(PENDING), stamps = load(STAMPS);
+    const t = Math.max(Date.now(), (stamps[k] || 0) + 1);
+    pending[k] = { v, t }; stamps[k] = t;
+    save(PENDING, pending); save(STAMPS, stamps);
+    if (disabled) return;
+    show('busy');
+    clearTimeout(timer); timer = setTimeout(push, 1500);
+  };
+  window.lxStore = {
+    set(k, raw) { try { localStorage.setItem(k, raw); } catch { return; } record(k, raw); },
+    remove(k) { try { localStorage.removeItem(k); } catch { return; } record(k, null); },
+  };
+
+  async function push(keepalive = false) {
+    clearTimeout(timer);
+    if (disabled || pushing) return;
+    const sent = load(PENDING);
+    if (!Object.keys(sent).length) { if (state === 'busy') show('ok'); return; }
+    pushing = true;
+    try {
+      const body = JSON.stringify({ changes: sent });
+      const res = await fetch(API, { method: 'POST', headers: { 'content-type': 'application/json' }, body, keepalive: keepalive && body.length < 60000 });
+      if (res.status === 404 || res.status === 503) { disabled = true; show('local'); return; }
+      if (!res.ok) throw new Error('sync ' + res.status);
+      const pending = load(PENDING);
+      for (const k of Object.keys(sent)) if (pending[k] && pending[k].t === sent[k].t) delete pending[k];
+      save(PENDING, pending);
+      lastSync = Date.now();
+      if (Object.keys(pending).length) timer = setTimeout(push, 1500); else show('ok');
+    } catch (err) {
+      console.warn(err);
+      show('err');
+      timer = setTimeout(push, 30000);
+    } finally { pushing = false; }
+  }
+
+  async function pull() {
+    if (disabled) return;
+    lastPull = Date.now();
+    show('busy');
+    try {
+      const res = await fetch(API, { headers: { accept: 'application/json' } });
+      if (res.status === 404 || res.status === 503) { disabled = true; show('local'); return; }
+      if (!res.ok) throw new Error('sync ' + res.status);
+      const { data } = await res.json();
+      const pending = load(PENDING), stamps = load(STAMPS), changed = [];
+      for (const [k, e] of Object.entries(data || {})) {
+        if (!syncable(k) || !(e.t > (stamps[k] || 0))) continue;
+        try { if (e.v === null) localStorage.removeItem(k); else localStorage.setItem(k, e.v); } catch { continue; }
+        stamps[k] = e.t;
+        if (pending[k] && pending[k].t < e.t) delete pending[k];
+        changed.push(k);
+      }
+      save(STAMPS, stamps); save(PENDING, pending);
+      lastSync = Date.now();
+      if (changed.length) dispatchEvent(new CustomEvent('lx:synced', { detail: { keys: changed } }));
+      await push();
+    } catch (err) {
+      console.warn(err);
+      show('err');
+      timer = setTimeout(push, 30000);
+    }
+  }
+
+  // First run on this device: queue what is already stored with the oldest stamp,
+  // so it fills gaps online but never overrides progress saved from another device.
+  if (!localStorage.getItem(INIT)) {
+    const pending = load(PENDING), stamps = load(STAMPS);
+    try { Object.keys(localStorage).filter(k => syncable(k) && !(k in stamps)).forEach(k => { pending[k] = { v: localStorage.getItem(k), t: 1 }; stamps[k] = 1; }); } catch { /* ignore */ }
+    save(PENDING, pending); save(STAMPS, stamps); save(INIT, true);
+  }
+
+  document.addEventListener('DOMContentLoaded', () => { show(state); pull(); });
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'hidden') push(true);
+    else if (Date.now() - lastPull > 60000) pull();
+  });
+  addEventListener('pagehide', () => push(true));
+  document.addEventListener('click', e => { if (e.target.closest('[data-sync]') && !disabled) pull(); });
+})();
+</script>
 <style>
   /* ======================================================================
      CS4420 Practice Lab — "data terminal": a dark console read in long sessions.
@@ -36,6 +166,13 @@
     --warning: #d9a441;
     --warning-bg: #2a2416;
     --cell: #2c2b31;
+    --selection: #2b4f7c;
+    --control-hover: #55555b;
+    --invert: #ffffff; --invert-ink: #111111; --invert-hover: #dcdce0;
+    --tag-hover: #2e2d33;
+    --accent-bg-ink: #d6e6fa; --warning-bg-ink: #f0d49c; --negative-bg-ink: #f6b8c3;
+    --prose: #ececef; --code: #f0f0f2;
+    --focus-line: #3d5f8a; --placeholder: #6f7177;
     --shadow: 0 12px 28px rgba(0,0,0,.2);
     --shadow-menu: 0 16px 40px rgba(0,0,0,.45);
     --font: "Public Sans", Inter, system-ui, -apple-system, "Segoe UI", sans-serif;
@@ -45,11 +182,44 @@
     --sidebar: 248px; --control-height: 34px;
     color-scheme: dark;
   }
+  /* Light: the same terminal printed on paper — white cards on a pale ground, ink text, deeper blue. */
+  :root[data-theme="light"] {
+    --ground: #f6f6f7;
+    --surface: #ffffff;
+    --raised: #eeeef0;
+    --well: #f9f9fa;
+    --hover: #ececee;
+    --border: #e2e2e5;
+    --rule: #ececee;
+    --control: #cfcfd4;
+    --text: #17171a;
+    --text-2: #3c3c42;
+    --muted: #6b6d73;
+    --accent: #2f6fbf;
+    --accent-ink: #235a9e;
+    --accent-bg: #e8f0fa;
+    --positive: #2b8a69;
+    --negative: #c8354f;
+    --negative-bg: #fbebee;
+    --warning: #a87412;
+    --warning-bg: #fbf3e2;
+    --cell: #e4e4e8;
+    --selection: #cfe0f5;
+    --control-hover: #a9a9b0;
+    --invert: #17171a; --invert-ink: #ffffff; --invert-hover: #3a3a40;
+    --tag-hover: #e2e2e6;
+    --accent-bg-ink: #1d4f8c; --warning-bg-ink: #7a5208; --negative-bg-ink: #9c2238;
+    --prose: #222226; --code: #1f1f23;
+    --focus-line: #8fb3e0; --placeholder: #9a9ca2;
+    --shadow: 0 12px 28px rgba(20,20,30,.08);
+    --shadow-menu: 0 16px 40px rgba(20,20,30,.16);
+    color-scheme: light;
+  }
 
   * { box-sizing: border-box; }
   html, body { margin: 0; }
   body { background: var(--ground); color: var(--text); font: 400 13px/20px var(--font); -webkit-font-smoothing: antialiased; }
-  ::selection { background: #2b4f7c; color: #fff; }
+  ::selection { background: var(--selection); color: var(--text); }
   :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
   a { color: var(--text); }
   h1, h2, h3 { margin: 0; }
@@ -82,7 +252,18 @@
   .lx-nav__c { flex: none; font: 400 11px/18px var(--mono); color: var(--muted); }
   .lx-nav__sub { display: flex; flex-direction: column; margin: 0 0 6px 20px; }
   .lx-nav__sub .lx-nav__item { min-height: 30px; padding: 5px 8px; }
-  .lx-sidebar__foot { padding: 12px; border-top: 1px solid var(--border); }
+  .lx-sidebar__foot { display: flex; align-items: center; gap: 4px; padding: 12px; border-top: 1px solid var(--border); }
+  .lx-sidebar__foot > .lx-signalwrap { flex: 1; min-width: 0; }
+  .lx-sidebar__foot > .lx-iconbtn::after { right: auto; left: 50%; transform: translate(-50%, 2px); }
+  .lx-sidebar__foot > .lx-iconbtn:hover::after, .lx-sidebar__foot > .lx-iconbtn:focus-visible::after { transform: translate(-50%, 0); }
+  .lx-sidebar__foot > .lx-sync::after { left: 0; transform: translateY(2px); }
+  .lx-sidebar__foot > .lx-sync:hover::after, .lx-sidebar__foot > .lx-sync:focus-visible::after { transform: none; }
+  .lx-sync .lx-sync__ok, .lx-sync .lx-sync__off { display: none; }
+  .lx-sync.is-ok { color: var(--positive); } .lx-sync.is-ok .lx-sync__ok { display: block; }
+  .lx-sync.is-err { color: var(--negative); } .lx-sync.is-local .lx-sync__off { display: block; }
+  .lx-sync.is-busy svg { animation: lx-blink 1.2s ease-in-out infinite; }
+  .lx-theme .lx-theme__sun, :root[data-theme="light"] .lx-theme .lx-theme__moon { display: none; }
+  :root[data-theme="light"] .lx-theme .lx-theme__sun { display: block; }
   .lx-content { min-width: 0; }
   .lx-mbar { display: none; }
 
@@ -141,9 +322,9 @@
   .lx-btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; height: var(--control-height); padding: 0 16px;
     border-radius: 999px; border: 1px solid var(--control); background: transparent; color: var(--text);
     font: 500 13px/1 var(--font); cursor: pointer; white-space: nowrap; text-decoration: none; }
-  .lx-btn:hover { background: var(--raised); border-color: #55555b; }
-  .lx-btn--primary { background: #fff; border-color: #fff; color: #111; font-weight: 600; }
-  .lx-btn--primary:hover { background: #dcdce0; border-color: #dcdce0; }
+  .lx-btn:hover { background: var(--raised); border-color: var(--control-hover); }
+  .lx-btn--primary { background: var(--invert); border-color: var(--invert); color: var(--invert-ink); font-weight: 600; }
+  .lx-btn--primary:hover { background: var(--invert-hover); border-color: var(--invert-hover); }
   .lx-btn--ghost { border-color: transparent; color: var(--text-2); padding: 0 12px; }
   .lx-btn--ghost:hover { background: var(--raised); border-color: transparent; color: var(--text); }
   .lx-btn[disabled] { opacity: .5; cursor: progress; }
@@ -151,7 +332,7 @@
     background: transparent; color: var(--muted); cursor: pointer; text-decoration: none; flex: none; }
   .lx-iconbtn:hover { background: var(--raised); color: var(--text); }
   .lx-iconbtn::after { content: attr(data-tip); position: absolute; bottom: calc(100% + 6px); right: 0; white-space: nowrap; padding: 5px 9px;
-    border-radius: var(--radius-sm); background: #f2f2f3; color: #111; font: 500 12px/16px var(--font); opacity: 0; pointer-events: none; z-index: 10; transform: translateY(2px); transition: opacity .15s ease, transform .15s ease; }
+    border-radius: var(--radius-sm); background: var(--invert); color: var(--invert-ink); font: 500 12px/16px var(--font); opacity: 0; pointer-events: none; z-index: 10; transform: translateY(2px); transition: opacity .15s ease, transform .15s ease; }
   .lx-iconbtn:hover::after, .lx-iconbtn:focus-visible::after { opacity: 1; transform: none; }
   .lx-iconbtn.is-off { opacity: .35; pointer-events: none; }
   kbd { font: 500 11px/1 var(--mono); padding: 3px 6px; border-radius: var(--radius-sm); background: var(--raised); color: var(--text-2); border: 1px solid var(--control); white-space: nowrap; }
@@ -165,7 +346,7 @@
   .lx-badge--danger { color: var(--negative); } .lx-badge--danger::before { background: var(--negative); }
   .lx-tag { display: inline-flex; align-items: center; height: 22px; padding: 0 9px; border-radius: 999px; background: var(--raised); color: var(--text-2);
     font: 500 12px/1 var(--font); white-space: nowrap; flex: none; text-decoration: none; }
-  a.lx-tag:hover { background: #2e2d33; color: var(--text); }
+  a.lx-tag:hover { background: var(--tag-hover); color: var(--text); }
 
   /* ---------- Cards: darker than the ground ---------- */
   .lx-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow); min-width: 0; }
@@ -250,9 +431,9 @@
 
   .lx-callout { border-radius: var(--radius); display: flex; flex-wrap: wrap; align-items: center; gap: 12px; padding: 12px 16px; background: var(--raised); color: var(--text); font-size: 13px; }
   .lx-callout a { color: inherit; }
-  .lx-callout--success { background: var(--accent-bg); color: #d6e6fa; }
-  .lx-callout--warning { background: var(--warning-bg); color: #f0d49c; }
-  .lx-callout--danger { background: var(--negative-bg); color: #f6b8c3; font-family: var(--mono); font-size: 12px; }
+  .lx-callout--success { background: var(--accent-bg); color: var(--accent-bg-ink); }
+  .lx-callout--warning { background: var(--warning-bg); color: var(--warning-bg-ink); }
+  .lx-callout--danger { background: var(--negative-bg); color: var(--negative-bg-ink); font-family: var(--mono); font-size: 12px; }
   .lx-callout--danger strong { font-family: var(--font); }
   .lx-callout__text { flex: 1 1 320px; }
 
@@ -268,7 +449,7 @@
   .lx-flow__arrows .lx-iconbtn::after { bottom: auto; top: calc(100% + 6px); }
 
   /* ---------- Reading ---------- */
-  .lx-prose { color: #ececef; font-size: 14px; line-height: 23px; }
+  .lx-prose { color: var(--prose); font-size: 14px; line-height: 23px; }
   .lx-prose h3 { font-size: 16px; line-height: 22px; font-weight: 600; color: var(--text); margin: 28px 0 8px; }
   .lx-prose h3:first-child { margin-top: 0; }
   .lx-prose p { margin: 8px 0; }
@@ -276,14 +457,14 @@
   .lx-prose li { margin: 4px 0; }
   .lx-prose li::marker { color: var(--muted); }
   .lx-prose a { color: var(--accent-ink); }
-  .lx-prose code, .lx-code { font: 500 12.5px/1 var(--mono); background: var(--raised); color: #f0f0f2; border-radius: var(--radius-sm); padding: 2px 5px; }
+  .lx-prose code, .lx-code { font: 500 12.5px/1 var(--mono); background: var(--raised); color: var(--code); border-radius: var(--radius-sm); padding: 2px 5px; }
   .lx-prose strong { font-weight: 600; color: var(--text); }
   .lx-prose .table-scroll { overflow-x: auto; margin: 12px 0; border: 1px solid var(--border); border-radius: var(--radius); }
   .lx-prose table { width: 100%; border-collapse: collapse; font-size: 13px; }
   .lx-prose th { text-align: left; padding: 8px 12px; color: var(--muted); font: 400 12px/16px var(--font); border-bottom: 1px solid var(--border); }
   .lx-prose td { padding: 8px 12px; border-bottom: 1px solid var(--rule); vertical-align: top; }
   .lx-prose tr:last-child td { border-bottom: 0; }
-  pre.code { font: 400 12.5px/1.65 var(--mono); background: var(--well); color: #e8e8ea; border: 1px solid var(--border); border-radius: var(--radius); padding: 14px 16px; overflow-x: auto; margin: 12px 0; }
+  pre.code { font: 400 12.5px/1.65 var(--mono); background: var(--well); color: var(--code); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px 16px; overflow-x: auto; margin: 12px 0; }
   pre.code code { background: none; padding: 0; font: inherit; color: inherit; }
   details > summary { cursor: pointer; font-weight: 600; color: var(--text); list-style: none; display: inline-flex; align-items: center; gap: 8px; font-size: 13px; }
   details > summary::-webkit-details-marker { display: none; }
@@ -326,18 +507,18 @@
   .lx-exmeta { display: flex; flex-wrap: wrap; gap: 6px; flex: 1; }
 
   .lx-console { background: var(--well); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; }
-  .lx-console:focus-within { border-color: #3d5f8a; }
+  .lx-console:focus-within { border-color: var(--focus-line); }
   .lx-console__bar { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 8px 14px; border-bottom: 1px solid var(--rule); font-size: 12px; color: var(--muted); }
   .lx-console__bar label { font: 500 12px/18px var(--mono); color: var(--text-2); }
   .lx-console__keys { display: flex; flex-wrap: wrap; gap: 6px 14px; align-items: center; }
   .lx-editor { width: 100%; min-height: 220px; resize: vertical; display: block; margin: 0;
-    font: 400 13.5px/1.65 var(--mono); tab-size: 2; color: #f2f2f4; caret-color: var(--accent); background: transparent;
+    font: 400 13.5px/1.65 var(--mono); tab-size: 2; color: var(--code); caret-color: var(--accent); background: transparent;
     border: 0; border-radius: 0; padding: 14px 16px; }
-  .lx-editor::placeholder { color: #6f7177; }
+  .lx-editor::placeholder { color: var(--placeholder); }
   .lx-editor:focus { outline: none; }
   input.lx-editor { min-height: 0; height: 40px; resize: none; }
   .lx-field { background: var(--well); border: 1px solid var(--border); border-radius: var(--radius); }
-  .lx-field:focus-within { border-color: #3d5f8a; }
+  .lx-field:focus-within { border-color: var(--focus-line); }
   .lx-runbar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; padding: 14px 20px 18px; }
   .lx-pager { display: flex; justify-content: space-between; gap: 12px; }
 
@@ -371,7 +552,7 @@
   .lx-qcell:hover { border-color: var(--control); color: var(--text); }
   .lx-qcell.is-pass { background: var(--accent); border-color: var(--accent); color: #fff; }
   .lx-qcell.is-fail { border-color: var(--warning); color: var(--warning); }
-  .lx-qcell.is-picked { border-color: #6f7177; color: var(--text); background: var(--raised); }
+  .lx-qcell.is-picked { border-color: var(--placeholder); color: var(--text); background: var(--raised); }
   .lx-howto { display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 7fr); gap: var(--gap); }
   .lx-howto ul { margin: 0; padding-left: 18px; }
   .lx-keys { display: grid; grid-template-columns: auto 1fr; gap: 12px 16px; margin: 0; align-items: center; }
@@ -457,6 +638,7 @@
   .hub-row .r small { color: var(--muted); font-size: 12px; }
   .hub-row .lx-cellmap { gap: 2px; }
   .hub-row .lx-cellmap a { width: 10px; height: 10px; }
+  .lx-sidebar__note { flex: 1; padding: 0 8px; color: var(--muted); font-size: 12px; }
   .hub-empty { padding: 4px 20px 20px; color: var(--muted); }
   .hub-word { font-family: var(--font); font-weight: 600; letter-spacing: -.01em; }
   .lx-week__t { -webkit-line-clamp: 3; }
@@ -476,6 +658,7 @@
   <header class="lx-mbar">
     <button class="lx-iconbtn" type="button" id="menuBtn" aria-controls="sidebar" aria-expanded="false" aria-label="Mở menu"><svg class="i" viewBox="0 0 16 16" aria-hidden="true"><path d="M2.5 4.5h11M2.5 8h11M2.5 11.5h11"/></svg></button>
     <span class="lx-brand__mark"><svg viewBox="0 0 28 28" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true"><ellipse cx="14" cy="6.5" rx="9" ry="3.5" fill="currentColor"/><path d="M5 6.5v15c0 1.93 4.03 3.5 9 3.5s9-1.57 9-3.5v-15"/><path d="M5 14c0 1.93 4.03 3.5 9 3.5s9-1.57 9-3.5"/></svg></span><span class="lx-mbar__title">CS4420 Practice Lab</span>
+    <button class="lx-iconbtn lx-theme" type="button" data-theme-toggle data-tip="Đổi giao diện sáng/tối" aria-label="Đổi giao diện sáng/tối"><svg class="i lx-theme__moon" viewBox="0 0 16 16" aria-hidden="true"><path d="M13.5 9.5A5.5 5.5 0 0 1 6.5 2.5a5.5 5.5 0 1 0 7 7z"/></svg><svg class="i lx-theme__sun" viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="3"/><path d="M8 1.5v1.5M8 13v1.5M1.5 8H3M13 8h1.5M3.4 3.4l1 1M11.6 11.6l1 1M3.4 12.6l1-1M11.6 4.4l1-1"/></svg></button>
   </header>
   <aside class="lx-sidebar" id="sidebar">
     <a class="lx-brand" href="index.html"><span class="lx-brand__mark"><svg viewBox="0 0 28 28" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true"><ellipse cx="14" cy="6.5" rx="9" ry="3.5" fill="currentColor"/><path d="M5 6.5v15c0 1.93 4.03 3.5 9 3.5s9-1.57 9-3.5v-15"/><path d="M5 14c0 1.93 4.03 3.5 9 3.5s9-1.57 9-3.5"/></svg></span><span class="lx-brand__name">Practice Lab<span>CS4420 · Database Systems</span></span></a>
@@ -484,6 +667,7 @@
       <div class="lx-nav__group"><div class="lx-nav__label">Theo sách</div><a class="lx-nav__item is-part" href="part_1/playground.html" title="Part 1 — Chương 1 đến 5"><span class="lx-nav__k">P1</span><span class="lx-nav__t">Chương 1 đến 5</span></a><a class="lx-nav__item is-part" href="part_2/playground.html" title="Part 2 — Chương 6 và 7"><span class="lx-nav__k">P2</span><span class="lx-nav__t">Chương 6 và 7</span></a><a class="lx-nav__item is-part" href="part_3/playground.html" title="Part 3 — Chương 8 và 9"><span class="lx-nav__k">P3</span><span class="lx-nav__t">Chương 8 và 9</span></a><a class="lx-nav__item is-part" href="part_4/playground.html" title="Part 4 — Chương 10 và 11"><span class="lx-nav__k">P4</span><span class="lx-nav__t">Chương 10 và 11</span></a><a class="lx-nav__item is-part" href="part_5/playground.html" title="Part 5 — Chương 12, 13 và 14"><span class="lx-nav__k">P5</span><span class="lx-nav__t">Chương 12, 13 và 14</span></a><a class="lx-nav__item is-part" href="part_6/playground.html" title="Part 6 — Chương 15 và 16"><span class="lx-nav__k">P6</span><span class="lx-nav__t">Chương 15 và 16</span></a><a class="lx-nav__item is-part" href="part_7/playground.html" title="Part 7 — Chương 17, 18 và 19"><span class="lx-nav__k">P7</span><span class="lx-nav__t">Chương 17, 18 và 19</span></a><a class="lx-nav__item is-part" href="part_8/playground.html" title="Part 8 — Chương 20 đến 23"><span class="lx-nav__k">P8</span><span class="lx-nav__t">Chương 20 đến 23</span></a><a class="lx-nav__item is-part" href="part_9/playground.html" title="Part 9 — Chương 24, 25 và 26"><span class="lx-nav__k">P9</span><span class="lx-nav__t">Chương 24, 25 và 26</span></a></div>
       <div class="lx-nav__group"><div class="lx-nav__label">Ôn thi</div><a class="lx-nav__item is-part" href="midterm/playground.html" title="Ôn giữa kỳ — Ôn tập giữa kỳ"><span class="lx-nav__k">GK</span><span class="lx-nav__t">Ôn tập giữa kỳ</span></a><a class="lx-nav__item is-part" href="final/playground.html" title="Ôn cuối kỳ — Ôn tập cuối kỳ"><span class="lx-nav__k">CK</span><span class="lx-nav__t">Ôn tập cuối kỳ</span></a></div>
     </nav>
+    <div class="lx-sidebar__foot"><button class="lx-iconbtn lx-sync is-busy" type="button" data-sync data-tip="Đang đồng bộ…" aria-label="Đang đồng bộ…"><svg class="i" viewBox="0 0 16 16" aria-hidden="true"><path d="M4.5 12.5h7.25a2.75 2.75 0 0 0 .3-5.48A4 4 0 0 0 4.3 7.1 2.7 2.7 0 0 0 4.5 12.5z"/><path class="lx-sync__ok" d="M6.3 9.6l1.3 1.2 2.3-2.5"/><path class="lx-sync__off" d="M2.5 2.5l11 11"/></svg></button><span class="lx-sidebar__note" data-sync-text>Đang đồng bộ…</span><button class="lx-iconbtn lx-theme" type="button" data-theme-toggle data-tip="Đổi giao diện sáng/tối" aria-label="Đổi giao diện sáng/tối"><svg class="i lx-theme__moon" viewBox="0 0 16 16" aria-hidden="true"><path d="M13.5 9.5A5.5 5.5 0 0 1 6.5 2.5a5.5 5.5 0 1 0 7 7z"/></svg><svg class="i lx-theme__sun" viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="3"/><path d="M8 1.5v1.5M8 13v1.5M1.5 8H3M13 8h1.5M3.4 3.4l1 1M11.6 11.6l1 1M3.4 12.6l1-1M11.6 4.4l1-1"/></svg></button></div>
   </aside>
   <div class="lx-content"><main class="lx-page" id="main">
     <div class="lx-head"><div class="lx-head__text">
@@ -565,11 +749,12 @@
     $('#book').innerHTML = '<div class="lx-card__head"><h2 class="lx-h2">Theo sách</h2><span class="lx-card__meta">' + books.length + ' part · học theo chương: tóm tắt, trắc nghiệm, tự luận, bài SQL</span></div><div class="hub-rows">' + head('Part') + partRows(books) + '</div>';
     if ($('#exam')) $('#exam').innerHTML = '<div class="lx-card__head"><h2 class="lx-h2">Ôn thi</h2><span class="lx-card__meta">Toàn bộ Practice Exercises của các chương thi, kèm đề thi thử</span></div><div class="hub-rows">' + head('Phần') + partRows(exams) + '</div>';
   }
-  const setWeek = n => { week = Math.min(HUB.schedule.length, Math.max(1, n)); try { localStorage.setItem('cs4420:week', JSON.stringify(week)); } catch {} render(); };
+  const setWeek = n => { week = Math.min(HUB.schedule.length, Math.max(1, n)); lxStore.set('cs4420:week', JSON.stringify(week)); render(); };
   $('#weekPrev').addEventListener('click', () => setWeek(week - 1));
   $('#weekNext').addEventListener('click', () => setWeek(week + 1));
   $('#weeks').addEventListener('click', e => { const b = e.target.closest('[data-week]'); if (b) setWeek(+b.dataset.week); });
   render();
+  addEventListener('lx:synced', () => { week = Math.min(15, Math.max(1, Number(get('cs4420:week', 1)) || 1)); render(); });
   const app = $('#app'), btn = $('#menuBtn');
   btn.addEventListener('click', () => { const open = !app.classList.contains('is-navopen'); app.classList.toggle('is-navopen', open); btn.setAttribute('aria-expanded', String(open)); });
 })();
