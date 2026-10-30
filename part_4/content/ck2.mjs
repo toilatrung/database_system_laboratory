@@ -170,12 +170,14 @@ Các PE chỉ có "—" là chứng minh/lập luận, không chạy SQL đượ
 
   questions: [
     {
+      pe: '7.1',
       q: '**PE 7.1.** Phân rã R = (A, B, C, D, E) thành (A, B, C) và (A, D, E). Chứng minh phân rã lossless nếu F = {A → BC, CD → E, B → D, E → A}.',
       answer: `- R₁ = (A, B, C), R₂ = (A, D, E), **R₁ ∩ R₂ = A**.
 - Tính A⁺: A → ABC (A → BC) → ABCD (B → D) → ABCDE (CD → E). Vậy A → ABC = R₁ (A là candidate key của R, xem PE 7.6).
 - Theo tiêu chuẩn lossless: R₁ ∩ R₂ → R₁ ∈ F⁺ ⇒ **lossless**.`,
     },
     {
+      pe: '7.2',
       q: '**PE 7.2.** Liệt kê mọi FD không tầm thường thoả bởi instance r(A, B, C) = {(a1, b1, c1), (a1, b1, c2), (a2, b1, c1), (a2, b1, c3)}.',
       answer: `*(Errata: lời giải trong sách ghi "Figure 7.18", đúng ra là Figure 7.17.)*
 - Mọi dòng có cùng B = b1 ⇒ vế phải B luôn thoả: **A → B**, **C → B**, và hệ quả **AC → B**.
@@ -185,6 +187,7 @@ Các PE chỉ có "—" là chứng minh/lập luận, không chạy SQL đượ
 - Có **19** FD tầm thường α → β (β ⊆ α, β ≠ ∅): 3·1 + 3·3 + 1·7 = 19.`,
     },
     {
+      pe: '7.3',
       q: '**PE 7.3.** Dùng FD để biểu diễn: (a) quan hệ một-một giữa student và instructor; (b) quan hệ nhiều-một giữa student và instructor.',
       answer: `Gọi Pk(r) là primary key của r, xét relation của relationship set.
 - (a) **Pk(student) → Pk(instructor)** và **Pk(instructor) → Pk(student)**: hai tuple cùng student phải cùng instructor và ngược lại.
@@ -192,6 +195,7 @@ Các PE chỉ có "—" là chứng minh/lập luận, không chạy SQL đượ
 (Thử trên bảng advisor của University ở CK2.14: s_ID → i_ID đúng, i_ID → s_ID sai ⇒ nhiều-một.)`,
     },
     {
+      pe: '7.4',
       q: '**PE 7.4.** Dùng Armstrong\'s axioms chứng minh tính đúng đắn (soundness) của union rule: α → β và α → γ ⇒ α → βγ.',
       answer: `1. α → β (giả thiết)
 2. αα → αβ, tức **α → αβ** (augmentation với α; αα = α)
@@ -200,6 +204,7 @@ Các PE chỉ có "—" là chứng minh/lập luận, không chạy SQL đượ
 5. α → αβ và αβ → γβ ⇒ **α → βγ** (transitivity; γβ = βγ).`,
     },
     {
+      pe: '7.5',
       q: '**PE 7.5.** Dùng Armstrong\'s axioms chứng minh pseudotransitivity: α → β và γβ → δ ⇒ αγ → δ.',
       answer: `1. α → β (giả thiết)
 2. **γα → γβ** (augmentation với γ; viết lại αγ → γβ)
@@ -207,6 +212,7 @@ Các PE chỉ có "—" là chứng minh/lập luận, không chạy SQL đượ
 4. αγ → γβ, γβ → δ ⇒ **αγ → δ** (transitivity).`,
     },
     {
+      pe: '7.6',
       q: '**PE 7.6.** Tính F⁺ của F = {A → BC, CD → E, B → D, E → A} trên R = (A, B, C, D, E) và liệt kê candidate key.',
       answer: `Không cần liệt kê hết F⁺ — chỉ cần các bao đóng:
 - **A⁺** = ABCDE (A → BC, B → D, CD → E).
@@ -220,6 +226,7 @@ Do đó F⁺ gồm: **mọi FD có vế trái chứa A, E, BC hoặc CD** (với
 **Candidate key: A, E, BC, CD** (mỗi tập đều tối thiểu; các tập không chứa A, E chỉ có BC, CD là superkey, BD thì không).`,
     },
     {
+      pe: '7.7',
       q: '**PE 7.7.** Dùng F của PE 7.6, tính canonical cover.',
       answer: `- Vế trái A, CD, B, E đôi một khác nhau → không gộp được.
 - A → BC: bỏ B, F' có A → C ⇒ A⁺ = AC không chứa B → B không thừa; bỏ C ⇒ A⁺ = ABD không chứa C → C không thừa.
@@ -228,6 +235,7 @@ Do đó F⁺ gồm: **mọi FD có vế trái chứa A, E, BC hoặc CD** (với
 ⇒ **F<sub>c</sub> = F** = {A → BC, CD → E, B → D, E → A}.`,
     },
     {
+      pe: '7.8',
       q: '**PE 7.8.** Xét thuật toán tính α⁺ dùng mảng fdcount (số thuộc tính vế trái của FD thứ i chưa có trong α⁺) và appears[A] (danh sách FD có A ở vế trái), với thủ tục đệ quy addin. Chứng minh thuật toán đúng và hiệu quả hơn thuật toán của Figure 7.8.',
       answer: `**Đúng (chỉ thêm thuộc tính thuộc α⁺)**: α ⊆ α⁺ hiển nhiên. Một thuộc tính A ∉ α chỉ được thêm khi có FD β → γ với A ∈ γ và fdcount = 0, tức β ⊆ result; quy nạp theo độ sâu đệ quy: mọi thứ trong result thuộc α⁺ ⇒ β ⊆ α⁺ ⇒ γ ⊆ α⁺.
 
@@ -236,6 +244,7 @@ Do đó F⁺ gồm: **mọi FD có vế trái chứa A, E, BC hoặc CD** (với
 **Hiệu quả**: mỗi FD được duyệt một lần để khởi tạo; mảng appears có kích thước tỉ lệ tổng độ dài F; mỗi thuộc tính được thêm vào result đúng một lần và mỗi lần giảm fdcount tương ứng một phần tử của appears ⇒ **tuyến tính** theo kích thước F. Thuật toán Figure 7.8 có thể lặp vòng while |F| lần, mỗi vòng duyệt cả F ⇒ **bậc hai**.`,
     },
     {
+      pe: '7.9',
       q: '**PE 7.9.** Cho R(A, B, C) và relation r. Viết câu SQL kiểm tra FD B → C có đúng trên r không, và một SQL assertion ép FD này (giả sử không có null).',
       answer: `Kiểm tra (kết quả **khác rỗng ⇔ B → C bị vi phạm**):
 \`\`\`sql
@@ -249,36 +258,43 @@ create assertion b_to_c check (not exists (
 PostgreSQL (và các DBMS phổ biến) **không hỗ trợ assertion** → dùng trigger kiểm tra trước insert/update (xem CK2.04). Nếu B là khoá của một bảng riêng (B, C) thì chỉ cần primary key — đó chính là lợi ích của phân rã BCNF.`,
     },
     {
+      pe: '7.10',
       q: '**PE 7.10.** Thảo luận lossless ngầm giả định thuộc tính ở vế trái FD không được null. Điều gì có thể sai nếu vi phạm giả định này?',
       answer: `Natural join định nghĩa qua Cartesian product + selection; so sánh với null cho **unknown** nên tuple có null ở thuộc tính chung **không khớp** với tuple nào — kể cả "bản sao" của chính nó ở bảng kia. Vì vậy khi phân rã theo α → β mà α có null, các tuple đó **biến mất** khỏi join: phân rã trở thành lossy theo nghĩa *mất tuple* (khác lossy thông thường là *thừa tuple*). Null ở thuộc tính chỉ nằm ở vế phải thì không gây vấn đề. Xem CK2.08.`,
     },
     {
+      pe: '7.11',
       q: '**PE 7.11.** Trong thuật toán BCNF, dùng α → β để tách r(α, β, γ) thành r₁(α, β), r₂(α, γ). (a) Nên có primary key/foreign key nào? (b) Nếu không ép foreign key thì bất nhất gì có thể xảy ra? (c) Với phân rã 3NF (thuật toán 7.5.2), PK/FK nào nên có?',
       answer: `- (a) **α là primary key của r₁**; **α trong r₂ là foreign key tham chiếu r₁**.
 - (b) Xoá một tuple của r₁ mà không xoá các tuple tham chiếu nó trong r₂: join r₁ ⋈ r₂ sẽ mất các tuple đó — tương đương với việc *đặt β thành null* trong các tuple gốc thay vì xoá chúng. (Tương tự: chèn vào r₂ một α không có trong r₁.) CK2.09 cho thấy FK chặn được cả hai.
 - (c) Với mỗi lược đồ r<sub>i</sub>(α, β) sinh từ α → β: **α là primary key**. Lược đồ chứa candidate key của R: key đó là primary key. Foreign key: nếu primary key của r<sub>i</sub> xuất hiện trong r<sub>j</sub> khác thì các thuộc tính đó trong r<sub>j</sub> là foreign key tham chiếu r<sub>i</sub>.`,
     },
     {
+      pe: '7.12',
       q: '**PE 7.12.** Cho R₁, …, R<sub>n</sub> là phân rã của U, u(U) là relation và r<sub>i</sub> = Π<sub>Ri</sub>(u). Chứng minh u ⊆ r₁ ⋈ r₂ ⋈ … ⋈ r<sub>n</sub>.',
       answer: `Lấy t bất kỳ thuộc u. Vì r<sub>i</sub> = Π<sub>Ri</sub>(u) nên t[R<sub>i</sub>] ∈ r<sub>i</sub> với mọi i, do đó t[R₁] ⋈ … ⋈ t[R<sub>n</sub>] ⊆ r₁ ⋈ … ⋈ r<sub>n</sub>.
 Theo định nghĩa natural join, t[R₁] ⋈ … ⋈ t[R<sub>n</sub>] = Π<sub>U</sub>(σ<sub>θ</sub>(t[R₁] × … × t[R<sub>n</sub>])) với θ: các thuộc tính trùng tên bằng nhau. Tích Cartesian của các tuple đơn cho một tuple; θ thoả vì mọi thuộc tính trùng tên đều lấy từ cùng t; phép chiếu bỏ cột trùng. Vì U = R₁ ∪ … ∪ R<sub>n</sub>, tuple thu được chứa đủ mọi thuộc tính của t, tức **chính là t**. Vậy t ∈ r₁ ⋈ … ⋈ r<sub>n</sub>; do t tuỳ ý nên u ⊆ r₁ ⋈ … ⋈ r<sub>n</sub>. (Dấu bằng xảy ra khi phân rã lossless.) Xem CK2.10.`,
     },
     {
+      pe: '7.13',
       q: '**PE 7.13.** Chứng minh phân rã ở PE 7.1 không bảo toàn phụ thuộc.',
       answer: `Xét **B → D**. F₁ (FD của F⁺ trên (A, B, C)) không có FD nào có D ở vế phải (D không thuộc R₁). F₂ (trên (A, D, E)) không có FD nào có B ở vế trái. Để suy ra B → D từ F₁ ∪ F₂ phải có B → γ ∈ F₁⁺ và γ → D ∈ F₂⁺, với γ ⊆ R₁ ∩ R₂ = A. Nhưng **B → A ∉ F₁⁺** vì B⁺ = BD. Vậy B → D không được bảo toàn.
 Kiểm tra bằng thuật toán bảo toàn: result = B; (B ∩ R₁)⁺ ∩ R₁ = BD ∩ ABC = B; (B ∩ R₂) = ∅ → result dừng ở B, không chứa D. (Tương tự **CD → E** cũng bị mất.) Trên dữ liệu: CK2.07 chèn hai tuple hợp lệ ở từng bảng nhưng join vi phạm B → D.`,
     },
     {
+      pe: '7.14',
       q: '**PE 7.14.** Chứng minh có thể có nhiều canonical cover, dùng F = {X → YZ, Y → XZ, Z → XY}.',
       answer: `- Z thừa trong X → YZ (vì X → Y, Y → XZ cho X → Z) → X → Y; tiếp theo X thừa trong Y → XZ → Y → Z; Y thừa trong Z → XY → Z → X. Được **{X → Y, Y → Z, Z → X}**.
 - Hoặc: Y thừa trong X → YZ → X → Z; Z thừa trong Y → XZ → Y → X; X thừa trong Z → XY → Z → Y. Được **{X → Z, Y → X, Z → Y}**.
 - Còn có cách khác: bỏ Y khỏi X → YZ, bỏ X khỏi Y → XZ, rồi không còn gì thừa trong Z → XY: **{X → Z, Y → Z, Z → XY}** (công cụ FD trả về kết quả này). Mọi cover trên đều tương đương F (X, Y, Z xác định lẫn nhau).`,
     },
     {
+      pe: '7.15',
       q: '**PE 7.15.** Thuật toán canonical cover chỉ xoá **một** thuộc tính thừa mỗi lần. Dùng F của PE 7.14 để chỉ ra điều gì sai nếu xoá hai thuộc tính cùng lúc.',
       answer: `Trong X → YZ: Y thừa (vì X → Z → … → Y qua các FD khác) và Z cũng thừa (vì X → Y → … → Z). Nhưng nếu **xoá cả hai** thì còn X → ∅ (bỏ FD), và F mới {Y → XZ, Z → XY} không suy ra được X → YZ (X⁺ = X). Lý do: sau khi xoá Y, Z **không còn** thừa nữa (nó là con đường duy nhất để X suy ra Y), và ngược lại. Mỗi kết luận "thừa" chỉ đúng với F hiện tại, nên phải xoá từng thuộc tính rồi kiểm tra lại.`,
     },
     {
+      pe: '7.16',
       q: '**PE 7.16.** Chứng minh phân rã 3NF bảo toàn phụ thuộc là lossless nếu ít nhất một lược đồ chứa candidate key của lược đồ bị phân rã.',
       answer: `Gọi δ = {R₁, …, R<sub>n</sub>} là phân rã 3NF bảo toàn phụ thuộc, X là candidate key nằm trong một R<sub>k</sub>; r là instance hợp lệ, j = Π<sub>X</sub>(r) ⋈ Π<sub>R1</sub>(r) ⋈ … ⋈ Π<sub>Rn</sub>(r).
 1. **Khẳng định**: hai tuple t₁, t₂ ∈ j cùng giá trị X thì t₁ = t₂. Chạy thuật toán bao đóng X⁺ dưới F' = F₁ ∪ … ∪ F<sub>n</sub>; quy nạp theo số bước: ban đầu result = X nên t₁[result] = t₂[result]; mỗi bước dùng β → γ với β ⊆ result và β → γ thuộc một F<sub>i</sub>; vì t₁[R<sub>i</sub>], t₂[R<sub>i</sub>] ∈ Π<sub>Ri</sub>(r) thoả β → γ nên t₁[γ] = t₂[γ]. Do δ bảo toàn phụ thuộc và X là key, cuối cùng result = R ⇒ t₁ = t₂.
@@ -286,6 +302,7 @@ Kiểm tra bằng thuật toán bảo toàn: result = B; (B ∩ R₁)⁺ ∩ R�
 3. Theo PE 7.12, r ⊆ j; cùng số tuple ⇒ **r = j**, tức lossless. (Vì vậy thuật toán 3NF thêm lược đồ X nếu chưa có.)`,
     },
     {
+      pe: '7.17',
       q: '**PE 7.17.** Cho ví dụ lược đồ R\' và tập F\' sao cho có ít nhất ba phân rã lossless khác nhau của R\' thành BCNF.',
       answer: `R\' = (A, B, C, D), F\' = {A → B, C → D, B → C} (key duy nhất: A). Ba phân rã BCNF:
 - **{(A, B), (C, D), (B, C)}** — tách theo C → D, rồi B → C. Bảo toàn mọi FD.
@@ -294,12 +311,14 @@ Kiểm tra bằng thuật toán bảo toàn: result = B; (B ∩ R₁)⁺ ∩ R�
 Mỗi bảng hai thuộc tính luôn ở BCNF; mỗi bước tách có phần chung là key của một bên nên lossless (đã kiểm tra bằng chase trong công cụ FD và trên dữ liệu ở CK2.11). Ví dụ cho thấy kết quả thuật toán BCNF phụ thuộc thứ tự chọn FD — và không phải phân rã nào cũng tốt như nhau.`,
     },
     {
+      pe: '7.18',
       q: '**PE 7.18.** Thuộc tính prime là thuộc tính nằm trong ít nhất một candidate key. A *phụ thuộc bắc cầu* vào α nếu α → β, β ↛ α, β → A, A ∉ α, A ∉ β. Chứng minh định nghĩa "R ở 3NF nếu không có thuộc tính không khoá A nào phụ thuộc bắc cầu vào một key" tương đương định nghĩa của sách.',
       answer: `**Sách ⇒ định nghĩa mới**: giả sử A không khoá phụ thuộc bắc cầu vào key α qua β. Xét β → A: (1) không tầm thường vì A ∉ β; (2) β không phải superkey vì β ↛ α; (3) A không thuộc candidate key nào vì A không khoá. Cả ba điều kiện 3NF đều sai ⇒ mâu thuẫn với R ở 3NF theo sách.
 
 **Định nghĩa mới ⇒ sách**: giả sử R không ở 3NF theo sách: có α → β mà (1) không tầm thường, (2) α không phải superkey, (3) có A ∈ β − α không thuộc key nào. Lấy γ là một candidate key: γ → α; α ↛ γ (vì α không phải superkey); α → A; A ∉ α; A ∉ γ (A không khoá). Vậy A phụ thuộc bắc cầu vào key γ ⇒ vi phạm định nghĩa mới.`,
     },
     {
+      pe: '7.19',
       q: '**PE 7.19.** α → β là phụ thuộc bộ phận nếu có γ ⊂ α thực sự với γ → β. R ở 2NF nếu mỗi thuộc tính A hoặc thuộc một candidate key, hoặc không phụ thuộc bộ phận vào candidate key nào. Chứng minh mọi lược đồ 3NF đều ở 2NF.',
       answer: `Viết lại 2NF: không có thuộc tính không khoá A nào phụ thuộc bộ phận vào một candidate key. Dùng định nghĩa 3NF của PE 7.18, chỉ cần chứng minh: **mọi phụ thuộc bộ phận của A không khoá vào key α là một phụ thuộc bắc cầu**.
 - A phụ thuộc bộ phận vào α ⇒ có β ⊂ α thực sự với β → A.
@@ -308,6 +327,7 @@ Mỗi bảng hai thuộc tính luôn ở BCNF; mỗi bước tách có phần ch
 Vậy α → β, β ↛ α, β → A: **A phụ thuộc bắc cầu vào α**. Lược đồ 3NF không có phụ thuộc bắc cầu nào như vậy nên cũng không có phụ thuộc bộ phận ⇒ ở 2NF.`,
     },
     {
+      pe: '7.20',
       q: '**PE 7.20.** Cho ví dụ lược đồ R và tập phụ thuộc sao cho R ở BCNF nhưng không ở 4NF.',
       answer: `*(Lời giải trong file PDF bị cắt — đây là đáp án chuẩn.)*
 R = (A, B, C) với phụ thuộc không tầm thường duy nhất là **A →→ B** (do đó cũng A →→ C).
@@ -320,6 +340,7 @@ R = (A, B, C) với phụ thuộc không tầm thường duy nhất là **A →�
   exercises: [
     {
       id: 'CK2.01', topic: 'PE 7.2 — test FD', level: 1,
+      pe: '7.2',
       prompt: 'Bảng `nf_r_abc(a, b, c)` là instance của PE 7.2. Trả về **một dòng, 6 cột boolean** theo thứ tự `a_b, a_c, b_a, b_c, c_a, c_b` cho biết mỗi FD A → B, A → C, B → A, B → C, C → A, C → B có thoả trên instance không.',
       hint: 'X → Y thoả ⇔ not exists (select X from r group by X having count(distinct Y) > 1)',
       solution: `select not exists (select a from nf_r_abc group by a having count(distinct b) > 1) as a_b,
@@ -331,6 +352,7 @@ R = (A, B, C) với phụ thuộc không tầm thường duy nhất là **A →�
     },
     {
       id: 'CK2.02', topic: 'PE 7.2 — composite FD', level: 2,
+      pe: '7.2',
       prompt: 'Tiếp PE 7.2: trả về một dòng ba cột boolean: `ac_b` (AC → B có thoả), `ab_c` (AB → C có thoả), `ac_unique` (AC có xác định duy nhất mỗi dòng trên instance).',
       solution: `select not exists (select a, c from nf_r_abc group by a, c having count(distinct b) > 1) as ac_b,
        not exists (select a, b from nf_r_abc group by a, b having count(distinct c) > 1) as ab_c,
@@ -339,11 +361,13 @@ from nf_r_abc;`,
     },
     {
       id: 'CK2.03', topic: 'PE 7.9 — test FD', level: 1,
+      pe: '7.9',
       prompt: 'PE 7.9a: bảng `nf_pe79_r(a, b, c)`. Viết câu truy vấn trả về các giá trị b **vi phạm** FD B → C (kết quả rỗng ⇔ FD đúng).',
       solution: `select b from nf_pe79_r group by b having count(distinct c) > 1;`,
     },
     {
       id: 'CK2.04', topic: 'PE 7.9 — enforce FD', level: 3,
+      pe: '7.9',
       prompt: `PE 7.9b: PostgreSQL không hỗ trợ \`create assertion\`. Hãy ép FD B → C trên bảng \`nf_pe79_clean(a, b, c)\` bằng **trigger** (before insert or update, raise exception khi có dòng khác cùng b mà khác c).
 Hệ thống thử chèn (4, 'x', 11) — phải bị từ chối — và (5, 'x', 10) — phải thành công.`,
       solution: `create function nf_pe79_b_to_c() returns trigger
@@ -364,6 +388,7 @@ for each row execute function nf_pe79_b_to_c();`,
     },
     {
       id: 'CK2.05', topic: 'PE 7.1 — lossless', level: 2,
+      pe: '7.1',
       prompt: 'PE 7.1 trên dữ liệu: `nf_pe71(a, b, c, d, e)` thoả F = {A → BC, CD → E, B → D, E → A}. Phân rã thành (a, b, c) và (a, d, e). Trả về một dòng ba cột `joined_rows`, `extra`, `missing` (số tuple thừa / thiếu của join so với bảng gốc).',
       solution: `with j as (
   select a, b, c, d, e
@@ -375,6 +400,7 @@ select (select count(*) from j) as joined_rows,
     },
     {
       id: 'CK2.06', topic: 'PE 7.6 — keys on data', level: 2,
+      pe: '7.6',
       prompt: 'PE 7.6: candidate key là A, E, BC, CD; B không phải key. Minh hoạ trên `nf_pe71`: trả về một dòng 5 cột boolean `a, e, bc, cd, b` — mỗi tập có xác định duy nhất mỗi dòng của instance không.',
       solution: `select count(*) = count(distinct a) as a,
        count(*) = count(distinct e) as e,
@@ -385,6 +411,7 @@ from nf_pe71;`,
     },
     {
       id: 'CK2.07', topic: 'PE 7.13 — lost FD', level: 3,
+      pe: '7.13',
       prompt: `PE 7.13 trên dữ liệu: tạo \`nf_pe71_r1(a primary key, b, c)\` và \`nf_pe71_r2(a primary key, d, e)\` từ nf_pe71 (A là key của cả hai). Rồi chèn ('a5', 'b1', 'c9') vào r1 và ('a5', 'd9', 'e9') vào r2 — ràng buộc của từng bảng đều thoả.
 (Hệ thống join hai bảng và tìm các b vi phạm B → D — FD không được bảo toàn.)`,
       solution: `create table nf_pe71_r1 (a varchar(2) primary key, b varchar(2), c varchar(2));
@@ -399,6 +426,7 @@ group by b having count(distinct d) > 1;`,
     },
     {
       id: 'CK2.08', topic: 'PE 7.10 — nulls', level: 2,
+      pe: '7.10',
       prompt: 'PE 7.10: `nf_pe710(a, b, c)` với A → B, một số dòng có a là null. Phân rã thành (a, b) và (a, c). Trả về các dòng của bảng gốc **bị mất** sau natural join (cột a, b, c).',
       hint: 'select * from nf_pe710 except select a, b, c from (...) natural join (...)',
       solution: `select a, b, c from nf_pe710
@@ -407,6 +435,7 @@ select a, b, c from (select a, b from nf_pe710) r1 natural join (select a, c fro
     },
     {
       id: 'CK2.09', topic: 'PE 7.11 — PK/FK', level: 2,
+      pe: '7.11',
       prompt: `PE 7.11: phân rã BCNF \`nf_in_dep\` theo dept_name → building, budget thành \`nf_dept(dept_name primary key, building, budget)\` và \`nf_inst(ID primary key, name, salary, dept_name)\` với dept_name **foreign key** tham chiếu nf_dept; chép dữ liệu sang.
 (Hệ thống thử xoá khoa Physics khỏi nf_dept và chèn giảng viên thuộc khoa 'Nowhere' — cả hai phải bị foreign key chặn, mã 23503.)`,
       solution: `create table nf_dept (dept_name varchar(20) primary key, building varchar(15), budget numeric(12,2));
@@ -420,6 +449,7 @@ insert into nf_inst select ID, name, salary, dept_name from nf_in_dep;`,
     },
     {
       id: 'CK2.10', topic: 'PE 7.12 — u ⊆ join', level: 2,
+      pe: '7.12',
       prompt: 'PE 7.12 trên dữ liệu: u = `nf_r_abc`, phân rã (a, b), (b, c) — r₁, r₂ là **projection** (loại trùng). Trả về một dòng ba cột: `u_rows`, `joined_rows`, `missing` (số tuple của u không có trong join — phải bằng 0).',
       solution: `with j as (select a, b, c from (select distinct a, b from nf_r_abc) r1 natural join (select distinct b, c from nf_r_abc) r2)
 select (select count(*) from nf_r_abc) as u_rows,
@@ -428,6 +458,7 @@ select (select count(*) from nf_r_abc) as u_rows,
     },
     {
       id: 'CK2.11', topic: 'PE 7.17 — 3 BCNF decompositions', level: 3,
+      pe: '7.17',
       prompt: 'PE 7.17: `nf_pe717(a, b, c, d)` thoả A → B, C → D, B → C. Với ba phân rã {(a,b),(c,d),(b,c)}, {(a,b),(c,d),(a,c)}, {(b,c),(a,d),(a,b)}, trả về một dòng ba cột `extra1, extra2, extra3`: số tuple **thừa** của natural join các projection so với bảng gốc (lossless ⇒ 0).',
       solution: `with r as (select distinct * from nf_pe717),
 j1 as (select a, b, c, d from (select distinct a, b from r) x natural join (select distinct c, d from r) y natural join (select distinct b, c from r) z),
@@ -439,6 +470,7 @@ select (select count(*) from (select * from j1 except select * from r) t) as ext
     },
     {
       id: 'CK2.12', topic: 'PE 7.20 — MVD vs FD', level: 2,
+      pe: '7.20',
       prompt: 'PE 7.20: `nf_pe720(a, b, c)`. Trả về một dòng hai cột boolean: `mvd_a_b` — A →→ B thoả trên instance (với mỗi a, các dòng là đủ mọi tổ hợp b × c); `fd_a_b` — FD A → B có thoả không.',
       solution: `select not exists (select a from nf_pe720 group by a
                    having count(*) <> count(distinct b) * count(distinct c)) as mvd_a_b,
@@ -446,6 +478,7 @@ select (select count(*) from (select * from j1 except select * from r) t) as ext
     },
     {
       id: 'CK2.13', topic: 'PE 7.20 — 4NF', level: 2,
+      pe: '7.20',
       prompt: 'Phân rã 4NF của PE 7.20: tạo `nf_pe720_ab(a, b)` và `nf_pe720_ac(a, c)` bằng `create table ... as select distinct`. (Hệ thống đếm dòng hai bảng và số tuple thừa của join so với nf_pe720.)',
       solution: `create table nf_pe720_ab as select distinct a, b from nf_pe720;
 create table nf_pe720_ac as select distinct a, c from nf_pe720;`,
@@ -456,6 +489,7 @@ create table nf_pe720_ac as select distinct a, c from nf_pe720;`,
     },
     {
       id: 'CK2.14', topic: 'PE 7.3 — cardinality via FD', level: 1,
+      pe: '7.3',
       prompt: 'PE 7.3 trên bảng `advisor(s_ID, i_ID)` của University: trả về một dòng hai cột boolean `s_to_i` (s_ID → i_ID có thoả) và `i_to_s` (i_ID → s_ID có thoả). Kết quả cho biết quan hệ advisor là một-một hay nhiều-một?',
       solution: `select not exists (select s_ID from advisor group by s_ID having count(distinct i_ID) > 1) as s_to_i,
        not exists (select i_ID from advisor group by i_ID having count(distinct s_ID) > 1) as i_to_s;`,

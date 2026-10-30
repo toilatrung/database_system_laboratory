@@ -2,7 +2,7 @@
 
 *Practice Exercises — Chapter 7 · Practice Exercises 7.1–7.20, Database System Concepts, 7th Ed.*
 
-> **Cách học:** đọc *Tóm tắt kiến thức* → làm *Trắc nghiệm* → trả lời *Câu hỏi tự luận* → làm *Bài tập SQL* trong [`playground.html`](../playground.html) hoặc [`my_answers.sql`](my_answers.sql) (chấm trong thư mục `lab/` bằng `npm run grade -- ck2`). Đáp án SQL: [`solutions.sql`](solutions.sql).
+> **Cách học:** *Tóm tắt kiến thức* → *Trắc nghiệm* → *Câu hỏi tự luận* → *Bài tập SQL*, trong [`playground.html`](../playground.html) hoặc [`my_answers.sql`](my_answers.sql) (chấm trong thư mục `lab/` bằng `npm run grade -- ck2`). Đáp án SQL: [`solutions.sql`](solutions.sql).
 
 ## 1. Tóm tắt kiến thức
 
@@ -276,7 +276,13 @@ Các PE chỉ có "—" là chứng minh/lập luận, không chạy SQL đượ
 
 ## 3. Câu hỏi tự luận (20 câu)
 
-**Câu 1.** **PE 7.1.** Phân rã R = (A, B, C, D, E) thành (A, B, C) và (A, D, E). Chứng minh phân rã lossless nếu F = {A → BC, CD → E, B → D, E → A}.
+**Câu 1.** 
+
+> **Exercise 7.1.** The schema R = (A, B, C, D, E) is decomposed into (A, B, C) and (A, D, E). Show that this decomposition is lossless when the following set F of functional dependencies holds:
+> 
+> A → BC, CD → E, B → D, E → A
+
+**PE 7.1.** Phân rã R = (A, B, C, D, E) thành (A, B, C) và (A, D, E). Chứng minh phân rã lossless nếu F = {A → BC, CD → E, B → D, E → A}.
 
 <details><summary>Gợi ý đáp án</summary>
 
@@ -286,7 +292,20 @@ Các PE chỉ có "—" là chứng minh/lập luận, không chạy SQL đượ
 
 </details>
 
-**Câu 2.** **PE 7.2.** Liệt kê mọi FD không tầm thường thoả bởi instance r(A, B, C) = {(a1, b1, c1), (a1, b1, c2), (a2, b1, c1), (a2, b1, c3)}.
+**Câu 2.** 
+
+> **Exercise 7.2.** List every nontrivial functional dependency satisfied by the relation of Figure 7.18.
+> 
+> *Figure 7.18 — Relation of Exercise 7.2:*
+> 
+> | A | B | C |
+> |---|---|---|
+> | a1 | b1 | c1 |
+> | a1 | b1 | c2 |
+> | a2 | b1 | c1 |
+> | a2 | b1 | c3 |
+
+**PE 7.2.** Liệt kê mọi FD không tầm thường thoả bởi instance r(A, B, C) = {(a1, b1, c1), (a1, b1, c2), (a2, b1, c1), (a2, b1, c3)}.
 
 <details><summary>Gợi ý đáp án</summary>
 
@@ -299,7 +318,14 @@ Các PE chỉ có "—" là chứng minh/lập luận, không chạy SQL đượ
 
 </details>
 
-**Câu 3.** **PE 7.3.** Dùng FD để biểu diễn: (a) quan hệ một-một giữa student và instructor; (b) quan hệ nhiều-một giữa student và instructor.
+**Câu 3.** 
+
+> **Exercise 7.3.** Explain how functional dependencies can be used to express each of the following:
+> 
+> - a one-to-one relationship set exists between the entity sets *student* and *instructor*;
+> - a many-to-one relationship set exists between the entity sets *student* and *instructor*.
+
+**PE 7.3.** Dùng FD để biểu diễn: (a) quan hệ một-một giữa student và instructor; (b) quan hệ nhiều-một giữa student và instructor.
 
 <details><summary>Gợi ý đáp án</summary>
 
@@ -310,7 +336,11 @@ Gọi Pk(r) là primary key của r, xét relation của relationship set.
 
 </details>
 
-**Câu 4.** **PE 7.4.** Dùng Armstrong's axioms chứng minh tính đúng đắn (soundness) của union rule: α → β và α → γ ⇒ α → βγ.
+**Câu 4.** 
+
+> **Exercise 7.4.** Use Armstrong’s axioms to prove that the union rule is sound. (Hint: with the augmentation rule show that if α → β then α → αβ. Apply augmentation again using α → γ, and then apply the transitivity rule.)
+
+**PE 7.4.** Dùng Armstrong's axioms chứng minh tính đúng đắn (soundness) của union rule: α → β và α → γ ⇒ α → βγ.
 
 <details><summary>Gợi ý đáp án</summary>
 
@@ -322,7 +352,11 @@ Gọi Pk(r) là primary key của r, xét relation của relationship set.
 
 </details>
 
-**Câu 5.** **PE 7.5.** Dùng Armstrong's axioms chứng minh pseudotransitivity: α → β và γβ → δ ⇒ αγ → δ.
+**Câu 5.** 
+
+> **Exercise 7.5.** Use Armstrong’s axioms to prove that the pseudotransitivity rule is sound.
+
+**PE 7.5.** Dùng Armstrong's axioms chứng minh pseudotransitivity: α → β và γβ → δ ⇒ αγ → δ.
 
 <details><summary>Gợi ý đáp án</summary>
 
@@ -333,7 +367,15 @@ Gọi Pk(r) là primary key của r, xét relation của relationship set.
 
 </details>
 
-**Câu 6.** **PE 7.6.** Tính F⁺ của F = {A → BC, CD → E, B → D, E → A} trên R = (A, B, C, D, E) và liệt kê candidate key.
+**Câu 6.** 
+
+> **Exercise 7.6.** For the relation schema R = (A, B, C, D, E), compute the closure of the following set F of functional dependencies:
+> 
+> A → BC, CD → E, B → D, E → A
+> 
+> List the candidate keys of R.
+
+**PE 7.6.** Tính F⁺ của F = {A → BC, CD → E, B → D, E → A} trên R = (A, B, C, D, E) và liệt kê candidate key.
 
 <details><summary>Gợi ý đáp án</summary>
 
@@ -350,7 +392,11 @@ Do đó F⁺ gồm: **mọi FD có vế trái chứa A, E, BC hoặc CD** (với
 
 </details>
 
-**Câu 7.** **PE 7.7.** Dùng F của PE 7.6, tính canonical cover.
+**Câu 7.** 
+
+> **Exercise 7.7.** Using the functional dependencies of Exercise 7.6, compute the canonical cover F<sub>c</sub>.
+
+**PE 7.7.** Dùng F của PE 7.6, tính canonical cover.
 
 <details><summary>Gợi ý đáp án</summary>
 
@@ -362,7 +408,11 @@ Do đó F⁺ gồm: **mọi FD có vế trái chứa A, E, BC hoặc CD** (với
 
 </details>
 
-**Câu 8.** **PE 7.8.** Xét thuật toán tính α⁺ dùng mảng fdcount (số thuộc tính vế trái của FD thứ i chưa có trong α⁺) và appears[A] (danh sách FD có A ở vế trái), với thủ tục đệ quy addin. Chứng minh thuật toán đúng và hiệu quả hơn thuật toán của Figure 7.8.
+**Câu 8.** 
+
+> **Exercise 7.8.** Consider the algorithm of Figure 7.19 for computing α<sup>+</sup>. Show that it is more efficient than the algorithm of Figure 7.8 (Section 7.4.2) and that it computes α<sup>+</sup> correctly.
+
+**PE 7.8.** Xét thuật toán tính α⁺ dùng mảng fdcount (số thuộc tính vế trái của FD thứ i chưa có trong α⁺) và appears[A] (danh sách FD có A ở vế trái), với thủ tục đệ quy addin. Chứng minh thuật toán đúng và hiệu quả hơn thuật toán của Figure 7.8.
 
 <details><summary>Gợi ý đáp án</summary>
 
@@ -374,7 +424,11 @@ Do đó F⁺ gồm: **mọi FD có vế trái chứa A, E, BC hoặc CD** (với
 
 </details>
 
-**Câu 9.** **PE 7.9.** Cho R(A, B, C) và relation r. Viết câu SQL kiểm tra FD B → C có đúng trên r không, và một SQL assertion ép FD này (giả sử không có null).
+**Câu 9.** 
+
+> **Exercise 7.9.** For the schema R(A, B, C) and a relation r on R, write an SQL query that tests whether the functional dependency B → C holds on r. Also write an SQL assertion that enforces this dependency. Assume no null values are present. (Such assertions belong to the SQL standard but no database implementation currently supports them.)
+
+**PE 7.9.** Cho R(A, B, C) và relation r. Viết câu SQL kiểm tra FD B → C có đúng trên r không, và một SQL assertion ép FD này (giả sử không có null).
 
 <details><summary>Gợi ý đáp án</summary>
 
@@ -391,7 +445,11 @@ PostgreSQL (và các DBMS phổ biến) **không hỗ trợ assertion** → dùn
 
 </details>
 
-**Câu 10.** **PE 7.10.** Thảo luận lossless ngầm giả định thuộc tính ở vế trái FD không được null. Điều gì có thể sai nếu vi phạm giả định này?
+**Câu 10.** 
+
+> **Exercise 7.10.** Our treatment of lossless decomposition silently assumed that attributes on the left-hand side of a functional dependency cannot be null. What could go wrong in a decomposition if this assumption is violated?
+
+**PE 7.10.** Thảo luận lossless ngầm giả định thuộc tính ở vế trái FD không được null. Điều gì có thể sai nếu vi phạm giả định này?
 
 <details><summary>Gợi ý đáp án</summary>
 
@@ -399,7 +457,17 @@ Natural join định nghĩa qua Cartesian product + selection; so sánh với nu
 
 </details>
 
-**Câu 11.** **PE 7.11.** Trong thuật toán BCNF, dùng α → β để tách r(α, β, γ) thành r₁(α, β), r₂(α, γ). (a) Nên có primary key/foreign key nào? (b) Nếu không ép foreign key thì bất nhất gì có thể xảy ra? (c) Với phân rã 3NF (thuật toán 7.5.2), PK/FK nào nên có?
+**Câu 11.** 
+
+> **Exercise 7.11.** In the BCNF decomposition algorithm, suppose a functional dependency α → β is used to decompose a relation schema r(α, β, γ) into r<sub>1</sub>(α, β) and r<sub>2</sub>(α, γ).
+> 
+> a. Which primary-key and foreign-key constraints do you expect to hold on the decomposed relations?
+> 
+> b. Give an example of an inconsistency that an erroneous update could cause if the foreign-key constraint were not enforced on these decomposed relations.
+> 
+> c. When a relation schema is decomposed into 3NF with the algorithm of Section 7.5.2, which primary-key and foreign-key dependencies would you expect on the decomposed schema?
+
+**PE 7.11.** Trong thuật toán BCNF, dùng α → β để tách r(α, β, γ) thành r₁(α, β), r₂(α, γ). (a) Nên có primary key/foreign key nào? (b) Nếu không ép foreign key thì bất nhất gì có thể xảy ra? (c) Với phân rã 3NF (thuật toán 7.5.2), PK/FK nào nên có?
 
 <details><summary>Gợi ý đáp án</summary>
 
@@ -409,7 +477,13 @@ Natural join định nghĩa qua Cartesian product + selection; so sánh với nu
 
 </details>
 
-**Câu 12.** **PE 7.12.** Cho R₁, …, R<sub>n</sub> là phân rã của U, u(U) là relation và r<sub>i</sub> = Π<sub>Ri</sub>(u). Chứng minh u ⊆ r₁ ⋈ r₂ ⋈ … ⋈ r<sub>n</sub>.
+**Câu 12.** 
+
+> **Exercise 7.12.** Let R<sub>1</sub>, R<sub>2</sub>, …, R<sub>n</sub> be a decomposition of schema U, let u(U) be a relation, and let r<sub>i</sub> = Π<sub>R<sub>i</sub></sub>(u). Show that
+> 
+> u ⊆ r<sub>1</sub> ⋈ r<sub>2</sub> ⋈ ⋯ ⋈ r<sub>n</sub>
+
+**PE 7.12.** Cho R₁, …, R<sub>n</sub> là phân rã của U, u(U) là relation và r<sub>i</sub> = Π<sub>Ri</sub>(u). Chứng minh u ⊆ r₁ ⋈ r₂ ⋈ … ⋈ r<sub>n</sub>.
 
 <details><summary>Gợi ý đáp án</summary>
 
@@ -418,7 +492,11 @@ Theo định nghĩa natural join, t[R₁] ⋈ … ⋈ t[R<sub>n</sub>] = Π<sub>
 
 </details>
 
-**Câu 13.** **PE 7.13.** Chứng minh phân rã ở PE 7.1 không bảo toàn phụ thuộc.
+**Câu 13.** 
+
+> **Exercise 7.13.** Show that the decomposition of Exercise 7.1 does not preserve dependencies.
+
+**PE 7.13.** Chứng minh phân rã ở PE 7.1 không bảo toàn phụ thuộc.
 
 <details><summary>Gợi ý đáp án</summary>
 
@@ -427,7 +505,11 @@ Kiểm tra bằng thuật toán bảo toàn: result = B; (B ∩ R₁)⁺ ∩ R�
 
 </details>
 
-**Câu 14.** **PE 7.14.** Chứng minh có thể có nhiều canonical cover, dùng F = {X → YZ, Y → XZ, Z → XY}.
+**Câu 14.** 
+
+> **Exercise 7.14.** Using the dependencies X → YZ, Y → XZ, and Z → XY, show that a set of functional dependencies can have more than one canonical cover.
+
+**PE 7.14.** Chứng minh có thể có nhiều canonical cover, dùng F = {X → YZ, Y → XZ, Z → XY}.
 
 <details><summary>Gợi ý đáp án</summary>
 
@@ -437,7 +519,11 @@ Kiểm tra bằng thuật toán bảo toàn: result = B; (B ∩ R₁)⁺ ∩ R�
 
 </details>
 
-**Câu 15.** **PE 7.15.** Thuật toán canonical cover chỉ xoá **một** thuộc tính thừa mỗi lần. Dùng F của PE 7.14 để chỉ ra điều gì sai nếu xoá hai thuộc tính cùng lúc.
+**Câu 15.** 
+
+> **Exercise 7.15.** The canonical-cover algorithm removes only one extraneous attribute at a time. With the functional dependencies of Exercise 7.14, show what can go wrong if two attributes found to be extraneous are removed at the same time.
+
+**PE 7.15.** Thuật toán canonical cover chỉ xoá **một** thuộc tính thừa mỗi lần. Dùng F của PE 7.14 để chỉ ra điều gì sai nếu xoá hai thuộc tính cùng lúc.
 
 <details><summary>Gợi ý đáp án</summary>
 
@@ -445,7 +531,11 @@ Trong X → YZ: Y thừa (vì X → Z → … → Y qua các FD khác) và Z cũ
 
 </details>
 
-**Câu 16.** **PE 7.16.** Chứng minh phân rã 3NF bảo toàn phụ thuộc là lossless nếu ít nhất một lược đồ chứa candidate key của lược đồ bị phân rã.
+**Câu 16.** 
+
+> **Exercise 7.16.** Show that a dependency-preserving decomposition into 3NF can be made lossless by guaranteeing that at least one schema contains a candidate key of the schema being decomposed. (Hint: show that the join of all projections onto the schemas of the decomposition cannot have more tuples than the original relation.)
+
+**PE 7.16.** Chứng minh phân rã 3NF bảo toàn phụ thuộc là lossless nếu ít nhất một lược đồ chứa candidate key của lược đồ bị phân rã.
 
 <details><summary>Gợi ý đáp án</summary>
 
@@ -456,7 +546,11 @@ Gọi δ = {R₁, …, R<sub>n</sub>} là phân rã 3NF bảo toàn phụ thuộ
 
 </details>
 
-**Câu 17.** **PE 7.17.** Cho ví dụ lược đồ R' và tập F' sao cho có ít nhất ba phân rã lossless khác nhau của R' thành BCNF.
+**Câu 17.** 
+
+> **Exercise 7.17.** Give an example of a relation schema R′ and a set F′ of functional dependencies for which there are at least three distinct lossless decompositions of R′ into BCNF.
+
+**PE 7.17.** Cho ví dụ lược đồ R' và tập F' sao cho có ít nhất ba phân rã lossless khác nhau của R' thành BCNF.
 
 <details><summary>Gợi ý đáp án</summary>
 
@@ -468,7 +562,11 @@ Mỗi bảng hai thuộc tính luôn ở BCNF; mỗi bước tách có phần ch
 
 </details>
 
-**Câu 18.** **PE 7.18.** Thuộc tính prime là thuộc tính nằm trong ít nhất một candidate key. A *phụ thuộc bắc cầu* vào α nếu α → β, β ↛ α, β → A, A ∉ α, A ∉ β. Chứng minh định nghĩa "R ở 3NF nếu không có thuộc tính không khoá A nào phụ thuộc bắc cầu vào một key" tương đương định nghĩa của sách.
+**Câu 18.** 
+
+> **Exercise 7.18.** Call an attribute *prime* if it appears in at least one candidate key. Let α and β be sets of attributes such that α → β holds but β → α does not, and let A be an attribute that is in neither α nor β and for which β → A holds. We then say A is *transitively dependent* on α. 3NF can be restated as: a relation schema R is in 3NF with respect to a set F of functional dependencies if no nonprime attribute A of R is transitively dependent on a key for R. Show that this definition is equivalent to the original one.
+
+**PE 7.18.** Thuộc tính prime là thuộc tính nằm trong ít nhất một candidate key. A *phụ thuộc bắc cầu* vào α nếu α → β, β ↛ α, β → A, A ∉ α, A ∉ β. Chứng minh định nghĩa "R ở 3NF nếu không có thuộc tính không khoá A nào phụ thuộc bắc cầu vào một key" tương đương định nghĩa của sách.
 
 <details><summary>Gợi ý đáp án</summary>
 
@@ -478,7 +576,16 @@ Mỗi bảng hai thuộc tính luôn ở BCNF; mỗi bước tách có phần ch
 
 </details>
 
-**Câu 19.** **PE 7.19.** α → β là phụ thuộc bộ phận nếu có γ ⊂ α thực sự với γ → β. R ở 2NF nếu mỗi thuộc tính A hoặc thuộc một candidate key, hoặc không phụ thuộc bộ phận vào candidate key nào. Chứng minh mọi lược đồ 3NF đều ở 2NF.
+**Câu 19.** 
+
+> **Exercise 7.19.** A functional dependency α → β is a *partial dependency* if some proper subset γ of α satisfies γ → β; β is then *partially dependent* on α. A relation schema R is in *second normal form* (2NF) if every attribute A of R satisfies one of these criteria:
+> 
+> - it appears in a candidate key;
+> - it is not partially dependent on a candidate key.
+> 
+> Show that every 3NF schema is in 2NF. (Hint: show that every partial dependency is a transitive dependency.)
+
+**PE 7.19.** α → β là phụ thuộc bộ phận nếu có γ ⊂ α thực sự với γ → β. R ở 2NF nếu mỗi thuộc tính A hoặc thuộc một candidate key, hoặc không phụ thuộc bộ phận vào candidate key nào. Chứng minh mọi lược đồ 3NF đều ở 2NF.
 
 <details><summary>Gợi ý đáp án</summary>
 
@@ -490,7 +597,11 @@ Vậy α → β, β ↛ α, β → A: **A phụ thuộc bắc cầu vào α**. L
 
 </details>
 
-**Câu 20.** **PE 7.20.** Cho ví dụ lược đồ R và tập phụ thuộc sao cho R ở BCNF nhưng không ở 4NF.
+**Câu 20.** 
+
+> **Exercise 7.20.** Give an example of a relation schema R and a set of dependencies for which R is in BCNF but not in 4NF.
+
+**PE 7.20.** Cho ví dụ lược đồ R và tập phụ thuộc sao cho R ở BCNF nhưng không ở 4NF.
 
 <details><summary>Gợi ý đáp án</summary>
 
@@ -506,17 +617,17 @@ R = (A, B, C) với phụ thuộc không tầm thường duy nhất là **A →�
 
 | # | Chủ đề | Mức | Đề bài |
 |---|---|---|---|
-| CK2.01 | PE 7.2 — test FD | ★☆☆ | Bảng `nf_r_abc(a, b, c)` là instance của PE 7.2. Trả về một dòng, 6 cột boolean theo thứ tự `a_b, a_c, b_a, b_c, c_a, c_b` cho biết mỗi FD A → B, A → C, B → A, B → C, C → A, C → B có thoả trên instance không. |
-| CK2.02 | PE 7.2 — composite FD | ★★☆ | Tiếp PE 7.2: trả về một dòng ba cột boolean: `ac_b` (AC → B có thoả), `ab_c` (AB → C có thoả), `ac_unique` (AC có xác định duy nhất mỗi dòng trên instance). |
-| CK2.03 | PE 7.9 — test FD | ★☆☆ | PE 7.9a: bảng `nf_pe79_r(a, b, c)`. Viết câu truy vấn trả về các giá trị b vi phạm FD B → C (kết quả rỗng ⇔ FD đúng). |
-| CK2.04 | PE 7.9 — enforce FD | ★★★ | PE 7.9b: PostgreSQL không hỗ trợ `create assertion`. Hãy ép FD B → C trên bảng `nf_pe79_clean(a, b, c)` bằng trigger (before insert or update, raise exception khi có dòng khác cùng b mà khác c). Hệ thống thử chèn (4, 'x', 11) — phải bị từ chối — và (5, 'x', 10) — phải thành công. |
-| CK2.05 | PE 7.1 — lossless | ★★☆ | PE 7.1 trên dữ liệu: `nf_pe71(a, b, c, d, e)` thoả F = {A → BC, CD → E, B → D, E → A}. Phân rã thành (a, b, c) và (a, d, e). Trả về một dòng ba cột `joined_rows`, `extra`, `missing` (số tuple thừa / thiếu của join so với bảng gốc). |
-| CK2.06 | PE 7.6 — keys on data | ★★☆ | PE 7.6: candidate key là A, E, BC, CD; B không phải key. Minh hoạ trên `nf_pe71`: trả về một dòng 5 cột boolean `a, e, bc, cd, b` — mỗi tập có xác định duy nhất mỗi dòng của instance không. |
-| CK2.07 | PE 7.13 — lost FD | ★★★ | PE 7.13 trên dữ liệu: tạo `nf_pe71_r1(a primary key, b, c)` và `nf_pe71_r2(a primary key, d, e)` từ nf_pe71 (A là key của cả hai). Rồi chèn ('a5', 'b1', 'c9') vào r1 và ('a5', 'd9', 'e9') vào r2 — ràng buộc của từng bảng đều thoả. (Hệ thống join hai bảng và tìm các b vi phạm B → D — FD không được bảo toàn.) |
-| CK2.08 | PE 7.10 — nulls | ★★☆ | PE 7.10: `nf_pe710(a, b, c)` với A → B, một số dòng có a là null. Phân rã thành (a, b) và (a, c). Trả về các dòng của bảng gốc bị mất sau natural join (cột a, b, c). |
-| CK2.09 | PE 7.11 — PK/FK | ★★☆ | PE 7.11: phân rã BCNF `nf_in_dep` theo dept_name → building, budget thành `nf_dept(dept_name primary key, building, budget)` và `nf_inst(ID primary key, name, salary, dept_name)` với dept_name foreign key tham chiếu nf_dept; chép dữ liệu sang. (Hệ thống thử xoá khoa Physics khỏi nf_dept và chèn giảng viên thuộc khoa 'Nowhere' — cả hai phải bị foreign key chặn, mã 23503.) |
-| CK2.10 | PE 7.12 — u ⊆ join | ★★☆ | PE 7.12 trên dữ liệu: u = `nf_r_abc`, phân rã (a, b), (b, c) — r₁, r₂ là projection (loại trùng). Trả về một dòng ba cột: `u_rows`, `joined_rows`, `missing` (số tuple của u không có trong join — phải bằng 0). |
-| CK2.11 | PE 7.17 — 3 BCNF decompositions | ★★★ | PE 7.17: `nf_pe717(a, b, c, d)` thoả A → B, C → D, B → C. Với ba phân rã {(a,b),(c,d),(b,c)}, {(a,b),(c,d),(a,c)}, {(b,c),(a,d),(a,b)}, trả về một dòng ba cột `extra1, extra2, extra3`: số tuple thừa của natural join các projection so với bảng gốc (lossless ⇒ 0). |
-| CK2.12 | PE 7.20 — MVD vs FD | ★★☆ | PE 7.20: `nf_pe720(a, b, c)`. Trả về một dòng hai cột boolean: `mvd_a_b` — A →→ B thoả trên instance (với mỗi a, các dòng là đủ mọi tổ hợp b × c); `fd_a_b` — FD A → B có thoả không. |
-| CK2.13 | PE 7.20 — 4NF | ★★☆ | Phân rã 4NF của PE 7.20: tạo `nf_pe720_ab(a, b)` và `nf_pe720_ac(a, c)` bằng `create table ... as select distinct`. (Hệ thống đếm dòng hai bảng và số tuple thừa của join so với nf_pe720.) |
-| CK2.14 | PE 7.3 — cardinality via FD | ★☆☆ | PE 7.3 trên bảng `advisor(s_ID, i_ID)` của University: trả về một dòng hai cột boolean `s_to_i` (s_ID → i_ID có thoả) và `i_to_s` (i_ID → s_ID có thoả). Kết quả cho biết quan hệ advisor là một-một hay nhiều-một? |
+| CK2.01 | PE 7.2 — test FD | ★☆☆ | Exercise 7.2. List every nontrivial functional dependency satisfied by the relation of Figure 7.18.  *Figure 7.18 — Relation of Exercise 7.2:*  \| A \| B \| C \| \|---\|---\|---\| \| a1 \| b1 \| c1 \| \| a1 \| b1 \| c2 \| \| a2 \| b1 \| c1 \| \| a2 \| b1 \| c3 \|<br>Bảng `nf_r_abc(a, b, c)` là instance của PE 7.2. Trả về một dòng, 6 cột boolean theo thứ tự `a_b, a_c, b_a, b_c, c_a, c_b` cho biết mỗi FD A → B, A → C, B → A, B → C, C → A, C → B có thoả trên instance không. |
+| CK2.02 | PE 7.2 — composite FD | ★★☆ | Exercise 7.2. List every nontrivial functional dependency satisfied by the relation of Figure 7.18.  *Figure 7.18 — Relation of Exercise 7.2:*  \| A \| B \| C \| \|---\|---\|---\| \| a1 \| b1 \| c1 \| \| a1 \| b1 \| c2 \| \| a2 \| b1 \| c1 \| \| a2 \| b1 \| c3 \|<br>Tiếp PE 7.2: trả về một dòng ba cột boolean: `ac_b` (AC → B có thoả), `ab_c` (AB → C có thoả), `ac_unique` (AC có xác định duy nhất mỗi dòng trên instance). |
+| CK2.03 | PE 7.9 — test FD | ★☆☆ | Exercise 7.9. For the schema R(A, B, C) and a relation r on R, write an SQL query that tests whether the functional dependency B → C holds on r. Also write an SQL assertion that enforces this dependency. Assume no null values are present. (Such assertions belong to the SQL standard but no database implementation currently supports them.)<br>PE 7.9a: bảng `nf_pe79_r(a, b, c)`. Viết câu truy vấn trả về các giá trị b vi phạm FD B → C (kết quả rỗng ⇔ FD đúng). |
+| CK2.04 | PE 7.9 — enforce FD | ★★★ | Exercise 7.9. For the schema R(A, B, C) and a relation r on R, write an SQL query that tests whether the functional dependency B → C holds on r. Also write an SQL assertion that enforces this dependency. Assume no null values are present. (Such assertions belong to the SQL standard but no database implementation currently supports them.)<br>PE 7.9b: PostgreSQL không hỗ trợ `create assertion`. Hãy ép FD B → C trên bảng `nf_pe79_clean(a, b, c)` bằng trigger (before insert or update, raise exception khi có dòng khác cùng b mà khác c). Hệ thống thử chèn (4, 'x', 11) — phải bị từ chối — và (5, 'x', 10) — phải thành công. |
+| CK2.05 | PE 7.1 — lossless | ★★☆ | Exercise 7.1. The schema R = (A, B, C, D, E) is decomposed into (A, B, C) and (A, D, E). Show that this decomposition is lossless when the following set F of functional dependencies holds:  A → BC, CD → E, B → D, E → A<br>PE 7.1 trên dữ liệu: `nf_pe71(a, b, c, d, e)` thoả F = {A → BC, CD → E, B → D, E → A}. Phân rã thành (a, b, c) và (a, d, e). Trả về một dòng ba cột `joined_rows`, `extra`, `missing` (số tuple thừa / thiếu của join so với bảng gốc). |
+| CK2.06 | PE 7.6 — keys on data | ★★☆ | Exercise 7.6. For the relation schema R = (A, B, C, D, E), compute the closure of the following set F of functional dependencies:  A → BC, CD → E, B → D, E → A  List the candidate keys of R.<br>PE 7.6: candidate key là A, E, BC, CD; B không phải key. Minh hoạ trên `nf_pe71`: trả về một dòng 5 cột boolean `a, e, bc, cd, b` — mỗi tập có xác định duy nhất mỗi dòng của instance không. |
+| CK2.07 | PE 7.13 — lost FD | ★★★ | Exercise 7.13. Show that the decomposition of Exercise 7.1 does not preserve dependencies.<br>PE 7.13 trên dữ liệu: tạo `nf_pe71_r1(a primary key, b, c)` và `nf_pe71_r2(a primary key, d, e)` từ nf_pe71 (A là key của cả hai). Rồi chèn ('a5', 'b1', 'c9') vào r1 và ('a5', 'd9', 'e9') vào r2 — ràng buộc của từng bảng đều thoả. (Hệ thống join hai bảng và tìm các b vi phạm B → D — FD không được bảo toàn.) |
+| CK2.08 | PE 7.10 — nulls | ★★☆ | Exercise 7.10. Our treatment of lossless decomposition silently assumed that attributes on the left-hand side of a functional dependency cannot be null. What could go wrong in a decomposition if this assumption is violated?<br>PE 7.10: `nf_pe710(a, b, c)` với A → B, một số dòng có a là null. Phân rã thành (a, b) và (a, c). Trả về các dòng của bảng gốc bị mất sau natural join (cột a, b, c). |
+| CK2.09 | PE 7.11 — PK/FK | ★★☆ | Exercise 7.11. In the BCNF decomposition algorithm, suppose a functional dependency α → β is used to decompose a relation schema r(α, β, γ) into r[1](α, β) and r[2](α, γ).  a. Which primary-key and foreign-key constraints do you expect to hold on the decomposed relations?  b. Give an example of an inconsistency that an erroneous update could cause if the foreign-key constraint were not enforced on these decomposed relations.  c. When a relation schema is decomposed into 3NF with the algorithm of Section 7.5.2, which primary-key and foreign-key dependencies would you expect on the decomposed schema?<br>PE 7.11: phân rã BCNF `nf_in_dep` theo dept_name → building, budget thành `nf_dept(dept_name primary key, building, budget)` và `nf_inst(ID primary key, name, salary, dept_name)` với dept_name foreign key tham chiếu nf_dept; chép dữ liệu sang. (Hệ thống thử xoá khoa Physics khỏi nf_dept và chèn giảng viên thuộc khoa 'Nowhere' — cả hai phải bị foreign key chặn, mã 23503.) |
+| CK2.10 | PE 7.12 — u ⊆ join | ★★☆ | Exercise 7.12. Let R[1], R[2], …, R[n] be a decomposition of schema U, let u(U) be a relation, and let r[i] = Π[Ri](u). Show that  u ⊆ r[1] ⋈ r[2] ⋈ ⋯ ⋈ r[n]<br>PE 7.12 trên dữ liệu: u = `nf_r_abc`, phân rã (a, b), (b, c) — r₁, r₂ là projection (loại trùng). Trả về một dòng ba cột: `u_rows`, `joined_rows`, `missing` (số tuple của u không có trong join — phải bằng 0). |
+| CK2.11 | PE 7.17 — 3 BCNF decompositions | ★★★ | Exercise 7.17. Give an example of a relation schema R′ and a set F′ of functional dependencies for which there are at least three distinct lossless decompositions of R′ into BCNF.<br>PE 7.17: `nf_pe717(a, b, c, d)` thoả A → B, C → D, B → C. Với ba phân rã {(a,b),(c,d),(b,c)}, {(a,b),(c,d),(a,c)}, {(b,c),(a,d),(a,b)}, trả về một dòng ba cột `extra1, extra2, extra3`: số tuple thừa của natural join các projection so với bảng gốc (lossless ⇒ 0). |
+| CK2.12 | PE 7.20 — MVD vs FD | ★★☆ | Exercise 7.20. Give an example of a relation schema R and a set of dependencies for which R is in BCNF but not in 4NF.<br>PE 7.20: `nf_pe720(a, b, c)`. Trả về một dòng hai cột boolean: `mvd_a_b` — A →→ B thoả trên instance (với mỗi a, các dòng là đủ mọi tổ hợp b × c); `fd_a_b` — FD A → B có thoả không. |
+| CK2.13 | PE 7.20 — 4NF | ★★☆ | Exercise 7.20. Give an example of a relation schema R and a set of dependencies for which R is in BCNF but not in 4NF.<br>Phân rã 4NF của PE 7.20: tạo `nf_pe720_ab(a, b)` và `nf_pe720_ac(a, c)` bằng `create table ... as select distinct`. (Hệ thống đếm dòng hai bảng và số tuple thừa của join so với nf_pe720.) |
+| CK2.14 | PE 7.3 — cardinality via FD | ★☆☆ | Exercise 7.3. Explain how functional dependencies can be used to express each of the following:  - a one-to-one relationship set exists between the entity sets *student* and *instructor*; - a many-to-one relationship set exists between the entity sets *student* and *instructor*.<br>PE 7.3 trên bảng `advisor(s_ID, i_ID)` của University: trả về một dòng hai cột boolean `s_to_i` (s_ID → i_ID có thoả) và `i_to_s` (i_ID → s_ID có thoả). Kết quả cho biết quan hệ advisor là một-một hay nhiều-một? |

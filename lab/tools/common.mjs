@@ -4,6 +4,7 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
 import path from 'node:path';
 import { PGlite } from '@electric-sql/pglite';
 import { createDatabase } from './engine.mjs';
+import { resolvePE } from './pe.mjs';
 
 export const LAB = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 export const REPO = path.resolve(LAB, '..');
@@ -29,10 +30,15 @@ export async function databaseProvider(files) {
 
 // Fills in the display fields a chapter may leave out. Numbered book chapters
 // keep `number`; review sections give their own `key` and labels.
+// `pe: '3.2a'` on a question or exercise pulls the original statement from lab/pe/ into `en`.
+const withPE = item => item.pe ? { ...item, en: resolvePE(item.pe) } : item;
+
 function normalizeChapter(mod, part) {
   const key = mod.key || `ch${mod.number}`;
   return {
     ...mod,
+    questions: (mod.questions || []).map(withPE),
+    exercises: (mod.exercises || []).map(withPE),
     key,
     store: mod.key || String(mod.number),
     short: mod.short || String(mod.number),

@@ -30,7 +30,9 @@ function exerciseHeader(ch) {
 }
 
 function exerciseBlock(ex) {
-  const lines = [`-- @ex ${ex.id}  [${ex.topic}]  ${stars(ex.level)}`, sqlComment(ex.prompt)];
+  const lines = [`-- @ex ${ex.id}  [${ex.topic}]  ${stars(ex.level)}`];
+  if (ex.en) lines.push(sqlComment('Đề gốc: ' + ex.en.trim()), '--');
+  lines.push(sqlComment(ex.prompt));
   if (ex.hint) lines.push(sqlComment('Gợi ý: ' + ex.hint));
   if (ex.fresh) lines.push('-- (Bài này chạy trên một database mới — được dùng begin/commit/rollback.)');
   if (ex.ordered) lines.push('-- (Thứ tự dòng được chấm.)');
@@ -65,24 +67,22 @@ function writeChapterFiles(part, ch) {
   ].join('\n\n') + '\n';
   writeFileSync(path.join(dir, 'solutions.sql'), solutions);
 
+  const LABELS = { summary: 'Tóm tắt kiến thức', quiz: 'Trắc nghiệm', questions: 'Câu hỏi tự luận', ex: 'Bài tập SQL', ...(part.stepLabels || {}) };
+  const steps = (part.steps || ['summary', 'quiz', 'questions', 'ex']).filter(k => k !== 'quiz' || ch.quiz.length);
+  const section = {
+    summary: () => [ch.summary.trim()],
+    quiz: () => ch.quiz.map((q, i) => `**Câu ${i + 1}.** ${q.q}\n\n` + q.options.map((o, j) => `- ${LETTERS[j]}. ${o}`).join('\n') +
+      `\n\n<details><summary>Đáp án</summary>\n\n**${LETTERS[q.answer]}** — ${q.explain}\n\n</details>`),
+    questions: () => ch.questions.map((q, i) => `**Câu ${i + 1}.** ${q.en ? `\n\n> ${q.en.trim().replace(/\n/g, '\n> ')}\n\n` : ''}${q.q}\n\n<details><summary>Gợi ý đáp án</summary>\n\n${q.answer}\n\n</details>`),
+    ex: () => ['| # | Chủ đề | Mức | Đề bài |\n|---|---|---|---|\n' +
+      ch.exercises.map(ex => `| ${ex.id} | ${ex.topic} | ${stars(ex.level)} | ${[ex.en ? `${plain(ex.en)}` : '', plain(ex.prompt)].filter(Boolean).join('<br>').replace(/\n/g, ' ').replace(/\|/g, '\\|')} |`).join('\n')],
+  };
+  const count = { summary: '', quiz: ` (${ch.quiz.length} câu)`, questions: ` (${ch.questions.length} câu)`, ex: ` (${ch.exercises.length} bài)` };
   const md = [];
   md.push(`# ${ch.label} — ${ch.titleVi}`);
   md.push(`*${ch.title}${ch.source ? ` · ${ch.source}` : ' · Database System Concepts, 7th Ed.'}*`);
-  md.push(`> **Cách học:** đọc *Tóm tắt kiến thức* → làm *Trắc nghiệm* → trả lời *Câu hỏi tự luận* → làm *Bài tập SQL* trong [\`playground.html\`](../playground.html) hoặc [\`my_answers.sql\`](my_answers.sql) (chấm trong thư mục \`lab/\` bằng \`npm run grade -- ${ch.key}\`). Đáp án SQL: [\`solutions.sql\`](solutions.sql).`);
-  md.push('## 1. Tóm tắt kiến thức');
-  md.push(ch.summary.trim());
-  md.push(`## 2. Trắc nghiệm (${ch.quiz.length} câu)`);
-  ch.quiz.forEach((q, i) => {
-    md.push(`**Câu ${i + 1}.** ${q.q}\n\n` + q.options.map((o, j) => `- ${LETTERS[j]}. ${o}`).join('\n') +
-      `\n\n<details><summary>Đáp án</summary>\n\n**${LETTERS[q.answer]}** — ${q.explain}\n\n</details>`);
-  });
-  md.push(`## 3. Câu hỏi tự luận (${ch.questions.length} câu)`);
-  ch.questions.forEach((q, i) => {
-    md.push(`**Câu ${i + 1}.** ${q.q}\n\n<details><summary>Gợi ý đáp án</summary>\n\n${q.answer}\n\n</details>`);
-  });
-  md.push(`## 4. Bài tập SQL (${ch.exercises.length} bài)`);
-  md.push('| # | Chủ đề | Mức | Đề bài |\n|---|---|---|---|\n' +
-    ch.exercises.map(ex => `| ${ex.id} | ${ex.topic} | ${stars(ex.level)} | ${plain(ex.prompt).replace(/\n/g, ' ').replace(/\|/g, '\\|')} |`).join('\n'));
+  md.push(`> **Cách học:** ${steps.map(k => `*${LABELS[k]}*`).join(' → ')}, trong [\`playground.html\`](../playground.html) hoặc [\`my_answers.sql\`](my_answers.sql) (chấm trong thư mục \`lab/\` bằng \`npm run grade -- ${ch.key}\`). Đáp án SQL: [\`solutions.sql\`](solutions.sql).`);
+  steps.forEach((k, n) => { md.push(`## ${n + 1}. ${LABELS[k]}${count[k]}`); md.push(...section[k]()); });
   writeFileSync(path.join(dir, 'README.md'), md.join('\n\n') + '\n');
 }
 
@@ -138,6 +138,7 @@ for (const part of allParts.filter(filter)) {
     part: {
       number: part.number, title: part.title, subtitle: part.subtitle || '', lead: part.lead || '',
       unit: part.unit, storage: part.storage, fdTool: !!part.fdTool, weeks: part.weeks || '',
+      steps: part.steps || null, stepLabels: part.stepLabels || {},
     },
     parts: allParts.map(partLink),
     schedule: schedule.map(w => ({ week: w.week, content: w.content, note: w.note || '', exam: w.exam || '', parts: [...new Set((w.links || []).map(l => l[0]))] })),
@@ -150,10 +151,10 @@ for (const part of allParts.filter(filter)) {
       titleVi: ch.titleVi,
       summary: block(ch.summary),
       quiz: ch.quiz.map(q => ({ q: inline(q.q), options: q.options.map(inline), answer: q.answer, explain: inline(q.explain) })),
-      questions: ch.questions.map(q => ({ q: inline(q.q), answer: block(q.answer) })),
+      questions: ch.questions.map(q => ({ q: inline(q.q), en: q.en ? block(q.en) : '', answer: block(q.answer) })),
       exercises: ch.exercises.map(ex => ({
         id: ex.id, topic: ex.topic, level: ex.level,
-        prompt: block(ex.prompt), hint: ex.hint ? inline(ex.hint) : '',
+        prompt: block(ex.prompt), en: ex.en ? block(ex.en) : '', hint: ex.hint ? inline(ex.hint) : '',
         solution: ex.solution.trim(), check: ex.check ? ex.check.trim() : null,
         ordered: !!ex.ordered, fresh: !!ex.fresh,
         expected: expected[ex.id],
@@ -184,26 +185,26 @@ const chapterOf = (n, key) => {
 const examBadge = { midterm: '<span class="lx-badge lx-badge--warning">Thi giữa kỳ</span>', final: '<span class="lx-badge lx-badge--danger">Thi cuối kỳ</span>' };
 const rows = schedule.map(w => {
   const links = (w.links || []).map(([n, key]) => chapterOf(n, key)).filter(Boolean)
-    .map(({ p, c }) => `<a class="lx-tag" href="${p.slug}/playground.html#/${c.key}/summary" title="${escHtml(c.titleVi)}">P${p.number} · ${escHtml(c.navLabel)}</a>`).join(' ');
+    .map(({ p, c }) => `<a class="lx-tag" href="${p.slug}/playground.html#/${c.key}" title="${escHtml(c.titleVi)}">P${p.number} · ${escHtml(c.navLabel)}</a>`).join(' ');
   return `<tr${w.exam ? ' class="hub-exam"' : ''}><td class="r">${w.week}</td><td><div class="lx-cell__main">${escHtml(w.content)}</div>${w.note ? `<div class="lx-cell__sub">${escHtml(w.note)}</div>` : ''}</td>
     <td>${w.exam ? examBadge[w.exam] : ''}</td><td><div class="hub-links">${links}</div></td></tr>`;
 }).join('');
 const cards = allParts.map(p => {
   const n = p.chapters.reduce((k, c) => k + c.exercises.length, 0);
-  const q = p.chapters.reduce((k, c) => k + c.quiz.length, 0);
+  const q = p.chapters.reduce((k, c) => k + c.questions.length, 0);
   return `<tr>
     <td class="hub-pn">Part ${p.number}</td>
     <td><a class="lx-cell__main" href="${p.slug}/playground.html">${escHtml(p.title.replace(/^Part \d+\s*[—-]\s*/, ''))}</a><div class="lx-cell__sub">${escHtml(p.subtitle || '')}</div>
-      <div class="hub-links">${p.chapters.map(c => `<a class="lx-tag" href="${p.slug}/playground.html#/${c.key}/summary" title="${escHtml(c.label)} — ${escHtml(c.titleVi)}">${escHtml(c.navLabel)}</a>`).join('')}</div></td>
+      <div class="hub-links">${p.chapters.map(c => `<a class="lx-tag" href="${p.slug}/playground.html#/${c.key}" title="${escHtml(c.label)} — ${escHtml(c.titleVi)}">${escHtml(c.navLabel)}</a>`).join('')}</div></td>
     <td>${escHtml(p.weeks || '')}</td>
-    <td class="r">${n}</td><td class="r">${q}</td>
+    <td class="r">${q}</td><td class="r">${n}</td>
     <td class="act"><a class="lx-btn" href="${p.slug}/playground.html">Mở</a></td></tr>`;
 }).join('');
 const brandSvg = '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><ellipse cx="8" cy="3.5" rx="5" ry="2"/><path d="M3 3.5v9c0 1.1 2.2 2 5 2s5-.9 5-2v-9M3 8c0 1.1 2.2 2 5 2s5-.9 5-2"/></svg>';
 const caret = '<svg class="i" viewBox="0 0 16 16" aria-hidden="true"><path d="M6 4l4 4-4 4"/></svg>';
 const sideNav = allParts.map(p => `<details class="lx-navpart" open><summary><span class="lx-navpart__n">Part ${p.number}</span><span class="lx-navpart__t">${escHtml(p.title.replace(/^Part \d+\s*[—-]\s*/, ''))}</span>${caret}</summary>
   <div class="lx-navpart__items"><a class="lx-nav__item" href="${p.slug}/playground.html"><span class="lx-nav__t">Tổng quan</span></a>${p.chapters.map(c =>
-    `<a class="lx-nav__item" href="${p.slug}/playground.html#/${c.key}/summary" title="${escHtml(c.label)} — ${escHtml(c.titleVi)}"><span class="lx-nav__k">${escHtml(c.navLabel.replace(/^Chương /, 'Ch '))}</span><span class="lx-nav__t">${escHtml(c.titleVi)}</span></a>`).join('')}</div></details>`).join('');
+    `<a class="lx-nav__item" href="${p.slug}/playground.html#/${c.key}" title="${escHtml(c.label)} — ${escHtml(c.titleVi)}"><span class="lx-nav__k">${escHtml(c.navLabel.replace(/^Chương /, 'Ch '))}</span><span class="lx-nav__t">${escHtml(c.titleVi)}</span></a>`).join('')}</div></details>`).join('');
 const hub = `<!doctype html>
 <html lang="vi">
 <head>
@@ -242,7 +243,7 @@ ${css}
     <h1 class="lx-h1">Bộ luyện tập theo lịch học</h1>
     <p class="lx-lead">Bốn part: học theo chương (Part 1, 2) và ôn thi (Part 3 giữa kỳ, Part 4 cuối kỳ). Phần ôn thi bám sát <strong>Practice Exercises</strong> của sách — đề thi chủ yếu lấy từ đây. Mọi câu SQL chạy trên PostgreSQL ngay trong trình duyệt.</p></div></div>
   <div class="lx-card"><div class="lx-card__head"><h2 class="lx-h2">Các part</h2><a class="lx-subtle" style="font-size:12px" href="https://www.db-book.com/Practice-Exercises/index-solu.html">Practice Exercises (db-book.com)</a></div>
-    <div class="lx-scroll"><table class="lx-table"><thead><tr><th>Part</th><th>Nội dung</th><th>Tuần</th><th class="r">Bài SQL</th><th class="r">Trắc nghiệm</th><th class="act"><span class="lx-sr">Mở</span></th></tr></thead><tbody>${cards}</tbody></table></div></div>
+    <div class="lx-scroll"><table class="lx-table"><thead><tr><th>Part</th><th>Nội dung</th><th>Tuần</th><th class="r">Tự luận</th><th class="r">Bài SQL</th><th class="act"><span class="lx-sr">Mở</span></th></tr></thead><tbody>${cards}</tbody></table></div></div>
   <div class="lx-card">
     <div class="lx-card__head"><h2 class="lx-h2">Lịch học &amp; kế hoạch thi</h2><span class="lx-subtle" style="font-size:12px">Bấm nhãn để mở đúng phần luyện tập</span></div>
     <div class="lx-scroll"><table class="lx-table"><thead><tr><th class="r">Tuần</th><th>Nội dung</th><th>Thi</th><th>Luyện tập</th></tr></thead><tbody>${rows}</tbody></table></div>

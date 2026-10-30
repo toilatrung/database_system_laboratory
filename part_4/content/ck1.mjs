@@ -155,6 +155,7 @@ export default {
 
   questions: [
     {
+      pe: '6.1',
       q: '**PE 6.1.** Vẽ E-R diagram cho công ty bảo hiểm xe: mỗi customer sở hữu một hoặc nhiều car; mỗi car có 0..nhiều accident được ghi nhận; mỗi policy bảo hiểm một hoặc nhiều car và có một hoặc nhiều premium payment; mỗi payment cho một kỳ, có due date và ngày nhận tiền. Sau đó viết lược đồ quan hệ.',
       answer: `\`\`\`
 [customer] ==== <owns> ---- [car] ---- <participated> ---- [accident]
@@ -186,6 +187,7 @@ Lược đồ:
 Ràng buộc "mỗi customer có ≥ 1 car" và "mỗi policy phủ ≥ 1 car" không ép được bằng PK/FK (xem PE 6.11).`,
     },
     {
+      pe: '6.2',
       q: '**PE 6.2.** CSDL gồm student, course, section của University và điểm mà sinh viên đạt trong các bài thi của từng section. (a) Vẽ E-R coi exam là entity và dùng một ternary relationship. (b) Vẽ E-R chỉ dùng binary relationship giữa student và section, mỗi cặp (student, section) chỉ có một relationship nhưng vẫn lưu được điểm nhiều bài thi.',
       answer: `**(a)**
 \`\`\`
@@ -209,6 +211,7 @@ Relationship binary có thuộc tính **multivalued composite** {exam_marks(exam
 Không đặt name/place/time của exam vào relationship: sẽ **lặp** cho từng sinh viên và không lưu được exam khi chưa có sinh viên — muốn lưu thì phải giữ entity exam riêng.`,
     },
     {
+      pe: '6.3',
       q: '**PE 6.3.** Thiết kế E-R lưu thống kê ghi điểm của đội bóng yêu thích: các trận, tỉ số mỗi trận, cầu thủ tham gia mỗi trận, thống kê ghi điểm của từng cầu thủ mỗi trận. Thống kê tổng hợp mô hình bằng derived attribute và giải thích cách tính.',
       answer: `\`\`\`
 [player] ---------- <played> ---------- [match]
@@ -222,16 +225,19 @@ Không đặt name/place/time của exam vào relationship: sẽ **lặp** cho t
 - Lược đồ: player(<u>player_id</u>, name, age), match(<u>match_id</u>, date, stadium, opponent, own_score, opp_score), played(<u>match_id, player_id</u>, score); season_score hiện thực bằng view \`sum(score) group by player_id\`.`,
     },
     {
+      pe: '6.4',
       q: '**PE 6.4.** Một E-R diagram có cùng một entity set xuất hiện nhiều lần, thuộc tính được lặp lại ở nhiều chỗ. Vì sao cho phép redundancy này là thói quen xấu?',
       answer: `Entity set được vẽ nhiều lần thường vì diagram trải trên nhiều trang. Nếu ghi thuộc tính ở mỗi lần xuất hiện, các bản có thể **khác nhau** (thêm/bớt thuộc tính ở một chỗ) → diagram không nhất quán. Nên chỉ ghi thuộc tính **một lần**; các lần xuất hiện khác không ghi thuộc tính nào — vì entity set không thể không có thuộc tính, người đọc hiểu rằng thuộc tính được định nghĩa ở chỗ khác.`,
     },
     {
+      pe: '6.5',
       q: '**PE 6.5.** Xem E-R diagram như một đồ thị. Các điều sau có ý nghĩa gì với cấu trúc lược đồ doanh nghiệp? (a) Đồ thị không liên thông. (b) Đồ thị có chu trình.',
       answer: `**(a)** Hai entity set nối nhau bằng một đường đi thì có liên quan (có thể gián tiếp). Không liên thông nghĩa là có các cặp entity set hoàn toàn không liên quan: các phần đó của doanh nghiệp **độc lập**, thực chất mỗi thành phần liên thông là một CSDL riêng.
 
 **(b)** Có chu trình thì mọi cặp entity set trên chu trình liên quan với nhau theo **ít nhất hai cách** khác nhau. Nếu diagram không có chu trình, giữa hai entity set có đúng một đường đi, tức một quan hệ duy nhất.`,
     },
     {
+      pe: '6.6',
       q: '**PE 6.6.** Ternary relationship R(A, B, C) được biểu diễn bằng entity set E và ba binary relationship R<sub>A</sub>, R<sub>B</sub>, R<sub>C</sub> (Figure 6.29b). (a) Cho một instance của E, A, B, C, R<sub>A</sub>, R<sub>B</sub>, R<sub>C</sub> không tương ứng với instance nào của A, B, C, R. (b) Sửa diagram thêm ràng buộc để mọi instance thoả ràng buộc đều tương ứng với một instance của R. (c) Sửa cách dịch để xử lý total participation trên ternary relationship.',
       answer: `**(a)** E = {e1, e2}, A = {a1, a2}, B = {b1}, C = {c1}, R<sub>A</sub> = {(e1, a1), (e2, a2)}, R<sub>B</sub> = {(e1, b1)}, R<sub>C</sub> = {(e1, c1)}. e2 chỉ nối với a2 mà không nối b, c nào → không có bộ (a, b, c) nào ứng với e2.
 
@@ -246,24 +252,29 @@ Không đặt name/place/time của exam vào relationship: sẽ **lặp** cho t
 **(c)** Nếu A total trong R thì thêm total participation của A vào R<sub>A</sub>; tương tự cho B (R<sub>B</sub>) và C (R<sub>C</sub>).`,
     },
     {
+      pe: '6.7',
       q: '**PE 6.7.** Weak entity set luôn có thể biến thành strong entity set bằng cách thêm các thuộc tính primary key của identifying entity set. Hãy nêu loại redundancy phát sinh.',
       answer: `PK của weak entity suy ra được từ relationship với strong entity. Nếu thêm PK của owner vào weak entity, giá trị đó xuất hiện **cả** trong entity set và trong relationship set (identifying relationship), và hai chỗ **phải luôn bằng nhau** → redundancy (và nguy cơ không nhất quán). Ví dụ section có course_id trong khi sec_course đã nối section với course.`,
     },
     {
+      pe: '6.8',
       q: '**PE 6.8.** Xét relation sec_course sinh từ relationship set many-to-one sec_course. Các ràng buộc primary key và foreign key tạo trên relation này có ép được cardinality many-to-one không? Giải thích.',
       answer: `**Có.** PK của section là (course_id, sec_id, semester, year), cũng là PK của sec_course; course_id là FK từ sec_course tới course. Do đó mỗi section chỉ ứng với **một** course → many-to-one được ép.
 
 Nhưng các ràng buộc này **không** ép được total participation: một course (hoặc một section) có thể không xuất hiện trong sec_course.`,
     },
     {
+      pe: '6.9',
       q: '**PE 6.9.** Giả sử relationship set advisor là one-to-one. Cần thêm ràng buộc gì trên relation advisor để ép cardinality one-to-one?',
       answer: `Ngoài khai báo **s_ID là primary key** của advisor, khai báo **i_ID là superkey** — trong SQL dùng \`unique (i_ID)\`. Như vậy mỗi student có tối đa một instructor và mỗi instructor hướng dẫn tối đa một student.`,
     },
     {
+      pe: '6.10',
       q: '**PE 6.10.** R là relationship many-to-one giữa A và B; relation của R được gộp vào relation của A. Trong SQL, thuộc tính tham gia foreign key có thể null. Giải thích cách ép total participation của A trong R bằng not null.',
       answer: `Khai báo thuộc tính FK (trong bảng A, ứng với PK của B) là **not null**. Một a không liên kết b nào sẽ phải có FK null khi gộp R vào A — bị cấm. Ví dụ instructor(ID, name, dept_name **not null** references department) ép mỗi instructor thuộc một khoa.`,
     },
     {
+      pe: '6.11',
       q: '**PE 6.11.** Foreign key trong SQL chỉ tham chiếu được primary key hoặc thuộc tính unique. Vì thế total participation trên relationship many-to-many (hoặc trên phía "one" của one-to-many) không ép được bằng primary key, foreign key và not null. (a) Giải thích vì sao. (b) Giải thích cách ép bằng check phức tạp hoặc assertion.',
       answer: `**(a)** Với many-to-many, R phải là bảng riêng. Không có cách nào trong SQL bảo đảm mỗi giá trị PK của E1 xuất hiện trong R, vì cột tương ứng của R **không unique**, mà FK chỉ được trỏ tới PK/unique. Tương tự với one-to-many: không thể bảo đảm giá trị ở phía "one" xuất hiện trong bảng phía "many".
 
@@ -275,6 +286,7 @@ set constraints total_part deferred;
 hoặc assertion \`create assertion ... check (not exists (select * from B where b not in (select b from A)))\`. Phải **deferred** (kiểm tra cuối transaction): chèn b vào B trước thì vi phạm total; chèn A trước thì vi phạm foreign key. PostgreSQL không có assertion/check có subquery → dùng **constraint trigger deferrable initially deferred** (bài CK1.09).`,
     },
     {
+      pe: '6.12',
       q: '**PE 6.12.** Cấu trúc lattice: X và Y là entity cấp cao; A là specialization của X, C của Y, B của cả X và Y. Giải thích cách A, B, C thừa kế thuộc tính. Xử lý thế nào khi X và Y có thuộc tính trùng tên?',
       answer: `\`\`\`
    [X]       [Y]
@@ -289,6 +301,7 @@ hoặc assertion \`create assertion ... check (not exists (select * from B where
 Bảng (method 1): x(<u>id</u>, ...), y(<u>id</u>, ...), b(<u>id</u>, ...) với id vừa là FK → x vừa là FK → y.`,
     },
     {
+      pe: '6.13',
       q: '**PE 6.13.** E-R thường mô hình trạng thái doanh nghiệp tại một thời điểm. Muốn theo dõi thay đổi theo thời gian: định nghĩa kiểu valid time (khoảng hoặc tập khoảng thời gian), gắn valid time cho mỗi entity và relationship; thuộc tính thay đổi theo thời gian là tập giá trị, mỗi giá trị có valid time riêng (end time có thể là vô cực). (a) Vẽ E-R có student, instructor, advisor với các mở rộng này. (b) Chuyển sang tập relation.',
       answer: `**(a)**
 \`\`\`
@@ -317,6 +330,7 @@ Nếu thêm ràng buộc các khoảng không chồng nhau (hoặc một start_t
   exercises: [
     {
       id: 'CK1.01', topic: 'PE 6.1 DDL', level: 3,
+      pe: '6.1',
       prompt: `**PE 6.1 — hiện thực bằng SQL.** Tạo các bảng (mọi khoá/chuỗi varchar(10), tiền numeric(10,2), ngày date):
 - \`ins_customer(customer_id, name, address)\`
 - \`ins_policy(policy_id)\`
@@ -368,6 +382,7 @@ create table ins_premium_payment (
     },
     {
       id: 'CK1.02', topic: 'PE 6.2a ternary', level: 3,
+      pe: '6.2a',
       prompt: `**PE 6.2(a)** — exam là entity, dùng ternary relationship. Tạo:
 - \`exam(exam_id varchar(5) primary key, name varchar(20), place varchar(20), exam_time timestamp)\`
 - \`exam_marks(ID, course_id, sec_id, semester, year, exam_id, marks)\` (kiểu cột giống bảng takes; marks numeric(5,2)) với primary key là ternary (student, section, exam), FK ID → student, (course_id, sec_id, semester, year) → section, exam_id → exam.`,
@@ -397,6 +412,7 @@ create table exam_marks (
     },
     {
       id: 'CK1.03', topic: 'PE 6.2b binary', level: 2,
+      pe: '6.2b',
       prompt: '**PE 6.2(b)** — chỉ một binary relationship student–section với thuộc tính multivalued composite {exam_marks(exam_id, marks)}. Tạo bảng `sec_exam_marks(ID, course_id, sec_id, semester, year, exam_id varchar(5), marks numeric(5,2))` (FK tới student và section; **không** có bảng exam) sao cho một sinh viên trong một section có nhiều bài thi nhưng mỗi bài thi một điểm.',
       solution: `create table sec_exam_marks (
   ID         varchar(5) references student,
@@ -417,6 +433,7 @@ create table exam_marks (
     },
     {
       id: 'CK1.04', topic: 'PE 6.3 derived (view)', level: 2,
+      pe: '6.3',
       prompt: '**PE 6.3** — dữ liệu có sẵn: `er_player(player_id, name, age)`, `er_match(...)`, `er_played(match_id, player_id, score)`. Hiện thực derived attribute season_score: tạo view `season_score(player_id, name, season_score)` cho **mọi** cầu thủ (cầu thủ chưa đá trận nào có 0).',
       hint: 'left join + coalesce(sum(score), 0).',
       solution: `create view season_score (player_id, name, season_score) as
@@ -427,6 +444,7 @@ create table exam_marks (
     },
     {
       id: 'CK1.05', topic: 'PE 6.3 derived (query)', level: 2,
+      pe: '6.3',
       prompt: '**PE 6.3** — thêm derived attribute `result()` của match: `W` nếu own_score > opp_score, `D` nếu bằng, `L` nếu thua. Trả về match_id, opponent, result, và số cầu thủ đã ra sân (`num_players`), sắp theo match_date.',
       solution: `select m.match_id, m.opponent,
        case when m.own_score > m.opp_score then 'W'
@@ -440,6 +458,7 @@ order by m.match_date;`,
     },
     {
       id: 'CK1.06', topic: 'PE 6.8 many-to-one', level: 2,
+      pe: '6.8',
       prompt: '**PE 6.8** — giả sử section có định danh riêng `section_id`. Tạo bảng `sec_course(section_id varchar(10), course_id varchar(8))` biểu diễn relationship **many-to-one** từ section tới course, ép được cardinality bằng primary key + foreign key (mỗi section thuộc đúng một course). Hệ thống cũng kiểm tra rằng course không có section nào vẫn hợp lệ — tức total participation **không** được ép.',
       solution: `create table sec_course (
   section_id  varchar(10) primary key,
@@ -453,6 +472,7 @@ order by m.match_date;`,
     },
     {
       id: 'CK1.07', topic: 'PE 6.9 one-to-one', level: 1,
+      pe: '6.9',
       prompt: '**PE 6.9** — tạo `advisor_1to1(s_ID varchar(5), i_ID varchar(5))` là phiên bản **one-to-one** của advisor: s_ID là primary key, và thêm ràng buộc để mỗi instructor hướng dẫn tối đa một sinh viên. FK tới student/instructor.',
       solution: `create table advisor_1to1 (
   s_ID  varchar(5) primary key references student (ID),
@@ -465,6 +485,7 @@ order by m.match_date;`,
     },
     {
       id: 'CK1.08', topic: 'PE 6.10 not null', level: 1,
+      pe: '6.10',
       prompt: '**PE 6.10** — relationship many-to-one `member_of` từ student tới `club`, **total** phía student, được gộp vào bảng phía many. Tạo `club(club_name varchar(20) primary key)` và `club_member(student_id varchar(5) primary key references student, club_name varchar(20))` sao cho mỗi club_member thuộc đúng một club đã tồn tại.',
       solution: `create table club (club_name varchar(20) primary key);
 create table club_member (
@@ -479,6 +500,7 @@ create table club_member (
     },
     {
       id: 'CK1.09', topic: 'PE 6.11 deferred trigger', level: 3,
+      pe: '6.11',
       prompt: `**PE 6.11** — ép total participation ở phía "one". Tạo
 - \`dept_t(dept_name varchar(20) primary key)\`
 - \`emp_t(emp_id varchar(5) primary key, dept_name varchar(20) not null references dept_t)\` (many-to-one emp → dept)
@@ -513,12 +535,14 @@ create constraint trigger emp_total after delete or update on emp_t
     },
     {
       id: 'CK1.10', topic: 'PE 6.8/6.11 vi phạm total', level: 1,
+      pe: ['6.8', '6.11'],
       prompt: '**PE 6.8 / 6.11** — nếu yêu cầu mỗi course phải có ít nhất một section (total participation của course trong sec_course), những course nào trong University database đang vi phạm? Trả về course_id, title.',
       solution: `select course_id, title from course
 where course_id not in (select course_id from section);`,
     },
     {
       id: 'CK1.11', topic: 'PE 6.12 multiple inheritance', level: 2,
+      pe: '6.12',
       prompt: '**PE 6.12** — lattice: B là specialization của cả X và Y (method 1). Tạo `lat_x(id varchar(5) primary key, name varchar(20), x_attr integer)`, `lat_y(id varchar(5) primary key, name varchar(20), y_attr integer)` và `lat_b(id varchar(5) primary key, b_attr integer)` trong đó id của lat_b phải tồn tại ở **cả** lat_x và lat_y. Sau đó tạo view `lat_b_full(id, x_name, y_name, x_attr, y_attr, b_attr)` gom đủ thuộc tính thừa kế (hai thuộc tính name trùng tên được đổi thành x_name, y_name).',
       solution: `create table lat_x (id varchar(5) primary key, name varchar(20), x_attr integer);
 create table lat_y (id varchar(5) primary key, name varchar(20), y_attr integer);
@@ -537,6 +561,7 @@ create view lat_b_full (id, x_name, y_name, x_attr, y_attr, b_attr) as
     },
     {
       id: 'CK1.12', topic: 'PE 6.13 temporal DDL', level: 2,
+      pe: '6.13',
       prompt: '**PE 6.13(b)** — tạo ba relation (date cho thời gian, varchar(5) cho ID, varchar(20) cho value): `t_student(student_id)`, `t_student_name(student_id, value, start_time, end_time)` và `t_advisor(student_id, instructor_id, start_time, end_time)` với primary key như lời giải của sách (end_time nằm trong khoá). t_student_name.student_id và t_advisor.student_id tham chiếu t_student.',
       solution: `create table t_student (student_id varchar(5) primary key);
 create table t_student_name (
@@ -562,6 +587,7 @@ create table t_advisor (
     },
     {
       id: 'CK1.13', topic: 'PE 6.13 query tại thời điểm', level: 2,
+      pe: '6.13',
       prompt: '**PE 6.13** — dữ liệu có sẵn: `er_t_advisor(student_id, instructor_id, start_time, end_time)`, `er_t_instructor_name(instructor_id, value, start_time, end_time)`. Ai (instructor_id và tên **có hiệu lực tại thời điểm đó**) là advisor của student `12345` vào ngày `2019-03-15`?',
       hint: "date '2019-03-15' between start_time and end_time — áp dụng cho cả advisor và tên.",
       solution: `select a.instructor_id, n.value as name
@@ -573,6 +599,7 @@ where a.student_id = '12345'
     },
     {
       id: 'CK1.14', topic: 'PE 6.13 lịch sử', level: 2,
+      pe: '6.13',
       prompt: '**PE 6.13** — liệt kê toàn bộ lịch sử advisor của sinh viên có tên (hiện tại) `Shankar`: instructor_id, start_time, end_time, sắp theo start_time. (Tên sinh viên ở `er_t_student_name`.)',
       solution: `select a.instructor_id, a.start_time, a.end_time
 from er_t_advisor a
@@ -583,6 +610,7 @@ order by a.start_time;`,
     },
     {
       id: 'CK1.15', topic: 'PE 6.13 snapshot', level: 3,
+      pe: '6.13',
       prompt: '**PE 6.13** — "chụp" trạng thái tại ngày `2021-06-01`: tạo view `advisor_snapshot_2021(student_name, instructor_name)` gồm các cặp advisor có hiệu lực ngày đó, với tên sinh viên và tên giảng viên có hiệu lực ngày đó.',
       solution: `create view advisor_snapshot_2021 (student_name, instructor_name) as
   select s.value, i.value

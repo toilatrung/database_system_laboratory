@@ -2,7 +2,7 @@
 
 *SQL & Relational Algebra Refresher · Tổng hợp Chương 2–4, dữ liệu: bank / employee / insurance database của Practice Exercises*
 
-> **Cách học:** đọc *Tóm tắt kiến thức* → làm *Trắc nghiệm* → trả lời *Câu hỏi tự luận* → làm *Bài tập SQL* trong [`playground.html`](../playground.html) hoặc [`my_answers.sql`](my_answers.sql) (chấm trong thư mục `lab/` bằng `npm run grade -- ck3`). Đáp án SQL: [`solutions.sql`](solutions.sql).
+> **Cách học:** *Tóm tắt kiến thức* → *Trắc nghiệm* → *Câu hỏi tự luận* → *Bài tập SQL*, trong [`playground.html`](../playground.html) hoặc [`my_answers.sql`](my_answers.sql) (chấm trong thư mục `lab/` bằng `npm run grade -- ck3`). Đáp án SQL: [`solutions.sql`](solutions.sql).
 
 ## 1. Tóm tắt kiến thức
 

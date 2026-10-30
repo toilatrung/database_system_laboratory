@@ -12,17 +12,16 @@ export default {
   summary: `
 ### 1. Cách làm đề thi thử
 - **Thời gian gợi ý: 90 phút**, làm liền một mạch, không mở slide.
-- Làm **Trắc nghiệm** và **Tự luận** ra giấy trước (khoảng 45 phút), sau đó mới làm **Bài tập SQL** (khoảng 45 phút). Trong phòng thi thật thường phải viết SQL trên giấy — hãy viết nháp trước khi bấm chạy.
-- Các câu ở đây là **biến thể** của Practice Exercises (đổi lược đồ, đổi hằng số, thêm "bẫy") để kiểm tra bạn hiểu chứ không phải nhớ đáp án. Nếu sai câu nào, quay lại phần ôn tương ứng (GK1–GK3).
+- Đề có **hai phần giống đề thật**: **A. Tự luận lý thuyết** (viết ra giấy, khoảng 35 phút) và **B. SQL** (khoảng 55 phút). Không có trắc nghiệm. Trong phòng thi phải viết SQL trên giấy — hãy viết nháp hết rồi mới gõ vào máy để chạy kiểm tra.
+- Các câu là Practice Exercises của sách hoặc **biến thể** của chúng (đổi lược đồ, đổi hằng số, thêm "bẫy"). Câu nào sai thì quay lại phần ôn tương ứng (GK1–GK3).
 
 | Phần | Nội dung | Điểm |
 |---|---|---|
-| A. Trắc nghiệm | 25 câu × 0,2 | 5,0 |
-| B. Tự luận | 5 câu | 2,5 |
-| C. SQL | 12 bài | 2,5 |
+| A. Tự luận lý thuyết | 8 câu × 0,5 | 4,0 |
+| B. SQL | 12 bài × 0,5 | 6,0 |
 | **Tổng** | | **10** |
 
-Tự chấm: trắc nghiệm chấm tự động; tự luận so với *gợi ý đáp án* (mỗi ý in đậm là một ý chấm điểm); SQL chấm tự động bằng nút **Kiểm tra**.
+Tự chấm: tự luận so với *gợi ý đáp án* (mỗi ý in đậm là một ý chấm điểm), rồi đánh dấu "Đã tự chấm"; SQL chấm tự động bằng nút **Kiểm tra**.
 
 ### 2. Kế hoạch 7 ngày (tuần 7 → thi tuần 8)
 | Ngày | Việc cần làm | Ở đâu |
@@ -49,168 +48,17 @@ Tự chấm: trắc nghiệm chấm tự động; tự luận so với *gợi ý
 - \`on delete cascade\` trên FK tự tham chiếu xoá **toàn bộ cây** cấp dưới (PE 4.9).
 `,
 
-  quiz: [
-    {
-      q: 'Relation account(account_number, branch_name, balance) có primary key account_number. Tập nào là superkey nhưng KHÔNG phải candidate key?',
-      options: ['{account_number}', '{account_number, balance}', '{branch_name}', '{branch_name, balance}'],
-      answer: 1,
-      explain: 'Chứa candidate key {account_number} nên là superkey, nhưng không tối thiểu.',
-    },
-    {
-      q: 'Bank database: loan.branch_name là foreign key tham chiếu branch. Thao tác nào CÓ THỂ vi phạm ràng buộc này?',
-      options: ['Insert một branch mới', 'Delete một loan', 'Delete một branch đang có loan', 'Update amount của một loan'],
-      answer: 2,
-      explain: 'Xoá tuple ở referenced relation (branch) mà vẫn còn tuple referencing (loan) trỏ tới.',
-    },
-    {
-      q: 'Bảng takes có primary key (ID, course_id, sec_id, semester, year). Vì sao grade KHÔNG nằm trong khoá?',
-      options: ['Vì grade có thể null', 'Vì một sinh viên học một section chỉ có một điểm — grade được xác định bởi khoá', 'Vì grade là chuỗi', 'Vì SQL cấm'],
-      answer: 1,
-      explain: 'Giống lý luận end_time trong time_slot (PE 2.3): thuộc tính được xác định duy nhất bởi các thuộc tính khoá thì không cần đưa vào khoá.',
-    },
-    {
-      q: 'Kết quả của σ<sub>borrower.loan_number = loan.loan_number</sub>(borrower × loan) chứa những customer nào?',
-      options: ['Mọi customer', 'Chỉ customer có ít nhất một loan; customer có 2 loan xuất hiện 2 lần', 'Chỉ customer có đúng một loan', 'Customer không có loan với cột loan = null'],
-      answer: 1,
-      explain: 'Giống PE 2.5: tích + chọn = join; tuple không khớp bị loại, mỗi cặp khớp sinh một dòng.',
-    },
-    {
-      q: 'Biểu thức nào tìm ID khách hàng có account nhưng KHÔNG có loan?',
-      options: ['Π<sub>ID</sub>(depositor) ∩ Π<sub>ID</sub>(borrower)', 'Π<sub>ID</sub>(depositor) − Π<sub>ID</sub>(borrower)', 'Π<sub>ID</sub>(borrower) − Π<sub>ID</sub>(depositor)', 'Π<sub>ID</sub>(depositor × borrower)'],
-      answer: 1,
-      explain: 'Set difference: có trong depositor mà không có trong borrower.',
-    },
-    {
-      q: 'r(A,B) ÷ s(B) trả về gì?',
-      options: ['Các A xuất hiện với ít nhất một B của s', 'Các A xuất hiện với MỌI B của s', 'Các B không có trong r', 'r × s'],
-      answer: 1,
-      explain: 'Division là phép "với mọi" (PE 2.9).',
-    },
-    {
-      q: 'Muốn tìm nhân viên lương cao nhất bằng đại số quan hệ chỉ dùng 6 phép cơ bản, ta cần phép nào để so sánh hai bản sao của works?',
-      options: ['Union', 'Rename ρ', 'Projection', 'Không cần phép nào'],
-      answer: 1,
-      explain: 'PE 2.8b: ρ<sub>A</sub>(works) và ρ<sub>B</sub>(works), tìm người có A.salary < B.salary rồi lấy phần bù.',
-    },
-    {
-      q: 'Câu `select p.a from p, r1, r2 where p.a = r1.a or p.a = r2.a` trả về rỗng khi nào dù p và r1 đều có giá trị khớp?',
-      options: ['Khi r2 rỗng', 'Khi p có null', 'Khi r1 có trùng lặp', 'Không bao giờ'],
-      answer: 0,
-      explain: 'PE 3.7: from p, r1, r2 là tích Descartes; một bảng rỗng → tích rỗng.',
-    },
-    {
-      q: '`select count(grade) from takes where ID = \'98988\'` trả về gì nếu sinh viên này có 2 dòng takes, một dòng grade = null?',
-      options: ['0', '1', '2', 'null'],
-      answer: 1,
-      explain: 'count(cột) bỏ qua null; count(*) mới đếm 2.',
-    },
-    {
-      q: 'Cho branch có 9 dòng và loan chỉ tham chiếu 7 branch. `select branch_name, count(*) from branch natural left outer join loan group by branch_name` sai ở đâu?',
-      options: ['Thiếu branch', 'Branch không có loan được đếm là 1 thay vì 0', 'Lỗi cú pháp', 'Đếm trùng loan'],
-      answer: 1,
-      explain: 'Dòng bù null vẫn là một dòng: phải dùng count(loan_number) (PE 4.2a).',
-    },
-    {
-      q: 'Điều kiện nào đúng cho "ID nhân viên lương cao hơn MỌI nhân viên của Small Bank Corporation"?',
-      options: ['salary > some (select salary ... )', 'salary > all (select salary ... )', 'salary in (select salary ...)', 'exists (select salary ...)'],
-      answer: 1,
-      explain: '> all = lớn hơn giá trị lớn nhất (PE 3.9d).',
-    },
-    {
-      q: 'Nếu subquery của `salary > all (subquery)` trả về tập rỗng thì điều kiện có giá trị gì?',
-      options: ['false', 'unknown', 'true', 'Lỗi'],
-      answer: 2,
-      explain: '"Lớn hơn mọi phần tử của tập rỗng" luôn đúng (vacuous truth).',
-    },
-    {
-      q: 'Truy vấn "công ty đặt ở MỌI thành phố mà Small Bank Corporation đặt" thường viết bằng cấu trúc nào?',
-      options: ['group by ... having count(*) > 1', 'not exists ((thành phố của Small Bank) except (thành phố của công ty S))', 'in (select city ...)', 'left outer join'],
-      answer: 1,
-      explain: 'PE 3.9e: A ⊆ B ⇔ A − B = ∅.',
-    },
-    {
-      q: '`where name like \'%sci%\'` không khớp "Comp. Sci." vì sao, và sửa thế nào?',
-      options: ['like không hỗ trợ dấu chấm; dùng =', 'like phân biệt hoa thường; dùng lower(name) like \'%sci%\'', 'Phải dùng _ thay vì %', 'Thiếu escape'],
-      answer: 1,
-      explain: 'PE 3.6.',
-    },
-    {
-      q: 'Lệnh nào tăng 10% cho lương ≤ 50000 và 4% cho phần còn lại mà KHÔNG phụ thuộc thứ tự thực hiện?',
-      options: ['Hai câu update, câu 10% trước', 'Hai câu update, câu 4% trước', 'Một câu update với set salary = salary * case when salary <= 50000 then 1.10 else 1.04 end', 'Không thể làm được'],
-      answer: 2,
-      explain: 'PE 3.10b: hai câu update riêng có thể "tăng hai lần" cho dòng vượt ngưỡng sau câu đầu.',
-    },
-    {
-      q: '`instructor natural join teaches natural join section natural join course` (PE 4.1) bị sai vì?',
-      options: ['section và course không có cột chung', 'Ghép thêm theo dept_name nên mất các môn dạy ngoài khoa của giảng viên', 'Natural join không kết hợp được', 'Thiếu group by'],
-      answer: 1,
-      explain: 'instructor và course đều có dept_name.',
-    },
-    {
-      q: 'r(A,B), s(B,C), t(B,D), mọi thuộc tính not null. Trong r ⟕ (s ⟕ t), cột nào có thể null?',
-      options: ['Chỉ C', 'Chỉ D; nếu C null thì D cũng null', 'Cả hai, độc lập nhau', 'Không cột nào'],
-      answer: 1,
-      explain: 'PE 4.4b: s ⟕ t tính trước nên C luôn có giá trị khi tuple s tồn tại.',
-    },
-    {
-      q: 'Viết a ⟗ b (natural) bằng `full outer join ... on` mà không có hai bản cột name: cần hàm nào?',
-      options: ['nullif', 'coalesce(a.name, b.name)', 'cast', 'decode(a.name)'],
-      answer: 1,
-      explain: 'PE 4.10.',
-    },
-    {
-      q: 'View `v` định nghĩa `select * from branch where branch_city = \'Brooklyn\'` (không check option). Insert qua v tuple có branch_city = \'Rye\' thì sao?',
-      options: ['Bị từ chối', 'Được chèn vào branch nhưng không thấy khi select * from v', 'Chèn với branch_city = null', 'Chèn vào cả hai'],
-      answer: 1,
-      explain: 'PE 4.13 ý 3; with check option mới chặn.',
-    },
-    {
-      q: 'User được grant select trên view v (định nghĩa trên r). User có cần quyền select trên r?',
-      options: ['Có', 'Không — đó chính là lợi ích của view', 'Chỉ khi v là materialized', 'Chỉ với update'],
-      answer: 1,
-      explain: 'PE 4.13 ý 1.',
-    },
-    {
-      q: 'Bảng manager(employee_ID PK, manager_ID FK → manager on delete cascade). Xoá một giám đốc cấp cao nhất thì?',
-      options: ['Chỉ xoá giám đốc', 'Xoá giám đốc và nhân viên trực tiếp', 'Xoá toàn bộ nhân viên cấp dưới ở mọi cấp', 'Báo lỗi'],
-      answer: 2,
-      explain: 'PE 4.9: cascade lan dần theo từng cấp.',
-    },
-    {
-      q: '`grant select on works to amit granted by current_role` khác gì so với không có mệnh đề granted by?',
-      options: ['Không khác', 'Quyền gắn với role, còn hiệu lực khi người cấp bị xoá tài khoản', 'Amit được cấp lại quyền cho người khác', 'Chỉ áp dụng trong transaction hiện tại'],
-      answer: 1,
-      explain: 'PE 4.12.',
-    },
-    {
-      q: 'Ràng buộc "instructor không dạy hai phòng khác nhau trong cùng time slot và học kỳ" — PostgreSQL hiện thực thế nào thay cho create assertion?',
-      options: ['check với subquery', 'Trigger (hoặc truy vấn kiểm tra định kỳ)', 'unique', 'not null'],
-      answer: 1,
-      explain: 'PE 4.8: assertion và check có subquery không được hỗ trợ.',
-    },
-    {
-      q: 'Vì sao test database cần có tuple ở referenced relation KHÔNG được tham chiếu (ví dụ department không có instructor)?',
-      options: ['Để tăng tốc', 'Để phát hiện truy vấn quên outer join (department có 0 giảng viên bị mất)', 'Bắt buộc bởi SQL', 'Để kiểm tra primary key'],
-      answer: 1,
-      explain: 'PE 4.5b.',
-    },
-    {
-      q: 'So với một ngôn ngữ lập trình, DDL của DBMS KHÔNG có đặc điểm nào sau đây?',
-      options: ['Khai báo ràng buộc toàn vẹn (FK, check)', 'Tạo đối tượng tồn tại lâu dài trong database', 'Hệ kiểu phong phú hơn kiểu của Java/C++', 'Hỗ trợ phân quyền'],
-      answer: 2,
-      explain: 'PE 1.2: hệ kiểu của ngôn ngữ lập trình thường phong phú hơn SQL.',
-    },
-  ],
+  quiz: [],
 
   questions: [
     {
-      q: '(0,5đ) Cho bank database. (a) Chỉ ra primary key và mọi foreign key của borrower và depositor. (b) Cho một ví dụ insert và một ví dụ delete vi phạm FK depositor.account_number → account.',
+      q: '**A1** — Cho bank database. (a) Chỉ ra primary key và mọi foreign key của borrower và depositor. (b) Cho một ví dụ insert và một ví dụ delete vi phạm FK depositor.account_number → account.',
       answer: `**(a)** borrower(**ID, loan_number**): FK ID → customer, loan_number → loan. depositor(**ID, account_number**): FK ID → customer, account_number → account. Khoá gồm cả hai cột vì quan hệ nhiều–nhiều (một khách nhiều tài khoản, tài khoản đứng tên chung).
 
 **(b)** Insert \`('12345', 'A-999')\` vào depositor khi account không có A-999. Delete \`A-101\` khỏi account khi depositor còn \`('67890', 'A-101')\` (nếu FK không có on delete cascade).`,
     },
     {
-      q: '(0,5đ) Viết đại số quan hệ trên bank database: (a) tên các branch ở thành phố Horseneck có assets > 1.000.000; (b) ID khách có loan ở **mọi** branch của thành phố Brooklyn.',
+      q: '**A2** — Viết đại số quan hệ trên bank database: (a) tên các branch ở thành phố Horseneck có assets > 1.000.000; (b) ID khách có loan ở **mọi** branch của thành phố Brooklyn.',
       answer: `**(a)** Π<sub>branch_name</sub>(σ<sub>branch_city = "Horseneck" ∧ assets > 1000000</sub>(branch))
 
 **(b)** Dùng division: r ← Π<sub>ID, branch_name</sub>(borrower ⋈ loan), s ← Π<sub>branch_name</sub>(σ<sub>branch_city = "Brooklyn"</sub>(branch)); kết quả **r ÷ s**.
@@ -218,7 +66,7 @@ Tự chấm: trắc nghiệm chấm tự động; tự luận so với *gợi ý
 Không dùng ÷: Π<sub>ID</sub>(r) − Π<sub>ID</sub>((Π<sub>ID</sub>(r) × s) − r).`,
     },
     {
-      q: '(0,5đ) Giải thích vì sao truy vấn sau cho kết quả sai khi một section chưa có sinh viên, và sửa lại: `select course_id, sec_id, count(*) from section natural join takes where semester = \'Fall\' and year = 2017 group by course_id, sec_id`.',
+      q: '**A3** — Giải thích vì sao truy vấn sau cho kết quả sai khi một section chưa có sinh viên, và sửa lại: `select course_id, sec_id, count(*) from section natural join takes where semester = \'Fall\' and year = 2017 group by course_id, sec_id`.',
       answer: `**Lỗi:** inner join loại các section không có dòng takes → section 0 sinh viên **biến mất** (PE 3.1e). (Ngoài ra nếu đổi sang outer join thì phải dùng \`count(takes.ID)\`, không dùng \`count(*)\`.)
 
 **Sửa 1 — scalar subquery:**
@@ -232,7 +80,7 @@ from section s where semester = 'Fall' and year = 2017;
 **Sửa 2 — outer join:** \`section left outer join takes using (course_id, sec_id, semester, year)\` + \`count(takes.ID)\`.`,
     },
     {
-      q: '(0,5đ) Viết DDL cho insurance database (person, car, accident, owns, participated) với đầy đủ primary key, foreign key. Khi xoá một car, ta muốn các dòng owns của xe đó bị xoá theo — khai báo thế nào?',
+      q: '**A4** — Viết DDL cho insurance database (person, car, accident, owns, participated) với đầy đủ primary key, foreign key. Khi xoá một car, ta muốn các dòng owns của xe đó bị xoá theo — khai báo thế nào?',
       answer: `\`\`\`sql
 create table person (driver_id varchar(5) primary key, name varchar(30) not null, address varchar(50));
 create table car (license_plate varchar(10) primary key, model varchar(30), year integer);
@@ -251,7 +99,7 @@ create table participated (
 **Ý chấm:** khoá kép của owns và participated; FK đủ chiều; \`on delete cascade\` đặt ở **owns.license_plate** (bảng referencing). Nếu participated không cascade, xoá xe đã gặp tai nạn sẽ bị từ chối — phải quyết định có giữ lịch sử tai nạn hay không.`,
     },
     {
-      q: '(0,5đ) Định nghĩa view `customer_balance(ID, total_balance)` cho tổng số dư mỗi khách, **kể cả khách không có tài khoản (tổng = 0)**. View này có update được không? User chỉ có quyền select trên view thì có đọc được bảng account không?',
+      q: '**A5** — Định nghĩa view `customer_balance(ID, total_balance)` cho tổng số dư mỗi khách, **kể cả khách không có tài khoản (tổng = 0)**. View này có update được không? User chỉ có quyền select trên view thì có đọc được bảng account không?',
       answer: `\`\`\`sql
 create view customer_balance (ID, total_balance) as
 select c.ID, coalesce(sum(a.balance), 0)
@@ -260,6 +108,37 @@ from customer c left outer join depositor d on c.ID = d.ID
 group by c.ID;
 \`\`\`
 **Ý chấm:** cần **left outer join** + \`coalesce\` (sum trên tập rỗng = null). View có join và aggregate nên **không** updatable. Quyền select trên view **không** cho đọc account (PE 4.13) — chỉ thấy dữ liệu đã tổng hợp.`,
+    },
+    {
+      en: 'Suppose you want to build a course-registration system for a university. Consider each of the points listed in Section 1.2 as disadvantages of keeping data in a file-processing system. Discuss the relevance of each point to this application. (Variant of Exercise 1.4)',
+      q: '**A6 · biến thể PE 1.1/1.4** — Trường muốn làm hệ thống đăng ký môn học. Với **từng** nhược điểm của file-processing system (Section 1.2), nêu một tình huống cụ thể của hệ thống này mà nhược điểm đó gây ra. Sau đó nêu **hai nhược điểm** khi dùng DBMS thay cho file.',
+      answer: `**Nhược điểm của file-processing (mỗi ý một tình huống):**
+- **Data redundancy & inconsistency:** địa chỉ sinh viên lưu ở file phòng đào tạo và file thư viện → sửa một nơi, nơi kia sai.
+- **Difficulty in accessing data:** muốn "sinh viên đăng ký trên 18 tín chỉ" phải viết chương trình mới.
+- **Data isolation:** dữ liệu rải nhiều file, nhiều định dạng → khó viết chương trình lấy dữ liệu.
+- **Integrity problems:** "lớp không quá sức chứa phòng", "tot_cred ≥ 0" bị chôn trong code, khó thêm/sửa.
+- **Atomicity problems:** chuyển lớp = huỷ lớp cũ + đăng ký lớp mới; máy hỏng giữa chừng → mất chỗ cả hai lớp.
+- **Concurrent-access anomalies:** hai sinh viên cùng lấy chỗ cuối cùng → lớp vượt sĩ số.
+- **Security problems:** giảng viên chỉ được xem điểm lớp mình, khó phân quyền trên file.
+
+**Nhược điểm DBMS (PE 1.1):** cài đặt tốn **chi phí, kiến thức, thời gian**; độ **phức tạp** có thể làm hiệu năng kém với ứng dụng đơn giản.`,
+    },
+    {
+      en: 'Consider the relation takes(ID, course_id, sec_id, semester, year, grade). Explain why grade is not part of the primary key. Could {ID, course_id} alone be a primary key? (Variant of Exercises 2.3 and 2.4)',
+      q: '**A7 · biến thể PE 2.3/2.4** — Bảng takes(ID, course_id, sec_id, semester, year, grade). (a) Vì sao grade **không** thuộc primary key? (b) {ID, course_id} có làm primary key được không? (c) Trong dữ liệu mẫu hiện tại không có hai dòng trùng (ID, course_id). Điều đó có chứng minh được (b) không?',
+      answer: `**(a)** Mỗi sinh viên học một section (course_id, sec_id, semester, year) chỉ có **một** grade → grade **được xác định** bởi các cột khoá, đưa vào khoá là thừa và cho phép hai điểm khác nhau cho cùng một lần học (giống lý luận end_time của time_slot, PE 2.3).
+
+**(b) Không:** sinh viên có thể **học lại** cùng course ở học kỳ khác → hai dòng trùng (ID, course_id). Khoá phải gồm cả section: (ID, course_id, sec_id, semester, year).
+
+**(c) Không** (PE 2.4): key là ràng buộc trên **schema**, áp cho **mọi** instance hợp lệ; một instance cụ thể không trùng không chứng minh được gì.`,
+    },
+    {
+      en: 'Explain exactly what happens when a tuple is deleted from emp_tree(employee_id primary key, manager_id references emp_tree(employee_id) on delete cascade). What changes if the clause is on delete set null instead? (Variant of Exercise 4.9)',
+      q: '**A8 · biến thể PE 4.9, 4.13** — (a) Bảng emp_tree(employee_id primary key, manager_id) với manager_id là foreign key tham chiếu emp_tree(employee_id) **on delete cascade**. Giải thích chính xác điều gì xảy ra khi xoá một nhân viên; nếu đổi thành **on delete set null** thì sao? (b) User được grant **select** trên một view v (chỉ dựa trên bảng r) có cần quyền select trên r không? Còn **update** trên v thì sao?',
+      answer: `**(a) on delete cascade:** xoá nhân viên X → mọi dòng có manager_id = X bị xoá, rồi **đệ quy** xoá cấp dưới của những người đó… → **toàn bộ cây** dưới X biến mất (PE 4.9). Cả dây chuyền nằm trong cùng một transaction: một bước lỗi thì không dòng nào bị xoá.
+**on delete set null:** chỉ xoá X; cấp dưới **trực tiếp** của X có manager_id = null, cấp dưới gián tiếp không đổi.
+
+**(b)** Select trên v: **không cần** quyền trên r — view là cách cấp quyền chỉ trên một phần dữ liệu (PE 4.13). Update trên v: theo sách **có cần** — update qua v thực chất là update r, nên phải được phép cập nhật r. *(PostgreSQL chạy view bằng quyền của chủ view, nên trên thực tế user chỉ cần quyền update trên view.)*`,
     },
   ],
 

@@ -3,10 +3,13 @@ export default {
   number: 3,
   title: 'Part 3 — Ôn tập giữa kỳ',
   subtitle: 'Chương 1–4 theo Practice Exercises của sách + đề thi thử',
-  lead: 'Thi giữa kỳ ở tuần 8, phạm vi Chương 1–4 (Introduction, Relational Model, Intro SQL, Intermediate SQL). Đề chủ yếu lấy từ Practice Exercises của sách, nên mỗi phần dưới đây đi qua TOÀN BỘ Practice Exercises của từng chương (đánh số đúng như sách) và chạy được trên dữ liệu mẫu. Phần cuối là đề thi thử có giới hạn thời gian.',
+  lead: 'Thi giữa kỳ ở tuần 8, phạm vi Chương 1–4. Đề thi không có trắc nghiệm: gồm tự luận lý thuyết và viết SQL, chủ yếu lấy từ Practice Exercises của sách. Vì vậy mỗi phần ở đây đi qua toàn bộ Practice Exercises của chương: câu lý thuyết (kèm đề gốc tiếng Anh) để tự viết ra giấy, câu SQL để chạy và chấm trên dữ liệu mẫu. Phần cuối là đề thi thử 90 phút.',
   weeks: 'Tuần 7–8',
   storage: 'cs4420p3',
   unit: 'Phần',
+  // Exam format: no multiple choice. Essays and SQL first, the cheat sheet last.
+  steps: ['questions', 'ex', 'summary'],
+  stepLabels: { questions: 'Tự luận lý thuyết', ex: 'Bài tập SQL', summary: 'Ghi nhớ nhanh' },
   setup: ['university_schema.sql', 'university_data.sql', 'extra_tables.sql', 'practice_datasets.sql'],
   chapters: ['gk1', 'gk2', 'gk3', 'gk4'],
   schemaGroups: [

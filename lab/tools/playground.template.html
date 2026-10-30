@@ -289,6 +289,11 @@
   .lx-editor::placeholder { color: var(--ink-subtle); }
   .lx-editor:focus { outline: 2px solid var(--focus); outline-offset: 2px; }
 
+  .lx-check { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; color: var(--ink-muted); cursor: pointer; }
+  .lx-check input { margin: 0; accent-color: var(--accent); width: 16px; height: 16px; }
+  .lx-en { margin: 0 0 var(--space-3); padding: var(--space-2) var(--space-3); border-left: 2px solid var(--border-strong); background: var(--surface-sunken); border-radius: 0 var(--radius-sm) var(--radius-sm) 0; color: var(--ink); }
+  .lx-en p { margin: 0; }
+
   /* ---------- FD tool ---------- */
   .lx-fd-form { display: flex; flex-direction: column; gap: var(--space-4); }
   .lx-fd-form label { display: flex; flex-direction: column; gap: 6px; font-weight: 600; }
@@ -388,6 +393,13 @@ const STEPS = [
   { key: 'questions', label: 'Câu hỏi tự luận' },
   { key: 'ex', label: 'Bài tập SQL' },
 ];
+// A part may reorder or rename the steps (the review parts: essays and SQL first,
+// no multiple choice). A section without quiz questions skips that step.
+const PART_STEPS = (DATA.part.steps || STEPS.map(s => s.key))
+  .map(k => ({ key: k, label: (DATA.part.stepLabels || {})[k] || STEPS.find(s => s.key === k).label }));
+const stepsOf = ch => PART_STEPS.filter(s => s.key !== 'quiz' || ch.quiz.length);
+const stepHref = (ch, key) => (key === 'ex' ? `#/${ch.key}/ex/${ch.exercises[0].id}` : `#/${ch.key}/${key}`);
+const HAS_QUIZ = DATA.chapters.some(ch => ch.quiz.length) && PART_STEPS.some(s => s.key === 'quiz');
 
 // 16px line icons, 1.5px stroke, one icon per meaning.
 const ICON = {
@@ -610,7 +622,9 @@ const exStatus = id => store.get('status:' + id, null);
 function chapterProgress(ch) {
   const passed = ch.exercises.filter(ex => exStatus(ex.id) === 'pass').length;
   const tried = ch.exercises.filter(ex => exStatus(ex.id)).length;
-  return { passed, tried, total: ch.exercises.length, quiz: store.get('quiz:' + ch.store, null) };
+  const essays = store.get('essay:' + ch.store, []).filter(i => i < ch.questions.length).length;
+  return { passed, tried, total: ch.exercises.length, quiz: store.get('quiz:' + ch.store, null),
+    needQuiz: HAS_QUIZ && ch.quiz.length > 0, essays, essayTotal: ch.questions.length };
 }
 function exBadge(id) {
   const s = exStatus(id);
@@ -619,8 +633,8 @@ function exBadge(id) {
   return '<span class="lx-badge">Chưa làm</span>';
 }
 function chapterBadge(p) {
-  if (p.passed === p.total && p.quiz) return '<span class="lx-badge lx-badge--success">Hoàn thành</span>';
-  if (p.tried || p.quiz) return '<span class="lx-badge lx-badge--info">Đang học</span>';
+  if (p.passed === p.total && (p.quiz || !p.needQuiz) && p.essays === p.essayTotal) return '<span class="lx-badge lx-badge--success">Hoàn thành</span>';
+  if (p.tried || p.quiz || p.essays) return '<span class="lx-badge lx-badge--info">Đang học</span>';
   return '<span class="lx-badge">Chưa bắt đầu</span>';
 }
 
@@ -642,7 +656,7 @@ function renderNav(path) {
     const cur = p.number === DATA.part.number;
     const items = [
       item(partHref(p), '<span class="lx-nav__t">Tổng quan</span>', cur && path === '/'),
-      ...p.chapters.map(c => item(partHref(p, `#/${c.key}/summary`),
+      ...p.chapters.map(c => item(partHref(p, `#/${c.key}`),
         `<span class="lx-nav__k">${esc(c.navLabel.replace(/^Chương /, 'Ch '))}</span><span class="lx-nav__t">${esc(c.titleVi)}</span>`,
         cur && here === c.key, `${c.label} — ${c.titleVi}`)),
     ];
@@ -695,37 +709,46 @@ function weekStrip() {
 function viewHome() {
   const progress = DATA.chapters.map(chapterProgress);
   const passed = progress.reduce((n, p) => n + p.passed, 0);
+  const essays = progress.reduce((n, p) => n + p.essays, 0);
+  const essayTotal = progress.reduce((n, p) => n + p.essayTotal, 0);
   const quizChapters = DATA.chapters.filter((ch, i) => progress[i].quiz);
   const quizzes = quizChapters.map(ch => progress[DATA.chapters.indexOf(ch)]);
   const quizPct = quizChapters.length
     ? (100 * quizzes.reduce((n, p) => n + p.quiz.best, 0) / quizChapters.reduce((n, ch) => n + ch.quiz.length, 0)).toFixed(1) + '%'
     : null;
   // Continue where the student left off: the first section not finished yet.
-  const next = DATA.chapters.find((ch, i) => progress[i].passed < progress[i].total || !progress[i].quiz) || DATA.chapters[0];
-  const started = progress.some(p => p.tried || p.quiz);
+  const done = p => p.passed === p.total && (p.quiz || !p.needQuiz) && p.essays === p.essayTotal;
+  const next = DATA.chapters.find((ch, i) => !done(progress[i])) || DATA.chapters[0];
+  const started = progress.some(p => p.tried || p.quiz || p.essays);
+  const pct = (a, b) => (b ? (100 * a / b).toFixed(1) : 0);
+  const third = HAS_QUIZ
+    ? `<div class="lx-kpi"><div class="lx-kpi__k">Tỉ lệ đúng trắc nghiệm</div><div class="lx-kpi__v">${quizPct || '<span class="lx-dash">–</span>'}</div>
+        <div class="lx-kpi__n">${quizPct ? `${quizzes.length}/${DATA.chapters.length} ${esc(DATA.part.unit.toLowerCase())} đã làm, tính điểm cao nhất` : 'Chưa làm phần nào'}</div></div>`
+    : `<div class="lx-kpi"><div class="lx-kpi__k">${esc(DATA.part.unit)} đã hoàn thành</div><div class="lx-kpi__v">${progress.filter(done).length}<span class="lx-kpi__u"> /${DATA.chapters.length}</span></div>
+        <div class="lx-kpi__n">Đúng hết bài SQL và đã tự chấm hết câu tự luận</div></div>`;
   main.innerHTML = pageHead(`CS4420 › ${esc(DATA.parts.find(p => p.number === DATA.part.number).short)}`, esc(DATA.part.title), esc(DATA.part.lead),
-      `<a class="lx-btn lx-btn--primary" href="#/${next.key}/summary">${started ? 'Tiếp tục' : 'Bắt đầu'}: ${esc(next.label)} ${icon('open')}</a>`) + `
+      `<a class="lx-btn lx-btn--primary" href="#/${next.key}">${started ? 'Tiếp tục' : 'Bắt đầu'}: ${esc(next.label)} ${icon('open')}</a>`) + `
     <div class="lx-card lx-kpis">
       <div class="lx-kpi"><div class="lx-kpi__k">Bài tập SQL đã đúng</div><div class="lx-kpi__v">${passed}<span class="lx-kpi__u"> /${TOTAL_EXERCISES}</span></div>
-        <div class="lx-progress" aria-hidden="true"><i style="width:${(100 * passed / TOTAL_EXERCISES).toFixed(1)}%"></i></div></div>
-      <div class="lx-kpi"><div class="lx-kpi__k">${esc(DATA.part.unit)} đã làm trắc nghiệm</div><div class="lx-kpi__v">${quizzes.length}<span class="lx-kpi__u"> /${DATA.chapters.length}</span></div>
-        <div class="lx-kpi__n">Tính điểm cao nhất mỗi ${esc(DATA.part.unit.toLowerCase())}</div></div>
-      <div class="lx-kpi"><div class="lx-kpi__k">Tỉ lệ đúng trắc nghiệm</div><div class="lx-kpi__v">${quizPct || '<span class="lx-dash">–</span>'}</div>
-        <div class="lx-kpi__n">${quizPct ? 'Trên các phần đã làm' : 'Chưa làm phần nào'}</div></div>
+        <div class="lx-progress" aria-hidden="true"><i style="width:${pct(passed, TOTAL_EXERCISES)}%"></i></div></div>
+      <div class="lx-kpi"><div class="lx-kpi__k">Câu tự luận đã tự chấm</div><div class="lx-kpi__v">${essays}<span class="lx-kpi__u"> /${essayTotal}</span></div>
+        <div class="lx-progress" aria-hidden="true"><i style="width:${pct(essays, essayTotal)}%"></i></div></div>
+      ${third}
     </div>
     <div class="lx-card">
       <div class="lx-card__head"><h2 class="lx-h2">Nội dung</h2><span class="lx-subtle">Database System Concepts, 7th Edition</span></div>
       <div class="lx-scroll"><table class="lx-table">
-        <thead><tr><th>${esc(DATA.part.unit)}</th><th class="r">Bài tập</th><th>Tiến độ</th><th class="r">Trắc nghiệm</th><th>Trạng thái</th><th class="act"><span class="lx-sr">Mở</span></th></tr></thead>
+        <thead><tr><th>${esc(DATA.part.unit)}</th><th class="r">Tự luận</th><th class="r">Bài SQL</th><th>Tiến độ SQL</th>${HAS_QUIZ ? '<th class="r">Trắc nghiệm</th>' : ''}<th>Trạng thái</th><th class="act"><span class="lx-sr">Mở</span></th></tr></thead>
         <tbody>${DATA.chapters.map((ch, i) => {
           const p = progress[i];
           return `<tr>
-            <td><a class="lx-cell__main" href="#/${ch.key}/summary">${esc(ch.label)} · ${esc(ch.titleVi)}</a><div class="lx-cell__sub">${esc(ch.title)} · ${ch.quiz.length} câu trắc nghiệm · ${ch.questions.length} câu tự luận</div></td>
+            <td><a class="lx-cell__main" href="#/${ch.key}">${esc(ch.label)} · ${esc(ch.titleVi)}</a><div class="lx-cell__sub">${esc(ch.title)}${ch.source ? ` · ${esc(ch.source)}` : ''}</div></td>
+            <td class="r">${p.essays}<span class="lx-subtle"> /${p.essayTotal}</span></td>
             <td class="r">${p.passed}<span class="lx-subtle"> /${p.total}</span></td>
-            <td><div class="lx-progress" aria-label="${p.passed} trên ${p.total} bài"><i style="width:${(100 * p.passed / p.total).toFixed(1)}%"></i></div></td>
-            <td class="r">${p.quiz ? `${p.quiz.best}<span class="lx-subtle"> /${ch.quiz.length}</span>` : '<span class="lx-dash">–</span>'}</td>
+            <td><div class="lx-progress" aria-label="${p.passed} trên ${p.total} bài"><i style="width:${pct(p.passed, p.total)}%"></i></div></td>
+            ${HAS_QUIZ ? `<td class="r">${p.quiz ? `${p.quiz.best}<span class="lx-subtle"> /${ch.quiz.length}</span>` : '<span class="lx-dash">–</span>'}</td>` : ''}
             <td>${chapterBadge(p)}</td>
-            <td class="act"><a class="lx-iconbtn" href="#/${ch.key}/summary" data-tip="Mở ${esc(ch.label)}" aria-label="Mở ${esc(ch.label)}">${icon('open')}</a></td>
+            <td class="act"><a class="lx-iconbtn" href="#/${ch.key}" data-tip="Mở ${esc(ch.label)}" aria-label="Mở ${esc(ch.label)}">${icon('open')}</a></td>
           </tr>`;
         }).join('')}</tbody>
       </table></div>
@@ -734,7 +757,8 @@ function viewHome() {
     <div class="lx-card">
       <div class="lx-card__head"><h2 class="lx-h2">Cách dùng</h2><button class="lx-btn lx-btn--ghost" id="resetProgress">${icon('reset')} Xoá tiến độ</button></div>
       <div class="lx-card__body lx-prose"><ul>
-        <li>Mỗi ${esc(DATA.part.unit.toLowerCase())} học theo 4 bước: tóm tắt kiến thức, trắc nghiệm, câu hỏi tự luận, bài tập SQL. Dùng mũi tên trên thanh bước để chuyển bước.</li>
+        <li>Mỗi ${esc(DATA.part.unit.toLowerCase())} có ${PART_STEPS.length} bước: ${PART_STEPS.map(s => s.label.toLowerCase()).join(', ')}. Dùng mũi tên trên thanh bước để chuyển bước.</li>
+        <li>Câu tự luận: viết câu trả lời ra giấy, mở gợi ý đáp án để so, rồi đánh dấu “Đã tự chấm”.</li>
         <li>Trong bài tập: <code>Ctrl + Enter</code> để chạy, <code>Ctrl + Shift + Enter</code> để kiểm tra.</li>
         <li>Bài tập chạy trong một transaction rồi <code>rollback</code>, nên dữ liệu gốc không đổi. Muốn thay đổi được giữ lại, dùng Công cụ › SQL tự do.</li>
         <li>Bài gắn nhãn “Có câu kiểm tra” được chấm bằng một câu truy vấn chạy sau code của bạn; bài gắn nhãn “Database mới” được dùng <code>begin</code>, <code>commit</code>, <code>rollback</code>.</li>
@@ -749,15 +773,16 @@ function viewHome() {
 }
 
 function flowNav(ch, stepKey) {
-  const i = STEPS.findIndex(s => s.key === stepKey);
-  const href = s => s.key === 'ex' ? `#/${ch.key}/ex/${ch.exercises[0].id}` : `#/${ch.key}/${s.key}`;
-  const prev = STEPS[i - 1], next = STEPS[i + 1];
+  const steps = stepsOf(ch);
+  const i = steps.findIndex(s => s.key === stepKey);
+  const href = s => stepHref(ch, s.key);
+  const prev = steps[i - 1], next = steps[i + 1];
   return `<nav class="lx-flow" aria-label="Các bước học ${esc(ch.label)}">
     <span class="lx-flow__k">${esc(ch.label)}</span>
     <a class="lx-iconbtn lx-flow__arrow${prev ? '' : ' is-off'}" ${prev ? `href="${href(prev)}"` : 'aria-disabled="true"'} data-tip="${prev ? `Về bước trước: ${prev.label}` : 'Đây là bước đầu'}" aria-label="${prev ? `Về bước trước: ${prev.label}` : 'Đây là bước đầu'}">${icon('back')}</a>
-    <ol class="lx-flow__steps">${STEPS.map((s, j) => `${j ? `<svg class="lx-flow__sep" viewBox="0 0 12 12" aria-hidden="true"><path d="M4 2l4 4-4 4"/></svg>` : ''}
+    <ol class="lx-flow__steps">${steps.map((s, j) => `${j ? `<svg class="lx-flow__sep" viewBox="0 0 12 12" aria-hidden="true"><path d="M4 2l4 4-4 4"/></svg>` : ''}
       <li class="lx-flow__step${j === i ? ' is-active' : ''}"><a href="${href(s)}"${j === i ? ' aria-current="step"' : ''}><span class="lx-flow__n">${j + 1}</span>${s.label}</a></li>`).join('')}</ol>
-    <span class="lx-flow__pos">Bước ${i + 1}/${STEPS.length}</span>
+    <span class="lx-flow__pos">Bước ${i + 1}/${steps.length}</span>
     <a class="lx-iconbtn lx-flow__arrow lx-flow__arrow--next${next ? '' : ' is-off'}" ${next ? `href="${href(next)}"` : 'aria-disabled="true"'} data-tip="${next ? `Sang bước sau: ${next.label}` : 'Đây là bước cuối'}" aria-label="${next ? `Sang bước sau: ${next.label}` : 'Đây là bước cuối'}">${icon('open')}</a>
   </nav>`;
 }
@@ -766,11 +791,23 @@ function chapterPage(ch, step, lead, actions = '') {
   return pageHead(`${esc(ch.label)} · ${esc(ch.title)}`, esc(ch.titleVi), lead, actions) + flowNav(ch, step);
 }
 
+// Footer link to the step after `key`, or back to the first step at the end.
+function nextStepFoot(ch, key) {
+  const steps = stepsOf(ch);
+  const i = steps.findIndex(s => s.key === key);
+  const next = steps[i + 1];
+  const count = { quiz: `${ch.quiz.length} câu trắc nghiệm`, questions: `${ch.questions.length} câu tự luận`, ex: `${ch.exercises.length} bài SQL`, summary: 'phần ghi nhớ' };
+  return next
+    ? `<div class="lx-card__foot"><span>Tiếp theo: ${count[next.key]}</span><a class="lx-btn lx-btn--primary" href="${stepHref(ch, next.key)}">${esc(next.label)} ${icon('open')}</a></div>`
+    : `<div class="lx-card__foot"><span>Đây là bước cuối của ${esc(ch.label)}</span><a class="lx-btn" href="${stepHref(ch, steps[0].key)}">Về ${esc(steps[0].label.toLowerCase())}</a></div>`;
+}
+
 function viewSummary(ch) {
-  main.innerHTML = chapterPage(ch, 'summary', 'Đọc kỹ phần tóm tắt trước khi làm trắc nghiệm và bài tập.') + `
-    <div class="lx-card"><div class="lx-card__head"><h2 class="lx-h2">Tóm tắt kiến thức</h2></div>
+  const label = PART_STEPS.find(s => s.key === 'summary').label;
+  main.innerHTML = chapterPage(ch, 'summary', stepsOf(ch)[0].key === 'summary' ? 'Đọc kỹ phần này trước khi làm bài.' : 'Tra cứu nhanh kiến thức và các bẫy hay gặp. Đọc lại trước khi thi.') + `
+    <div class="lx-card"><div class="lx-card__head"><h2 class="lx-h2">${esc(label)}</h2></div>
     <div class="lx-card__body lx-prose">${ch.summary}</div>
-    <div class="lx-card__foot"><span>Tiếp theo: ${ch.quiz.length} câu trắc nghiệm</span><a class="lx-btn lx-btn--primary" href="#/${ch.key}/quiz">Làm trắc nghiệm ${icon('open')}</a></div></div>`;
+    ${nextStepFoot(ch, 'summary')}</div>`;
 }
 
 function viewQuiz(ch) {
@@ -821,11 +858,20 @@ function viewQuiz(ch) {
 }
 
 function viewQuestions(ch) {
-  main.innerHTML = chapterPage(ch, 'questions', 'Tự trả lời ra giấy trước, sau đó mở gợi ý đáp án để so sánh.') +
+  const key = 'essay:' + ch.store;
+  const done = new Set(store.get(key, []));
+  main.innerHTML = chapterPage(ch, 'questions', 'Viết câu trả lời ra giấy như trong phòng thi, sau đó mở gợi ý đáp án để so và đánh dấu đã tự chấm.') +
     `<div class="lx-stack">${ch.questions.map((q, i) => `<div class="lx-card">
-      <div class="lx-card__head"><h2 class="lx-h2">Câu ${i + 1}</h2></div>
-      <div class="lx-card__body lx-prose"><p style="margin-top:0">${q.q}</p>
-      <details><summary>${icon('caret')} Gợi ý đáp án</summary>${q.answer}</details></div></div>`).join('')}</div>`;
+      <div class="lx-card__head"><h2 class="lx-h2">Câu ${i + 1}</h2>
+        <label class="lx-check"><input type="checkbox" data-essay="${i}"${done.has(i) ? ' checked' : ''}> Đã tự chấm</label></div>
+      <div class="lx-card__body lx-prose">${q.en ? `<blockquote class="lx-en lx-prose" lang="en">${q.en}</blockquote>` : ''}<p style="margin-top:0">${q.q}</p>
+      <details><summary>${icon('caret')} Gợi ý đáp án</summary>${q.answer}</details></div></div>`).join('')}
+      <div class="lx-card">${nextStepFoot(ch, 'questions')}</div></div>`;
+  main.querySelectorAll('[data-essay]').forEach(box => box.addEventListener('change', () => {
+    const set = new Set(store.get(key, []));
+    if (box.checked) set.add(+box.dataset.essay); else set.delete(+box.dataset.essay);
+    store.set(key, [...set].sort((a, b) => a - b));
+  }));
 }
 
 function viewExercise(ch, id) {
@@ -851,6 +897,7 @@ function viewExercise(ch, id) {
             <span id="exState">${exBadge(ex.id)}</span>
           </div>
           <div class="lx-card__body lx-stack">
+            ${ex.en ? `<blockquote class="lx-en lx-prose" lang="en">${ex.en}</blockquote>` : ''}
             <div class="lx-prose">${ex.prompt}</div>
             ${ex.hint ? `<details><summary>${icon('caret')} Gợi ý</summary><div class="lx-prose">${ex.hint}</div></details>` : ''}
             <div>
@@ -1138,8 +1185,12 @@ function route() {
   const hash = location.hash.slice(1) || '/';
   const [path, query] = hash.split('?');
   renderNav(path);
+  const bare = path.match(/^\/([\w-]+)$/);
+  const bareCh = bare && DATA.chapters.find(c => c.key === bare[1]);
+  if (bareCh) { location.replace(stepHref(bareCh, stepsOf(bareCh)[0].key)); return; }
   const m = path.match(/^\/([\w-]+)\/(summary|quiz|questions|ex)(?:\/([\w.-]+))?$/);
   const ch = m && DATA.chapters.find(c => c.key === m[1]);
+  if (ch && !stepsOf(ch).some(s => s.key === m[2])) { location.replace(stepHref(ch, stepsOf(ch)[0].key)); return; }
   if (ch) {
     renderContext(ch);
     ({ summary: viewSummary, quiz: viewQuiz, questions: viewQuestions, ex: c => viewExercise(c, m[3]) })[m[2]](ch);
