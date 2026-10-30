@@ -121,7 +121,7 @@ async function schemaOf(part, db) {
 }
 
 const partLink = p => ({
-  number: p.number, slug: p.slug, title: p.title, short: `Part ${p.number}`, weeks: p.weeks || '',
+  number: p.number, slug: p.slug, title: p.title, short: p.short, label: p.label, group: p.group, review: p.review, weeks: p.weeks || '',
   chapters: p.chapters.map(c => ({ key: c.key, navLabel: c.navLabel, label: c.label, titleVi: c.titleVi })),
 });
 
@@ -136,7 +136,7 @@ for (const part of allParts.filter(filter)) {
 
   const data = {
     part: {
-      number: part.number, title: part.title, subtitle: part.subtitle || '', lead: part.lead || '',
+      number: part.number, slug: part.slug, short: part.short, label: part.label, group: part.group, review: part.review, title: part.title, subtitle: part.subtitle || '', lead: part.lead || '',
       unit: part.unit, storage: part.storage, fdTool: !!part.fdTool, weeks: part.weeks || '',
       steps: part.steps || null, stepLabels: part.stepLabels || {},
     },
@@ -174,37 +174,41 @@ for (const part of allParts.filter(filter)) {
 }
 
 // ---------------------------------------------------------------- hub (index.html)
+// The hub shares the template's fonts, styles and mark. Its data (every part's
+// exercise IDs and storage prefix, the schedule with resolved links) is embedded
+// as JSON and rendered in the browser, so progress saved by each part shows here.
 if (!buildHub) { console.log(`Built ${built} part(s), ${total} exercises (index.html not rebuilt: run without --part)`); process.exit(0); }
+const fonts = template.slice(template.indexOf('<link rel="preconnect"'), template.indexOf('<style>'));
 const css = template.match(/<style>[\s\S]*?<\/style>/)[0];
+const brandSvg = template.match(/<span class="lx-brand__mark">(<svg[\s\S]*?<\/svg>)<\/span>/)[1];
 const escHtml = s => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
-const chapterOf = (n, key) => {
-  const p = allParts.find(x => x.number === n);
+const groupOf = p => p.group || (p.review ? 'exam' : /^part_\d+$/.test(p.slug) ? 'book' : 'exam');
+const labelOf = p => p.label || p.short || `Part ${p.number}`;
+const titleOf = p => String(p.title || '').replace(/^Part \d+\s*[—-]\s*/, '');
+const keyOf = p => (groupOf(p) === 'book' ? `P${p.number}` : ({ midterm: 'GK', final: 'CK' })[p.slug] || labelOf(p).slice(0, 3));
+// Schedule links are [slug, chapter] (older schedules used the part number).
+const chapterOf = (ref, key) => {
+  const p = allParts.find(x => x.slug === ref) || allParts.find(x => x.number === ref && groupOf(x) === 'book');
   const c = p && p.chapters.find(x => x.key === key);
   return p && c ? { p, c } : null;
 };
-const examBadge = { midterm: '<span class="lx-badge lx-badge--warning">Thi giữa kỳ</span>', final: '<span class="lx-badge lx-badge--danger">Thi cuối kỳ</span>' };
-const rows = schedule.map(w => {
-  const links = (w.links || []).map(([n, key]) => chapterOf(n, key)).filter(Boolean)
-    .map(({ p, c }) => `<a class="lx-tag" href="${p.slug}/playground.html#/${c.key}" title="${escHtml(c.titleVi)}">P${p.number} · ${escHtml(c.navLabel)}</a>`).join(' ');
-  return `<tr${w.exam ? ' class="hub-exam"' : ''}><td class="r">${w.week}</td><td><div class="lx-cell__main">${escHtml(w.content)}</div>${w.note ? `<div class="lx-cell__sub">${escHtml(w.note)}</div>` : ''}</td>
-    <td>${w.exam ? examBadge[w.exam] : ''}</td><td><div class="hub-links">${links}</div></td></tr>`;
-}).join('');
-const cards = allParts.map(p => {
-  const n = p.chapters.reduce((k, c) => k + c.exercises.length, 0);
-  const q = p.chapters.reduce((k, c) => k + c.questions.length, 0);
-  return `<tr>
-    <td class="hub-pn">Part ${p.number}</td>
-    <td><a class="lx-cell__main" href="${p.slug}/playground.html">${escHtml(p.title.replace(/^Part \d+\s*[—-]\s*/, ''))}</a><div class="lx-cell__sub">${escHtml(p.subtitle || '')}</div>
-      <div class="hub-links">${p.chapters.map(c => `<a class="lx-tag" href="${p.slug}/playground.html#/${c.key}" title="${escHtml(c.label)} — ${escHtml(c.titleVi)}">${escHtml(c.navLabel)}</a>`).join('')}</div></td>
-    <td>${escHtml(p.weeks || '')}</td>
-    <td class="r">${q}</td><td class="r">${n}</td>
-    <td class="act"><a class="lx-btn" href="${p.slug}/playground.html">Mở</a></td></tr>`;
-}).join('');
-const brandSvg = '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><ellipse cx="8" cy="3.5" rx="5" ry="2"/><path d="M3 3.5v9c0 1.1 2.2 2 5 2s5-.9 5-2v-9M3 8c0 1.1 2.2 2 5 2s5-.9 5-2"/></svg>';
-const caret = '<svg class="i" viewBox="0 0 16 16" aria-hidden="true"><path d="M6 4l4 4-4 4"/></svg>';
-const sideNav = allParts.map(p => `<details class="lx-navpart" open><summary><span class="lx-navpart__n">Part ${p.number}</span><span class="lx-navpart__t">${escHtml(p.title.replace(/^Part \d+\s*[—-]\s*/, ''))}</span>${caret}</summary>
-  <div class="lx-navpart__items"><a class="lx-nav__item" href="${p.slug}/playground.html"><span class="lx-nav__t">Tổng quan</span></a>${p.chapters.map(c =>
-    `<a class="lx-nav__item" href="${p.slug}/playground.html#/${c.key}" title="${escHtml(c.label)} — ${escHtml(c.titleVi)}"><span class="lx-nav__k">${escHtml(c.navLabel.replace(/^Chương /, 'Ch '))}</span><span class="lx-nav__t">${escHtml(c.titleVi)}</span></a>`).join('')}</div></details>`).join('');
+const hubParts = allParts.filter(p => p.chapters.length);
+const hubData = {
+  parts: hubParts.map(p => ({
+    slug: p.slug, key: keyOf(p), label: labelOf(p), title: titleOf(p), subtitle: p.subtitle || '', weeks: p.weeks || '',
+    group: groupOf(p), storage: p.storage,
+    chapters: p.chapters.map(c => ({ key: c.key, nav: c.navLabel, title: c.titleVi, store: c.store, essays: c.questions.length, ex: c.exercises.map(e => [e.id, e.topic]) })),
+  })),
+  schedule: schedule.map(w => ({
+    week: w.week, content: w.content, note: w.note || '', exam: w.exam || '',
+    links: (w.links || []).map(([ref, key]) => chapterOf(ref, key)).filter(Boolean).map(({ p, c }) => ({ slug: p.slug, key: c.key })),
+  })),
+};
+const bookParts = hubParts.filter(p => groupOf(p) === 'book');
+const examParts = hubParts.filter(p => groupOf(p) === 'exam');
+const sqlTotal = hubParts.reduce((n, p) => n + p.chapters.reduce((k, c) => k + c.exercises.length, 0), 0);
+const navItem = p => `<a class="lx-nav__item is-part" href="${p.slug}/playground.html" title="${escHtml(labelOf(p))} — ${escHtml(titleOf(p))}"><span class="lx-nav__k">${escHtml(keyOf(p))}</span><span class="lx-nav__t">${escHtml(titleOf(p))}</span></a>`;
+const navGroup = (label, list) => (list.length ? `<div class="lx-nav__group"><div class="lx-nav__label">${label}</div>${list.map(navItem).join('')}</div>` : '');
 const hub = `<!doctype html>
 <html lang="vi">
 <head>
@@ -212,17 +216,35 @@ const hub = `<!doctype html>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex">
 <title>CS4420 Practice Lab</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500&display=swap">
-${css}
+${fonts}${css}
 <style>
-  .hub-pn { white-space: nowrap; color: var(--ink-subtle); vertical-align: top !important; }
-  .hub-links { margin-top: 6px; }
-  .hub-links { display: flex; flex-wrap: wrap; gap: 4px; }
-  .hub-links a { text-decoration: none; }
-  .hub-links a:hover { background: var(--selected); color: var(--ink); }
-  tr.hub-exam td { background: var(--accent-soft); }
-  tr.hub-exam .lx-cell__main { font-weight: 600; }
+  .hub-stepper { display: inline-flex; align-items: center; gap: 4px; height: var(--control-height); padding: 0 2px; border: 1px solid var(--control); border-radius: 999px; }
+  .hub-stepper .lx-iconbtn { width: 30px; height: 30px; }
+  .hub-stepper .lx-iconbtn::after { bottom: auto; top: calc(100% + 6px); }
+  .hub-stepper output { min-width: 76px; text-align: center; font-size: 13px; color: var(--text-2); }
+  .hub-stepper output .n { color: var(--text); font-weight: 600; }
+  .hub-rows { display: flex; flex-direction: column; }
+  .hub-row { display: grid; grid-template-columns: 52px minmax(200px, 1fr) minmax(220px, 420px) 72px 72px 32px; align-items: center; gap: 0 20px; padding: 14px 20px; border-top: 1px solid var(--rule); }
+  .hub-row:hover { background: var(--hover); }
+  .hub-row--head { padding-top: 0; padding-bottom: 10px; border-top: 0; color: var(--muted); font-size: 12px; line-height: 16px; }
+  .hub-row--head:hover { background: none; }
+  .hub-row--head .r { font-family: var(--font); font-size: 12px; }
+  .hub-row .r { text-align: right; font-family: var(--mono); font-variant-numeric: tabular-nums; }
+  .hub-row .r small { color: var(--muted); font-size: 12px; }
+  .hub-row .lx-cellmap { gap: 2px; }
+  .hub-row .lx-cellmap a { width: 10px; height: 10px; }
+  .hub-empty { padding: 4px 20px 20px; color: var(--muted); }
+  .hub-word { font-family: var(--font); font-weight: 600; letter-spacing: -.01em; }
+  .lx-week__t { -webkit-line-clamp: 3; }
+  .lx-kpi__v .n { font: inherit; }
+  @media (max-width: 1100px) { .hub-row { grid-template-columns: 48px minmax(160px, 1fr) minmax(160px, 260px) 64px 32px; } .hub-row > .hub-ess { display: none; } }
+  @media (max-width: 900px) {
+    .hub-row { grid-template-columns: 40px minmax(0, 1fr) auto; grid-template-areas: "k t s" "c c c"; gap: 10px 12px; padding: 14px 16px; }
+    .hub-row--head { display: none; }
+    .hub-row > .lx-row__k { grid-area: k; } .hub-row > .lx-row__t { grid-area: t; } .hub-row > .lx-cellmap { grid-area: c; } .hub-row > .hub-sql { grid-area: s; }
+    .hub-row > .hub-ess, .hub-row > .lx-iconbtn { display: none; }
+    .lx-head > .lx-actions { width: auto; }
+  }
 </style>
 </head>
 <body>
@@ -232,27 +254,101 @@ ${css}
     <span class="lx-brand__mark">${brandSvg}</span><span class="lx-mbar__title">CS4420 Practice Lab</span>
   </header>
   <aside class="lx-sidebar" id="sidebar">
-    <a class="lx-brand" href="index.html"><span class="lx-brand__mark">${brandSvg}</span><span class="lx-brand__name">CS4420 Practice Lab<span>Database System Concepts</span></span></a>
+    <a class="lx-brand" href="index.html"><span class="lx-brand__mark">${brandSvg}</span><span class="lx-brand__name">Practice Lab<span>CS4420 · Database Systems</span></span></a>
     <nav class="lx-nav" aria-label="Các part">
-      <div class="lx-nav__group"><a class="lx-nav__item is-active" href="index.html" aria-current="page"><span class="lx-nav__t">Trang tổng &amp; lịch học</span></a></div>
-      <div class="lx-nav__group">${sideNav}</div>
+      <div class="lx-nav__group"><a class="lx-nav__item is-active" href="index.html" aria-current="page"><svg class="i" viewBox="0 0 16 16" aria-hidden="true"><path d="M2.5 4h11v9.5h-11zM2.5 7h11M5.5 2.5v3M10.5 2.5v3"/></svg><span class="lx-nav__t">Lịch học &amp; tiến độ</span></a></div>
+      ${navGroup('Theo sách', bookParts)}
+      ${navGroup('Ôn thi', examParts)}
     </nav>
   </aside>
-  <div class="lx-content"><main class="lx-page">
-  <div class="lx-head"><div class="lx-head__text"><div class="lx-eyebrow">CS4420 · Database System Concepts, 7th Ed.</div>
-    <h1 class="lx-h1">Bộ luyện tập theo lịch học</h1>
-    <p class="lx-lead">Bốn part: học theo chương (Part 1, 2) và ôn thi (Part 3 giữa kỳ, Part 4 cuối kỳ). Phần ôn thi bám sát <strong>Practice Exercises</strong> của sách — đề thi chủ yếu lấy từ đây. Mọi câu SQL chạy trên PostgreSQL ngay trong trình duyệt.</p></div></div>
-  <div class="lx-card"><div class="lx-card__head"><h2 class="lx-h2">Các part</h2><a class="lx-subtle" style="font-size:12px" href="https://www.db-book.com/Practice-Exercises/index-solu.html">Practice Exercises (db-book.com)</a></div>
-    <div class="lx-scroll"><table class="lx-table"><thead><tr><th>Part</th><th>Nội dung</th><th>Tuần</th><th class="r">Tự luận</th><th class="r">Bài SQL</th><th class="act"><span class="lx-sr">Mở</span></th></tr></thead><tbody>${cards}</tbody></table></div></div>
-  <div class="lx-card">
-    <div class="lx-card__head"><h2 class="lx-h2">Lịch học &amp; kế hoạch thi</h2><span class="lx-subtle" style="font-size:12px">Bấm nhãn để mở đúng phần luyện tập</span></div>
-    <div class="lx-scroll"><table class="lx-table"><thead><tr><th class="r">Tuần</th><th>Nội dung</th><th>Thi</th><th>Luyện tập</th></tr></thead><tbody>${rows}</tbody></table></div>
-  </div>
+  <div class="lx-content"><main class="lx-page" id="main">
+    <div class="lx-head"><div class="lx-head__text">
+      <h1 class="lx-h1">Lịch học &amp; tiến độ</h1>
+      <p class="lx-ctx" style="margin:6px 0 0">CS4420 · Database System Concepts, 7th Ed. · ${bookParts.length} part theo sách, ${examParts.length} phần ôn thi · ${sqlTotal} bài SQL chấm trên PostgreSQL trong trình duyệt</p>
+      <p class="lx-find" id="find">Học theo chương ở các part theo sách; trước mỗi kỳ thi, làm phần ôn thi tương ứng — bám sát Practice Exercises của sách.</p></div>
+      <div class="lx-actions"><div class="hub-stepper" role="group" aria-label="Tuần hiện tại">
+        <button class="lx-iconbtn" type="button" id="weekPrev" data-tip="Tuần trước" aria-label="Tuần trước"><svg class="i" viewBox="0 0 16 16" aria-hidden="true"><path d="M10 4L6 8l4 4"/></svg></button>
+        <output id="weekOut" aria-live="polite">Tuần <span class="n">1</span></output>
+        <button class="lx-iconbtn" type="button" id="weekNext" data-tip="Tuần sau" aria-label="Tuần sau"><svg class="i" viewBox="0 0 16 16" aria-hidden="true"><path d="M6 4l4 4-4 4"/></svg></button>
+      </div></div>
+    </div>
+    <div class="lx-card lx-kpis" id="kpis"></div>
+    <div class="lx-card" id="thisWeek"></div>
+    <div class="lx-card"><div class="lx-card__head"><h2 class="lx-h2">Lịch 15 tuần</h2><span class="lx-card__meta">Chọn một tuần để xem phần cần luyện</span></div><div class="lx-weeks" id="weeks"></div></div>
+    <div class="lx-card" id="book"></div>
+    ${examParts.length ? '<div class="lx-card" id="exam"></div>' : ''}
   </main></div>
 </div>
+<script id="hubData" type="application/json">${JSON.stringify(hubData).replace(/</g, '\\u003c')}</script>
 <script>
-  const app = document.getElementById('app'), btn = document.getElementById('menuBtn');
+(() => {
+  const HUB = JSON.parse(document.getElementById('hubData').textContent);
+  const $ = s => document.querySelector(s);
+  const esc = s => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  const get = (k, d) => { try { const v = localStorage.getItem(k); return v === null ? d : JSON.parse(v); } catch { return d; } };
+  const OPEN = '<svg class="i" viewBox="0 0 16 16" aria-hidden="true"><path d="M3 8h10M9 4l4 4-4 4"/></svg>';
+  const WORD = { pass: 'đã đúng', fail: 'chưa đúng' };
+  const bySlug = Object.fromEntries(HUB.parts.map(p => [p.slug, p]));
+  const status = (p, id) => get(p.storage + ':status:' + id, null);
+  const essaysDone = (p, c) => get(p.storage + ':essay:' + c.store, []).filter(i => i < c.essays).length;
+  const href = (p, hash = '') => p.slug + '/playground.html' + hash;
+  const cells = (p, chapters) => '<div class="lx-cellmap" role="list">' + chapters.map(c => c.ex.map(([id, topic]) => {
+    const s = status(p, id);
+    return '<a role="listitem"' + (s ? ' class="is-' + s + '"' : '') + ' href="' + href(p, '#/' + c.key + '/ex/' + id) + '" title="Bài ' + esc(id) + ' · ' + esc(topic) + '" aria-label="Bài ' + esc(id) + ': ' + (WORD[s] || 'chưa làm') + '"></a>';
+  }).join('')).join('') + '</div>';
+  const tally = (p, chapters) => chapters.reduce((t, c) => {
+    c.ex.forEach(([id]) => { if (status(p, id) === 'pass') t.pass++; });
+    t.total += c.ex.length; t.essays += essaysDone(p, c); t.essayTotal += c.essays; return t;
+  }, { pass: 0, total: 0, essays: 0, essayTotal: 0 });
+  const legend = '<div class="lx-legend" aria-hidden="true"><span><i class="is-pass"></i>Đã đúng</span><span><i class="is-fail"></i>Chưa đúng</span><span><i></i>Chưa làm</span></div>';
+  const head = first => '<div class="hub-row hub-row--head" aria-hidden="true"><span></span><span>' + first + '</span><span>Mỗi ô là một bài SQL</span><span class="r">SQL</span><span class="r hub-ess">Tự luận</span><span></span></div>';
+  const row = (k, p, chapters, title, sub, link) => {
+    const t = tally(p, chapters);
+    return '<div class="hub-row"><span class="lx-row__k">' + esc(k) + '</span><div class="lx-row__t"><a href="' + link + '">' + esc(title) + '</a><div class="lx-row__sub">' + esc(sub) + '</div></div>' +
+      cells(p, chapters) + '<span class="r hub-sql">' + t.pass + '<small>/' + t.total + '</small></span><span class="r hub-ess">' + t.essays + '<small>/' + t.essayTotal + '</small></span>' +
+      '<a class="lx-iconbtn" href="' + link + '" data-tip="Mở" aria-label="Mở ' + esc(title) + '">' + OPEN + '</a></div>';
+  };
+  const partRows = list => list.map(p => row(p.key, p, p.chapters, p.title, [p.label, p.weeks, p.subtitle].filter(Boolean).join(' · '), href(p))).join('');
+  const examWeek = kind => (HUB.schedule.find(w => w.exam === kind) || {}).week;
+  const until = (w, now) => (!w ? '<span class="lx-dash">–</span>' : w === now ? '<span class="hub-word">Tuần này</span>' : w < now ? '<span class="hub-word">Đã thi</span>' : (w - now) + '<span class="lx-kpi__u"> tuần nữa</span>');
+  const short = s => s.replace(/^Chương /, 'Ch ');
+
+  let week = Math.min(15, Math.max(1, Number(get('cs4420:week', 1)) || 1));
+  function render() {
+    const w = HUB.schedule.find(x => x.week === week) || HUB.schedule[0];
+    $('#weekOut').innerHTML = 'Tuần <span class="n">' + week + '</span>';
+    $('#weekPrev').disabled = week <= 1; $('#weekNext').disabled = week >= HUB.schedule.length;
+    const all = HUB.parts.reduce((t, p) => { const x = tally(p, p.chapters); t.pass += x.pass; t.total += x.total; return t; }, { pass: 0, total: 0 });
+    const mid = examWeek('midterm'), fin = examWeek('final');
+    $('#kpis').innerHTML =
+      '<div class="lx-kpi lx-kpi--lead"><div class="lx-kpi__k">Tuần đang học</div><div class="lx-kpi__v">' + week + '<span class="lx-kpi__u"> /' + HUB.schedule.length + '</span></div><div class="lx-meter" aria-hidden="true"><i style="width:' + (100 * week / HUB.schedule.length).toFixed(1) + '%"></i></div></div>' +
+      '<div class="lx-kpi"><div class="lx-kpi__k">Thi giữa kỳ' + (mid ? ' · tuần ' + mid : '') + '</div><div class="lx-kpi__v">' + until(mid, week) + '</div><div class="lx-kpi__n">' + esc((HUB.schedule.find(x => x.week === mid) || {}).note || '') + '</div></div>' +
+      '<div class="lx-kpi"><div class="lx-kpi__k">Thi cuối kỳ' + (fin ? ' · tuần ' + fin : '') + '</div><div class="lx-kpi__v">' + until(fin, week) + '</div><div class="lx-kpi__n">' + esc((HUB.schedule.find(x => x.week === fin) || {}).note || '') + '</div></div>' +
+      '<div class="lx-kpi"><div class="lx-kpi__k">Bài SQL đã đúng, cả khoá</div><div class="lx-kpi__v">' + all.pass + '<span class="lx-kpi__u"> /' + all.total + '</span></div><div class="lx-kpi__n">Lưu trong trình duyệt này</div></div>';
+    const exam = w.exam === 'midterm' ? 'Thi giữa kỳ' : w.exam === 'final' ? 'Thi cuối kỳ' : '';
+    $('#find').innerHTML = 'Tuần ' + week + ': ' + esc(exam || w.content) + (w.note ? ' · ' + esc(w.note) : '') + '.' +
+      (mid && week < mid ? ' Thi giữa kỳ sau <span class="n">' + (mid - week) + '</span> tuần.' : fin && week < fin ? ' Thi cuối kỳ sau <span class="n">' + (fin - week) + '</span> tuần.' : '');
+    const links = w.links.map(l => ({ p: bySlug[l.slug], c: bySlug[l.slug] && bySlug[l.slug].chapters.find(c => c.key === l.key) })).filter(x => x.c);
+    $('#thisWeek').innerHTML = '<div class="lx-card__head"><h2 class="lx-h2">Tuần ' + week + ' · ' + esc(exam || w.content) + '</h2>' + legend + '</div>' +
+      (links.length ? '<div class="hub-rows">' + head('Phần') + links.map(({ p, c }) => row(short(c.nav), p, [c], c.title, p.label + ' · ' + p.title, href(p, '#/' + c.key))).join('') + '</div>'
+        : '<p class="hub-empty">Tuần này không có phần luyện tập gắn sẵn. Chọn tuần khác trên lịch.</p>');
+    $('#weeks').innerHTML = HUB.schedule.map(x => {
+      const ex = x.exam === 'midterm' ? 'Thi giữa kỳ' : x.exam === 'final' ? 'Thi cuối kỳ' : '';
+      return '<button type="button" class="lx-week' + (x.week === week ? ' is-now' : '') + '" data-week="' + x.week + '" aria-pressed="' + (x.week === week) + '" title="Tuần ' + x.week + ': ' + esc(x.content) + (x.note ? ' — ' + esc(x.note) : '') + '">' +
+        '<span class="lx-week__n">T' + x.week + '</span>' + (ex ? '<span class="lx-week__exam">' + ex + '</span>' : '') + '<span class="lx-week__t">' + esc(x.links.map(l => bySlug[l.slug] && (bySlug[l.slug].chapters.find(c => c.key === l.key) || {}).nav).filter(Boolean).map(short).join(' · ') || x.content) + '</span></button>';
+    }).join('');
+    const books = HUB.parts.filter(p => p.group === 'book'), exams = HUB.parts.filter(p => p.group === 'exam');
+    $('#book').innerHTML = '<div class="lx-card__head"><h2 class="lx-h2">Theo sách</h2><span class="lx-card__meta">' + books.length + ' part · học theo chương: tóm tắt, trắc nghiệm, tự luận, bài SQL</span></div><div class="hub-rows">' + head('Part') + partRows(books) + '</div>';
+    if ($('#exam')) $('#exam').innerHTML = '<div class="lx-card__head"><h2 class="lx-h2">Ôn thi</h2><span class="lx-card__meta">Toàn bộ Practice Exercises của các chương thi, kèm đề thi thử</span></div><div class="hub-rows">' + head('Phần') + partRows(exams) + '</div>';
+  }
+  const setWeek = n => { week = Math.min(HUB.schedule.length, Math.max(1, n)); try { localStorage.setItem('cs4420:week', JSON.stringify(week)); } catch {} render(); };
+  $('#weekPrev').addEventListener('click', () => setWeek(week - 1));
+  $('#weekNext').addEventListener('click', () => setWeek(week + 1));
+  $('#weeks').addEventListener('click', e => { const b = e.target.closest('[data-week]'); if (b) setWeek(+b.dataset.week); });
+  render();
+  const app = $('#app'), btn = $('#menuBtn');
   btn.addEventListener('click', () => { const open = !app.classList.contains('is-navopen'); app.classList.toggle('is-navopen', open); btn.setAttribute('aria-expanded', String(open)); });
+})();
 </script>
 </body>
 </html>

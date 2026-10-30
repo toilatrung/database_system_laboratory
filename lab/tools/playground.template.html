@@ -5,325 +5,439 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>CS4420 Practice Lab</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500&display=swap">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap">
 <style>
-  /* ---------- LabelX design tokens (light) ---------- */
+  /* ======================================================================
+     CS4420 Practice Lab — "data terminal": a dark console read in long sessions.
+     Cards sit darker than the ground; every selection is one 1px PostgreSQL-blue
+     line as wide as its label; every figure, ID and query is set in JetBrains Mono.
+     Grid: 248px sidebar + fluid canvas, 40px side padding, one 24px gap everywhere.
+     ====================================================================== */
   :root {
-    --canvas: #f7f7f8;
-    --surface: #ffffff;
-    --surface-sunken: #f3f4f6;
-    --surface-selected: #eef0f3;
-    --hover: rgba(17,24,39,.045);
-    --selected: #e8e9ec;
-    --accent: #9d2235;
-    --accent-soft: #f7ebed;
-    --border: #e3e6ea;
-    --border-strong: #8c93a0;
-    --ink: #1a1d23;
-    --ink-muted: #4b5262;
-    --ink-subtle: #5f6570;
-    --primary: #1f2933;
-    --primary-hover: #38424f;
-    --on-primary: #ffffff;
-    --focus: #1f2933;
-    --success: #146c43;
-    --success-soft: #e6f4ec;
-    --warning: #8a5300;
-    --warning-soft: #fdf2d8;
-    --danger: #b42318;
-    --danger-soft: #fdecea;
-    --info: #1d5ea8;
-    --info-soft: #e7effa;
-    --neutral: #475061;
-    --neutral-soft: #eceef2;
-    --font-sans: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
-    --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Consolas, monospace;
-    --space-1: 4px; --space-2: 8px; --space-3: 12px; --space-4: 16px; --space-6: 24px; --space-8: 32px;
-    --radius-sm: 4px; --radius-md: 6px; --radius-lg: 8px; --radius-full: 999px;
-    --shadow-menu: 0 8px 24px rgba(17,24,39,0.12);
-    --sidebar-width: 264px; --control-height: 32px;
-    color-scheme: light;
+    --ground: #171719;
+    --surface: #131217;
+    --raised: #212023;
+    --well: #0d0d10;
+    --hover: #1d1c21;
+    --border: #262529;
+    --rule: #1f1e23;
+    --control: #3a3a3e;
+    --text: #ffffff;
+    --text-2: #cfcfd3;
+    --muted: #8f9197;
+    --accent: #4a8ad6;
+    --accent-ink: #8bb6ea;
+    --accent-bg: #16202e;
+    --positive: #44a282;
+    --negative: #e5566f;
+    --negative-bg: #2c1a20;
+    --warning: #d9a441;
+    --warning-bg: #2a2416;
+    --cell: #2c2b31;
+    --shadow: 0 12px 28px rgba(0,0,0,.2);
+    --shadow-menu: 0 16px 40px rgba(0,0,0,.45);
+    --font: "Public Sans", Inter, system-ui, -apple-system, "Segoe UI", sans-serif;
+    --mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Consolas, monospace;
+    --radius: 6px; --radius-sm: 4px;
+    --gap: 24px; --pad: 40px;
+    --sidebar: 248px; --control-height: 34px;
+    color-scheme: dark;
   }
 
   * { box-sizing: border-box; }
   html, body { margin: 0; }
-  body { background: var(--canvas); color: var(--ink); font: 400 14px/20px var(--font-sans); -webkit-font-smoothing: antialiased; }
-  :focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
-  a { color: var(--ink); }
+  body { background: var(--ground); color: var(--text); font: 400 13px/20px var(--font); -webkit-font-smoothing: antialiased; }
+  ::selection { background: #2b4f7c; color: #fff; }
+  :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  a { color: var(--text); }
+  h1, h2, h3 { margin: 0; }
+  .n, .lx-mono { font-family: var(--mono); font-variant-numeric: tabular-nums; }
+  .lx-mono { font-size: 12px; font-weight: 500; }
+  .lx-subtle, .lx-dash { color: var(--muted); }
+  .lx-sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
   svg.i { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; flex: none; }
 
-  /* ---------- App shell: sidebar on the page ground, content beside it ---------- */
-  .lx-app { display: grid; grid-template-columns: var(--sidebar-width) minmax(0, 1fr); min-height: 100vh; }
-  .lx-sidebar { position: sticky; top: 0; height: 100vh; display: flex; flex-direction: column; gap: var(--space-4);
-    padding: var(--space-4) var(--space-3) var(--space-3); border-right: 1px solid var(--border); background: var(--canvas); }
-  .lx-brand { display: flex; align-items: center; gap: 10px; padding: var(--space-1) var(--space-2); color: var(--ink); text-decoration: none; }
-  .lx-brand__mark { width: 28px; height: 28px; flex: none; display: grid; place-items: center; border-radius: var(--radius-md); background: var(--accent); color: #fff; }
-  .lx-brand__mark svg { width: 16px; height: 16px; }
-  .lx-brand__name { font: 600 14px/18px var(--font-sans); letter-spacing: -.01em; }
-  .lx-brand__name span { display: block; font-weight: 400; font-size: 12px; line-height: 16px; color: var(--ink-subtle); }
-  .lx-nav { flex: 1; min-height: 0; overflow-y: auto; display: flex; flex-direction: column; gap: var(--space-4); margin: 0 calc(-1 * var(--space-1)); padding: 0 var(--space-1); }
-  .lx-nav__group { display: flex; flex-direction: column; gap: 2px; }
-  .lx-nav__label { padding: 0 var(--space-2) var(--space-1); font-size: 12px; line-height: 16px; color: var(--ink-subtle); }
-  .lx-nav__item { display: flex; align-items: center; gap: var(--space-2); min-height: 32px; padding: 6px var(--space-2); border-radius: var(--radius-md);
-    color: var(--ink-muted); text-decoration: none; font-size: 13px; line-height: 18px; }
-  .lx-nav__item:hover { background: var(--hover); color: var(--ink); }
-  .lx-nav__item.is-active { background: var(--selected); color: var(--ink); font-weight: 600; }
-  .lx-nav__item svg.i { color: var(--ink-subtle); }
-  .lx-nav__k { flex: none; width: 44px; color: var(--ink-subtle); font-variant-numeric: tabular-nums; white-space: nowrap; }
-  .lx-nav__item.is-active .lx-nav__k { color: var(--ink-muted); }
-  .lx-nav__t { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .lx-navpart > summary { display: flex; width: 100%; align-items: center; gap: var(--space-2); min-height: 32px; padding: 6px var(--space-2); margin: 0;
-    border-radius: var(--radius-md); font-size: 13px; line-height: 18px; font-weight: 500; color: var(--ink-muted); }
-  .lx-navpart > summary:hover { background: var(--hover); color: var(--ink); }
-  .lx-navpart.is-current > summary { color: var(--ink); font-weight: 600; }
-  .lx-navpart > summary svg.i { margin-left: auto; width: 12px; height: 12px; color: var(--ink-subtle); }
-  .lx-navpart[open] > summary { margin-bottom: 2px; }
-  .lx-navpart__n { flex: none; width: 44px; }
-  .lx-navpart__t { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .lx-navpart__items { display: flex; flex-direction: column; gap: 2px; margin: 0 0 var(--space-2) var(--space-3); padding-left: var(--space-2); border-left: 1px solid var(--border); }
-  .lx-sidebar__foot { border-top: 1px solid var(--border); padding-top: var(--space-3); }
+  /* ---------- Shell: labelled sidebar on the ground, one rule, canvas beside it ---------- */
+  .lx-app { display: grid; grid-template-columns: var(--sidebar) minmax(0, 1fr); min-height: 100vh; }
+  .lx-sidebar { position: sticky; top: 0; height: 100vh; display: flex; flex-direction: column; border-right: 1px solid var(--border); background: var(--ground); }
+  .lx-brand { display: flex; align-items: center; gap: 12px; padding: 20px 20px 18px; color: var(--text); text-decoration: none; }
+  .lx-brand__mark { width: 28px; height: 28px; flex: none; color: var(--accent); }
+  .lx-brand__mark svg { width: 100%; height: 100%; display: block; }
+  .lx-brand__name { font: 600 14px/18px var(--font); letter-spacing: -.01em; }
+  .lx-brand__name span { display: block; font: 400 12px/16px var(--font); color: var(--muted); }
+  .lx-nav { flex: 1; min-height: 0; overflow-y: auto; padding: 4px 12px 16px; display: flex; flex-direction: column; gap: 20px; scrollbar-width: thin; scrollbar-color: var(--control) transparent; }
+  .lx-nav__group { display: flex; flex-direction: column; }
+  .lx-nav__label { padding: 0 8px 6px; font-size: 12px; line-height: 16px; color: var(--muted); }
+  .lx-nav__item { position: relative; display: flex; align-items: center; gap: 10px; min-height: 32px; margin-bottom: 2px; padding: 6px 8px; border-radius: var(--radius-sm);
+    color: var(--muted); text-decoration: none; font-size: 13px; line-height: 18px; }
+  .lx-nav__item:hover { background: var(--hover); color: var(--text); }
+  .lx-nav__item.is-active { color: var(--text); }
+  .lx-nav__item.is-active::before { content: ""; position: absolute; left: 0; top: 7px; bottom: 7px; width: 1px; background: var(--accent); }
+  .lx-nav__item.is-part.is-current { color: var(--text); font-weight: 600; }
+  .lx-nav__k { flex: none; min-width: 34px; font: 500 12px/18px var(--mono); color: var(--muted); white-space: nowrap; }
+  .lx-nav__item.is-active .lx-nav__k, .lx-nav__item.is-current .lx-nav__k { color: var(--text-2); }
+  .lx-nav__t { min-width: 0; flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .lx-nav__c { flex: none; font: 400 11px/18px var(--mono); color: var(--muted); }
+  .lx-nav__sub { display: flex; flex-direction: column; margin: 0 0 6px 20px; }
+  .lx-nav__sub .lx-nav__item { min-height: 30px; padding: 5px 8px; }
+  .lx-sidebar__foot { padding: 12px; border-top: 1px solid var(--border); }
   .lx-content { min-width: 0; }
   .lx-mbar { display: none; }
 
-  /* ---------- Database signal: green when PostgreSQL is ready ---------- */
+  /* ---------- PostgreSQL signal ---------- */
   .lx-signalwrap { position: relative; }
-  .lx-signal { appearance: none; display: flex; align-items: center; gap: 10px; width: 100%; height: var(--control-height); padding: 0 var(--space-2);
-    border: 0; border-radius: var(--radius-md); background: transparent; color: var(--ink-muted); font: 500 13px/1 var(--font-sans); cursor: help; text-align: left; }
-  .lx-signal:hover, .lx-signalwrap.is-open .lx-signal { background: var(--hover); color: var(--ink); }
-  .lx-signal__dot { width: 8px; height: 8px; flex: none; border-radius: 50%; background: var(--border-strong); transition: background-color .4s ease; }
-  .is-ready .lx-signal__dot { background: var(--success); }
-  [data-state="error"] .lx-signal__dot { background: var(--danger); }
+  .lx-signal { appearance: none; display: flex; align-items: center; gap: 10px; width: 100%; height: var(--control-height); padding: 0 8px;
+    border: 0; border-radius: var(--radius-sm); background: transparent; color: var(--muted); font: 500 12px/1 var(--font); cursor: help; text-align: left; }
+  .lx-signal:hover, .lx-signalwrap.is-open .lx-signal { background: var(--hover); color: var(--text); }
+  .lx-signal__dot { width: 8px; height: 8px; flex: none; border-radius: 50%; background: var(--control); transition: background-color .4s ease; }
+  .is-ready .lx-signal__dot { background: var(--positive); }
+  [data-state="error"] .lx-signal__dot { background: var(--negative); }
+  [data-state="loading"] .lx-signal__dot, [data-state="reloading"] .lx-signal__dot { animation: lx-blink 1.2s ease-in-out infinite; background: var(--warning); }
+  @keyframes lx-blink { 50% { opacity: .35; } }
   .lx-signal__label { display: inline-block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-
-  .lx-pop { position: absolute; bottom: calc(100% + 6px); left: 0; width: 360px; max-width: calc(100vw - 32px); z-index: 30;
-    background: var(--surface); color: var(--ink); text-align: left; border: 1px solid var(--border); border-radius: var(--radius-lg);
-    box-shadow: var(--shadow-menu);
+  .lx-pop { position: absolute; bottom: calc(100% + 8px); left: 0; width: 380px; max-width: calc(100vw - 32px); z-index: 30;
+    background: var(--raised); color: var(--text); border: 1px solid var(--control); border-radius: var(--radius); box-shadow: var(--shadow-menu);
     opacity: 0; visibility: hidden; transform: translateY(4px); transition: opacity .16s ease, transform .18s ease, visibility 0s linear .18s; }
-  .lx-signalwrap:hover .lx-pop, .lx-signalwrap:focus-within .lx-pop, .lx-signalwrap.is-open .lx-pop {
-    opacity: 1; visibility: visible; transform: none; transition-delay: 0s; }
-  .lx-pop__head { display: flex; align-items: center; justify-content: space-between; gap: var(--space-3); padding: var(--space-3) var(--space-4); border-bottom: 1px solid var(--border); }
-  .lx-pop__title { font-weight: 600; }
-  .lx-pop__body { padding: var(--space-3) var(--space-4); font-size: 13px; line-height: 20px; color: var(--ink-muted); }
-  .lx-pop__body p { margin: 0 0 var(--space-2); }
+  .lx-signalwrap:hover .lx-pop, .lx-signalwrap:focus-within .lx-pop, .lx-signalwrap.is-open .lx-pop { opacity: 1; visibility: visible; transform: none; transition-delay: 0s; }
+  .lx-pop__head { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 14px 16px 10px; }
+  .lx-pop__title { font-weight: 600; font-size: 14px; }
+  .lx-pop__body { padding: 0 16px 14px; font-size: 13px; line-height: 20px; color: var(--text-2); }
+  .lx-pop__body p { margin: 0 0 8px; }
   .lx-pop__body ol { margin: 0; padding-left: 18px; }
-  .lx-pop__body li { margin: 0 0 var(--space-2); }
-  .lx-pop__body code { font: 500 12px/1 var(--font-mono); color: var(--ink); background: var(--surface-sunken); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 1px 4px; }
-  .lx-pop__body .lx-kv { display: grid; grid-template-columns: auto 1fr; gap: 4px var(--space-3); margin: 0 0 var(--space-2); }
-  .lx-pop__body .lx-kv dt { color: var(--ink-subtle); }
-  .lx-pop__body .lx-kv dd { margin: 0; color: var(--ink); font-weight: 500; }
-  .lx-pop__foot { display: flex; justify-content: flex-end; gap: var(--space-2); padding: 10px var(--space-4); border-top: 1px solid var(--border); }
+  .lx-pop__body li { margin: 0 0 6px; }
+  .lx-pop__body code { font: 500 12px/1 var(--mono); color: var(--text); background: var(--well); border-radius: var(--radius-sm); padding: 2px 5px; }
+  .lx-pop__body .lx-kv { display: grid; grid-template-columns: auto 1fr; gap: 4px 16px; margin: 0 0 10px; }
+  .lx-pop__body .lx-kv dt { color: var(--muted); }
+  .lx-pop__body .lx-kv dd { margin: 0; color: var(--text); }
+  .lx-pop__foot { display: flex; justify-content: flex-end; gap: 8px; padding: 0 16px 14px; }
 
-  /* ---------- Motion ---------- */
-  .lx-btn, .lx-iconbtn, .lx-nav__item, .lx-navpart > summary, .lx-flow__step a, .lx-flow__n, .lx-list > li > a, .lx-opt,
-  .lx-table td, .lx-editor { transition: background-color .15s ease, color .15s ease, border-color .15s ease, box-shadow .15s ease; }
-  .lx-iconbtn::after { transform: translateY(2px); transition: opacity .15s ease, transform .15s ease; }
-  .lx-iconbtn:hover::after, .lx-iconbtn:focus-visible::after { transform: none; }
-  details > summary svg.i { transition: transform .2s ease, opacity .2s ease; }
-  .lx-progress > i { transition: width .5s cubic-bezier(.2,.7,.3,1); }
-  .lx-callout, .lx-q__explain:not([hidden]) { animation: lx-fade-up .22s ease-out; }
-  .lx-page.is-entering { animation: lx-fade-up .24s ease-out; }
-  @keyframes lx-fade-up { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
-  @media (prefers-reduced-motion: reduce) {
-    *, *::before, *::after { animation: none !important; transition: none !important; }
-  }
+  /* ---------- Feedback motion only: no entrances ---------- */
+  .lx-btn, .lx-iconbtn, .lx-nav__item, .lx-tab, .lx-row, .lx-opt, .lx-cellmap a, .lx-week, .lx-exlist a, .lx-editor { transition: background-color .15s ease, color .15s ease, border-color .15s ease, transform .15s ease; }
+  .lx-btn:active, .lx-iconbtn:active { transform: translateY(1px); }
+  .lx-callout, .lx-q__explain:not([hidden]) { animation: lx-in .2s ease-out; }
+  @keyframes lx-in { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+  @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; transition: none !important; } }
 
-  /* ---------- Page ---------- */
-  .lx-page { max-width: 1200px; margin: 0 auto; padding: var(--space-8) var(--space-8) 64px; display: flex; flex-direction: column; gap: var(--space-6); }
-  .lx-head { display: flex; flex-wrap: wrap; align-items: flex-start; justify-content: space-between; gap: var(--space-4); }
-  .lx-head__text { flex: 1 1 520px; max-width: 840px; }
-  .lx-eyebrow { font: 400 13px/18px var(--font-sans); color: var(--ink-subtle); margin-bottom: var(--space-1); }
-  .lx-h1 { margin: 0 0 6px; font-size: 26px; line-height: 32px; font-weight: 600; letter-spacing: -.02em; }
-  .lx-h2 { margin: 0; font-size: 15px; line-height: 22px; font-weight: 600; }
-  .lx-lead { margin: 0; color: var(--ink-muted); }
-  .lx-actions { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2); }
+  /* ---------- Canvas, title row ---------- */
+  .lx-page { max-width: 1320px; padding: 36px var(--pad) 80px; display: flex; flex-direction: column; gap: var(--gap); }
+  .lx-head { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 16px 24px; }
+  .lx-head__text { flex: 1 1 520px; min-width: 0; max-width: 880px; }
+  .lx-h1 { font-size: 26px; line-height: 32px; font-weight: 600; letter-spacing: -.02em; }
+  .lx-ctx { margin: 0 0 6px; font-size: 13px; line-height: 18px; color: var(--muted); }
+  .lx-ctx .n { color: var(--text-2); font-size: 12px; }
+  .lx-lead { margin: 10px 0 0; color: var(--text-2); font-size: 14px; line-height: 22px; max-width: 780px; }
+  .lx-find { margin: 10px 0 0; font-size: 14px; line-height: 22px; color: var(--text); }
+  .lx-find .n { font-size: 13px; }
+  .lx-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
   .lx-spacer { flex: 1; }
-  .lx-stack { display: flex; flex-direction: column; gap: var(--space-4); }
-  .lx-grid { display: grid; gap: var(--space-4); grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); }
-  .lx-cols { display: flex; flex-wrap: wrap; gap: var(--space-4); align-items: flex-start; }
-  .lx-main { flex: 999 1 560px; min-width: 0; }
-  .lx-side { flex: 1 1 320px; min-width: 0; max-width: 100%; overflow: hidden; }
-  .lx-subtle { color: var(--ink-subtle); }
-  .lx-mono { font-family: var(--font-mono); font-size: 12px; font-weight: 500; }
+  .lx-stack { display: flex; flex-direction: column; gap: 16px; }
+  .lx-h2 { font-size: 16px; line-height: 22px; font-weight: 600; }
+  .lx-section { font-size: 20px; line-height: 26px; font-weight: 400; color: var(--muted); }
+  .lx-section b { color: var(--text); font-weight: 600; }
 
-  /* ---------- Buttons ---------- */
-  .lx-btn { display: inline-flex; align-items: center; gap: var(--space-2); height: var(--control-height); padding: 0 var(--space-3);
-    border-radius: var(--radius-md); border: 1px solid var(--border-strong); background: var(--surface); color: var(--ink);
-    font: 500 13px/1 var(--font-sans); cursor: pointer; white-space: nowrap; text-decoration: none; }
-  .lx-btn:hover { background: var(--surface-sunken); }
-  .lx-btn--primary { background: var(--primary); border-color: var(--primary); color: var(--on-primary); }
-  .lx-btn--primary:hover { background: var(--primary-hover); }
-  .lx-btn--ghost { border-color: transparent; background: transparent; color: var(--ink-muted); }
-  .lx-btn--ghost:hover { background: var(--surface-sunken); color: var(--ink); }
-  .lx-btn[disabled] { opacity: .45; cursor: not-allowed; }
-  .lx-btn .lx-kbd { font: 500 11px/1 var(--font-mono); opacity: .7; }
+  /* ---------- Buttons: pills; primary inverted white ---------- */
+  .lx-btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; height: var(--control-height); padding: 0 16px;
+    border-radius: 999px; border: 1px solid var(--control); background: transparent; color: var(--text);
+    font: 500 13px/1 var(--font); cursor: pointer; white-space: nowrap; text-decoration: none; }
+  .lx-btn:hover { background: var(--raised); border-color: #55555b; }
+  .lx-btn--primary { background: #fff; border-color: #fff; color: #111; font-weight: 600; }
+  .lx-btn--primary:hover { background: #dcdce0; border-color: #dcdce0; }
+  .lx-btn--ghost { border-color: transparent; color: var(--text-2); padding: 0 12px; }
+  .lx-btn--ghost:hover { background: var(--raised); border-color: transparent; color: var(--text); }
+  .lx-btn[disabled] { opacity: .5; cursor: progress; }
+  .lx-iconbtn { position: relative; display: inline-grid; place-items: center; width: 32px; height: 32px; border: 0; border-radius: 999px;
+    background: transparent; color: var(--muted); cursor: pointer; text-decoration: none; flex: none; }
+  .lx-iconbtn:hover { background: var(--raised); color: var(--text); }
+  .lx-iconbtn::after { content: attr(data-tip); position: absolute; bottom: calc(100% + 6px); right: 0; white-space: nowrap; padding: 5px 9px;
+    border-radius: var(--radius-sm); background: #f2f2f3; color: #111; font: 500 12px/16px var(--font); opacity: 0; pointer-events: none; z-index: 10; transform: translateY(2px); transition: opacity .15s ease, transform .15s ease; }
+  .lx-iconbtn:hover::after, .lx-iconbtn:focus-visible::after { opacity: 1; transform: none; }
+  .lx-iconbtn.is-off { opacity: .35; pointer-events: none; }
+  kbd { font: 500 11px/1 var(--mono); padding: 3px 6px; border-radius: var(--radius-sm); background: var(--raised); color: var(--text-2); border: 1px solid var(--control); white-space: nowrap; }
 
-  .lx-iconbtn { position: relative; display: inline-grid; place-items: center; width: 32px; height: 32px; border: 0; border-radius: var(--radius-md);
-    background: transparent; color: var(--ink-muted); cursor: pointer; text-decoration: none; }
-  .lx-iconbtn:hover { background: var(--surface-sunken); color: var(--ink); }
-  .lx-iconbtn::after { content: attr(data-tip); position: absolute; bottom: calc(100% + 2px); right: 0; white-space: nowrap; padding: 4px 8px;
-    border-radius: 4px; background: var(--primary); color: var(--on-primary); font: 500 12px/16px var(--font-sans); opacity: 0; pointer-events: none; z-index: 10; }
-  .lx-iconbtn:hover::after, .lx-iconbtn:focus-visible::after { opacity: 1; }
+  /* ---------- Status: a dot and a word; blue = solved, amber = not yet ---------- */
+  .lx-badge { display: inline-flex; align-items: center; gap: 7px; flex: none; white-space: nowrap; font: 500 12px/18px var(--font); color: var(--muted); }
+  .lx-badge::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: var(--control); }
+  .lx-badge--success { color: var(--accent-ink); } .lx-badge--success::before { background: var(--accent); }
+  .lx-badge--info { color: var(--text-2); } .lx-badge--info::before { background: var(--text-2); }
+  .lx-badge--warning { color: var(--warning); } .lx-badge--warning::before { background: var(--warning); }
+  .lx-badge--danger { color: var(--negative); } .lx-badge--danger::before { background: var(--negative); }
+  .lx-tag { display: inline-flex; align-items: center; height: 22px; padding: 0 9px; border-radius: 999px; background: var(--raised); color: var(--text-2);
+    font: 500 12px/1 var(--font); white-space: nowrap; flex: none; text-decoration: none; }
+  a.lx-tag:hover { background: #2e2d33; color: var(--text); }
 
-  /* ---------- Badges & tags ---------- */
-  .lx-badge { display: inline-flex; align-items: center; height: 20px; padding: 0 var(--space-2); border-radius: var(--radius-sm);
-    font: 500 12px/1 var(--font-sans); white-space: nowrap; background: var(--neutral-soft); color: var(--neutral); }
-  .lx-badge--success { background: var(--success-soft); color: var(--success); }
-  .lx-badge--warning { background: var(--warning-soft); color: var(--warning); }
-  .lx-badge--danger { background: var(--danger-soft); color: var(--danger); }
-  .lx-badge--info { background: var(--info-soft); color: var(--info); }
-  .lx-tag { display: inline-flex; align-items: center; height: 20px; padding: 0 6px; border-radius: var(--radius-sm); background: var(--neutral-soft);
-    color: var(--neutral); font: 500 12px/1 var(--font-sans); white-space: nowrap; }
-
-  /* ---------- Card, table, list ---------- */
-  .lx-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); }
-  .lx-card__head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--space-3); padding: var(--space-3) var(--space-4); border-bottom: 1px solid var(--border); }
-  .lx-card__body { padding: var(--space-4); }
-  .lx-card__foot { padding: 10px var(--space-4); border-top: 1px solid var(--border); font-size: 12px; color: var(--ink-subtle); display: flex; flex-wrap: wrap; gap: var(--space-3); justify-content: space-between; align-items: center; }
+  /* ---------- Cards: darker than the ground ---------- */
+  .lx-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow); min-width: 0; }
+  .lx-card__head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 16px; padding: 16px 20px; }
+  .lx-card__head + .lx-card__body { padding-top: 0; }
+  .lx-card__meta { font-size: 13px; color: var(--muted); }
+  .lx-card__body { padding: 20px; }
+  .lx-card__foot { padding: 14px 20px; border-top: 1px solid var(--rule); font-size: 13px; color: var(--muted); display: flex; flex-wrap: wrap; gap: 12px; justify-content: space-between; align-items: center; }
   .lx-scroll { overflow-x: auto; }
-  .lx-card > .lx-scroll:last-child { border-radius: 0 0 var(--radius-lg) var(--radius-lg); }
+
+  /* Tables: rules and alignment */
   .lx-table { width: 100%; border-collapse: collapse; font-size: 13px; }
-  .lx-table th { text-align: left; padding: 10px var(--space-4) 8px; color: var(--ink-subtle);
-    font: 500 12px/16px var(--font-sans); border-bottom: 1px solid var(--border); white-space: nowrap; }
-  .lx-table td { padding: var(--space-3) var(--space-4); border-bottom: 1px solid var(--border); vertical-align: middle; }
+  .lx-table th { text-align: left; padding: 8px 20px; color: var(--muted); font: 400 12px/16px var(--font); border-bottom: 1px solid var(--border); white-space: nowrap; }
+  .lx-table td { padding: 11px 20px; border-bottom: 1px solid var(--rule); vertical-align: middle; }
   .lx-table tbody tr:last-child td { border-bottom: 0; }
-  .lx-table tbody tr:hover td { background: var(--surface-sunken); }
   .lx-table .r { text-align: right; font-variant-numeric: tabular-nums; }
-  .lx-table .act { width: 1%; text-align: right; padding-top: 0; padding-bottom: 0; }
-  .lx-cell__main { font-weight: 600; color: var(--ink); text-decoration: none; }
-  a.lx-cell__main:hover { text-decoration: underline; }
-  .lx-cell__sub { font-size: 12px; line-height: 16px; color: var(--ink-subtle); margin-top: 2px; }
-  .lx-table--data td, .lx-table--data th { font-family: var(--font-mono); font-size: 12px; text-transform: none; letter-spacing: 0; white-space: pre; padding: 8px var(--space-4); }
-  .lx-table--data th { font-weight: 600; color: var(--ink-muted); background: var(--surface-sunken); }
-  .lx-null { color: var(--ink-subtle); font-style: italic; }
+  .lx-table--data { font: 400 12px/18px var(--mono); }
+  .lx-table--data th { font: 500 12px/16px var(--mono); color: var(--text-2); position: sticky; top: 0; background: var(--surface); }
+  .lx-table--data td, .lx-table--data th { padding: 7px 16px; white-space: pre; }
+  .lx-table--data tbody tr:hover td { background: var(--hover); }
+  .lx-table--data td:first-child, .lx-table--data th:first-child { padding-left: 20px; }
+  .lx-datawrap { max-height: 480px; overflow: auto; border-top: 1px solid var(--rule); }
+  .lx-null { color: var(--muted); font-style: italic; }
 
-  .lx-list { list-style: none; margin: 0; padding: 0; }
-  .lx-list > li > a { display: flex; align-items: center; gap: var(--space-3); padding: 10px var(--space-4); border-bottom: 1px solid var(--border); text-decoration: none; color: var(--ink); }
-  .lx-list > li:last-child > a { border-bottom: 0; }
-  .lx-list > li > a:hover { background: var(--surface-sunken); }
-  .lx-list > li[aria-selected="true"] > a { background: var(--selected); font-weight: 600; }
-  .lx-list__id { font: 500 12px/16px var(--font-mono); width: 36px; flex: none; }
-  .lx-list__t { flex: 1; min-width: 0; font-size: 13px; color: var(--ink-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .lx-list--scroll { max-height: 640px; overflow-y: auto; }
+  /* KPI strip: one container, divided */
+  .lx-kpis { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  .lx-kpi { padding: 18px 24px 20px; display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+  .lx-kpi + .lx-kpi { border-left: 1px solid var(--rule); }
+  .lx-kpi__k { font-size: 13px; line-height: 18px; color: var(--muted); }
+  .lx-kpi__v { font: 500 22px/28px var(--mono); font-variant-numeric: tabular-nums; letter-spacing: -.02em; }
+  .lx-kpi--lead .lx-kpi__v { font-size: 32px; line-height: 38px; font-weight: 600; }
+  .lx-kpi__u { font-size: 14px; color: var(--muted); letter-spacing: 0; font-weight: 400; font-family: var(--font); }
+  .lx-kpi__n { font-size: 13px; line-height: 18px; color: var(--muted); }
+  .lx-meter { position: relative; height: 4px; border-radius: 2px; background: var(--cell); overflow: hidden; margin-top: 6px; }
+  .lx-meter > i { position: absolute; inset: 0 auto 0 0; background: var(--accent); border-radius: 2px; transition: width .5s cubic-bezier(.2,.7,.3,1); }
 
-  .lx-kpis { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); }
-  .lx-kpi { padding: var(--space-4) var(--space-6) 18px; display: flex; flex-direction: column; gap: 6px; min-width: 0; }
-  .lx-kpi + .lx-kpi { border-left: 1px solid var(--border); }
-  .lx-kpi__k { font-size: 13px; line-height: 18px; color: var(--ink-muted); }
-  .lx-kpi__v { font-size: 28px; line-height: 34px; font-weight: 600; letter-spacing: -.02em; font-variant-numeric: tabular-nums; }
-  .lx-kpi__u { font-size: 15px; font-weight: 500; color: var(--ink-subtle); letter-spacing: 0; }
-  .lx-kpi__n { font-size: 12px; line-height: 16px; color: var(--ink-subtle); }
-  .lx-kpi .lx-progress { margin-top: 4px; }
-  .lx-dash { color: var(--ink-subtle); }
-  .lx-sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+  /* ---------- Signature: every SQL exercise as one cell ---------- */
+  .lx-map { display: flex; flex-direction: column; }
+  .lx-row { display: grid; grid-template-columns: 52px minmax(200px, 1fr) minmax(240px, 380px) 72px 72px 112px 32px; align-items: center; gap: 0 20px;
+    padding: 14px 20px; border-top: 1px solid var(--rule); text-decoration: none; color: var(--text); }
+  .lx-row:hover { background: var(--hover); }
+  .lx-row--head { padding-top: 0; padding-bottom: 10px; border-top: 0; color: var(--muted); font-size: 12px; line-height: 16px; }
+  .lx-row--head:hover { background: none; }
+  .lx-row--head .r { font-family: var(--font); font-size: 12px; }
+  .lx-row__k { font: 600 13px/18px var(--mono); color: var(--text-2); }
+  .lx-row__t { min-width: 0; }
+  .lx-row__t a { color: var(--text); text-decoration: none; font-weight: 600; }
+  .lx-row__t a:hover { color: var(--accent-ink); }
+  .lx-row__sub { font-size: 13px; line-height: 18px; color: var(--muted); margin-top: 3px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .lx-row .r { text-align: right; font-family: var(--mono); font-variant-numeric: tabular-nums; font-size: 13px; }
+  .lx-row .r small { color: var(--muted); font-size: 12px; }
+  .lx-cellmap { display: flex; flex-wrap: wrap; gap: 3px; }
+  .lx-cellmap a, .lx-cellmap span { display: block; width: 12px; height: 12px; border-radius: 2px; background: var(--cell); }
+  .lx-cellmap .is-pass { background: var(--accent); }
+  .lx-cellmap .is-fail { background: transparent; border: 1px solid var(--warning); }
+  .lx-cellmap a:hover { background: var(--text-2); }
+  .lx-cellmap--empty { font-size: 12px; color: var(--muted); }
+  .lx-legend { display: flex; flex-wrap: wrap; gap: 6px 16px; font-size: 13px; color: var(--muted); }
+  .lx-legend span { display: inline-flex; align-items: center; gap: 6px; }
+  .lx-legend i { width: 10px; height: 10px; border-radius: 2px; background: var(--cell); }
+  .lx-legend i.is-pass { background: var(--accent); }
+  .lx-legend i.is-fail { background: transparent; border: 1px solid var(--warning); }
 
-  /* Fifteen weeks of the course: this part's weeks tinted, exam weeks marked */
-  .lx-weeks { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 6px; padding: var(--space-4); }
-  .lx-week { display: flex; flex-direction: column; gap: 4px; min-width: 0; min-height: 64px; padding: 8px 10px; border-radius: var(--radius-md);
-    background: var(--surface-sunken); color: var(--ink-muted); font-size: 12px; line-height: 16px; }
-  .lx-week__n { font-weight: 600; color: var(--ink-muted); font-variant-numeric: tabular-nums; white-space: nowrap; }
-  .lx-week__t { overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
-  .lx-week.is-on { background: var(--accent-soft); color: var(--ink-muted); box-shadow: inset 0 -2px 0 var(--accent); }
-  .lx-week.is-on .lx-week__n { color: var(--accent); }
-  .lx-week.is-exam { background: var(--surface); box-shadow: inset 0 0 0 1px var(--ink); color: var(--ink); }
-  .lx-week.is-exam strong { font-weight: 600; }
-  .lx-progress { height: 6px; border-radius: 3px; background: var(--neutral-soft); overflow: hidden; min-width: 96px; }
-  .lx-progress > i { display: block; height: 100%; background: var(--accent); }
+  /* ---------- Fifteen weeks: this part's weeks carry the blue line ---------- */
+  .lx-weeks { display: grid; grid-template-columns: repeat(15, minmax(0, 1fr)); gap: 0; padding: 0 20px 20px; }
+  .lx-week { position: relative; display: flex; flex-direction: column; gap: 6px; min-width: 0; padding: 12px 10px 4px; border-top: 1px solid var(--control); color: var(--muted); font-size: 12px; line-height: 16px; text-decoration: none; }
+  .lx-week + .lx-week { border-left: 1px solid var(--rule); }
+  .lx-week__n { font: 600 13px/16px var(--mono); color: var(--text-2); }
+  .lx-week__t { overflow: hidden; display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical; }
+  .lx-week.is-on { color: var(--text-2); }
+  .lx-week.is-on::before { content: ""; position: absolute; left: 0; right: 0; top: -1px; height: 1px; background: var(--accent); }
+  .lx-week.is-on .lx-week__n { color: var(--text); }
+  .lx-week__exam { color: var(--warning); font-weight: 600; }
+  .lx-weeks--thin .lx-week { min-height: 56px; }
+  .lx-weeklist { list-style: none; margin: 0; padding: 0 20px 12px; }
+  .lx-weeklist li { display: grid; grid-template-columns: 80px minmax(0, 1fr) minmax(0, 1fr); gap: 16px; padding: 10px 0; border-top: 1px solid var(--rule); font-size: 13px; }
+  .lx-weeklist .n { color: var(--text-2); font-size: 12px; }
+  button.lx-week { appearance: none; background: none; border-right: 0; border-bottom: 0; text-align: left; font: inherit; cursor: pointer; }
+  button.lx-week:hover { background: var(--hover); }
+  .lx-week.is-now { background: var(--accent-bg); }
+  .lx-week.is-now::before { content: ""; position: absolute; left: 0; right: 0; top: -1px; height: 2px; background: var(--accent); }
 
-  .lx-callout { border-radius: var(--radius-lg); display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-3); padding: var(--space-3) var(--space-4); background: var(--info-soft); color: var(--ink); }
-  .lx-callout--success { background: var(--success-soft); }
-  .lx-callout--warning { background: var(--warning-soft); }
-  .lx-callout--danger { background: var(--danger-soft); }
+  .lx-callout { border-radius: var(--radius); display: flex; flex-wrap: wrap; align-items: center; gap: 12px; padding: 12px 16px; background: var(--raised); color: var(--text); font-size: 13px; }
+  .lx-callout a { color: inherit; }
+  .lx-callout--success { background: var(--accent-bg); color: #d6e6fa; }
+  .lx-callout--warning { background: var(--warning-bg); color: #f0d49c; }
+  .lx-callout--danger { background: var(--negative-bg); color: #f6b8c3; font-family: var(--mono); font-size: 12px; }
+  .lx-callout--danger strong { font-family: var(--font); }
   .lx-callout__text { flex: 1 1 320px; }
 
-  /* ---------- Flow navigation (Tóm tắt → Trắc nghiệm → Tự luận → Bài tập) ---------- */
-  .lx-flow { display: flex; align-items: center; gap: var(--space-3); padding: 0 var(--space-3) 0 var(--space-4); min-height: 48px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); }
-  .lx-flow__k { font: 500 13px/18px var(--font-sans); color: var(--ink-muted); padding-right: var(--space-4); border-right: 1px solid var(--border); white-space: nowrap; }
-  .lx-flow__arrow { border: 1px solid var(--border-strong); background: var(--surface); color: var(--ink); }
-  .lx-flow__arrow.is-off { opacity: .35; pointer-events: none; }
-  .lx-flow__arrow::after { bottom: auto; top: calc(100% + 4px); right: auto; left: 0; }
-  .lx-flow__arrow--next::after { left: auto; right: 0; }
-  .lx-flow__steps { flex: 1; display: flex; align-items: center; gap: var(--space-2); margin: 0; padding: 0; list-style: none; overflow-x: auto; scrollbar-width: none; }
-  .lx-flow__step a { border-radius: var(--radius-md); display: inline-flex; align-items: center; gap: var(--space-2); height: 32px; padding: 0 var(--space-3); color: var(--ink-muted); text-decoration: none; font-size: 13px; font-weight: 500; white-space: nowrap; }
-  .lx-flow__step a:hover { background: var(--surface-sunken); color: var(--ink); }
-  .lx-flow__step.is-active a { background: var(--surface-selected); color: var(--ink); font-weight: 600; box-shadow: inset 0 -2px 0 var(--primary); }
-  .lx-flow__n { display: inline-grid; place-items: center; width: 18px; height: 18px; border: 1px solid var(--border-strong); border-radius: 50%; font-size: 11px; line-height: 1; }
-  .lx-flow__step.is-active .lx-flow__n { background: var(--primary); border-color: var(--primary); color: var(--on-primary); }
-  .lx-flow__sep { width: 12px; height: 12px; flex: none; fill: none; stroke: var(--border-strong); stroke-width: 1.5; }
-  .lx-flow__pos { font: 500 12px/16px var(--font-mono); color: var(--ink-muted); white-space: nowrap; }
+  /* ---------- Step tabs on one rule ---------- */
+  .lx-flow { display: flex; align-items: flex-end; gap: 8px; border-bottom: 1px solid var(--border); }
+  .lx-flow__steps { flex: 1; display: flex; gap: 28px; margin: 0; padding: 0; list-style: none; overflow-x: auto; scrollbar-width: none; }
+  .lx-tab { position: relative; display: inline-flex; align-items: center; gap: 8px; height: 42px; color: var(--muted); text-decoration: none; font-size: 14px; font-weight: 500; white-space: nowrap; }
+  .lx-tab:hover { color: var(--text); }
+  .lx-tab .n { font-size: 12px; color: var(--muted); }
+  .lx-tab.is-active { color: var(--text); }
+  .lx-tab.is-active::after { content: ""; position: absolute; left: 0; right: 0; bottom: -1px; height: 1px; background: var(--accent); }
+  .lx-flow__arrows { display: flex; gap: 4px; padding-bottom: 5px; }
+  .lx-flow__arrows .lx-iconbtn::after { bottom: auto; top: calc(100% + 6px); }
 
-  /* ---------- Reading content (summaries, answers) ---------- */
-  .lx-prose { color: var(--ink); line-height: 22px; }
-  .lx-prose h3 { font-size: 15px; line-height: 22px; font-weight: 600; margin: var(--space-6) 0 var(--space-2); padding-top: var(--space-4); border-top: 1px solid var(--border); }
-  .lx-prose h3:first-child { margin-top: 0; padding-top: 0; border-top: 0; }
-  .lx-prose p { margin: var(--space-2) 0; }
-  .lx-prose ul, .lx-prose ol { padding-left: 20px; margin: var(--space-2) 0; }
-  .lx-prose li { margin: var(--space-1) 0; }
-  .lx-prose code { font: 500 12.5px/1 var(--font-mono); background: var(--surface-sunken); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 1px 4px; }
-  .lx-prose strong { font-weight: 600; }
-  .lx-prose .table-scroll { overflow-x: auto; margin: var(--space-3) 0; border: 1px solid var(--border); border-radius: var(--radius-md); }
+  /* ---------- Reading ---------- */
+  .lx-prose { color: #ececef; font-size: 14px; line-height: 23px; }
+  .lx-prose h3 { font-size: 16px; line-height: 22px; font-weight: 600; color: var(--text); margin: 28px 0 8px; }
+  .lx-prose h3:first-child { margin-top: 0; }
+  .lx-prose p { margin: 8px 0; }
+  .lx-prose ul, .lx-prose ol { padding-left: 20px; margin: 8px 0; }
+  .lx-prose li { margin: 4px 0; }
+  .lx-prose li::marker { color: var(--muted); }
+  .lx-prose a { color: var(--accent-ink); }
+  .lx-prose code, .lx-code { font: 500 12.5px/1 var(--mono); background: var(--raised); color: #f0f0f2; border-radius: var(--radius-sm); padding: 2px 5px; }
+  .lx-prose strong { font-weight: 600; color: var(--text); }
+  .lx-prose .table-scroll { overflow-x: auto; margin: 12px 0; border: 1px solid var(--border); border-radius: var(--radius); }
   .lx-prose table { width: 100%; border-collapse: collapse; font-size: 13px; }
-  .lx-prose th { text-align: left; padding: 8px var(--space-3); color: var(--ink-subtle); font: 500 12px/16px var(--font-sans); border-bottom: 1px solid var(--border); }
-  .lx-prose td { padding: 8px var(--space-3); border-bottom: 1px solid var(--border); vertical-align: top; }
+  .lx-prose th { text-align: left; padding: 8px 12px; color: var(--muted); font: 400 12px/16px var(--font); border-bottom: 1px solid var(--border); }
+  .lx-prose td { padding: 8px 12px; border-bottom: 1px solid var(--rule); vertical-align: top; }
   .lx-prose tr:last-child td { border-bottom: 0; }
-  pre.code { font: 500 12.5px/1.6 var(--font-mono); background: var(--surface-sunken); border: 1px solid var(--border); border-radius: var(--radius-md); padding: var(--space-3) var(--space-4); overflow-x: auto; margin: var(--space-3) 0; }
-  pre.code code { background: none; border: 0; padding: 0; font: inherit; }
-  details > summary { cursor: pointer; font-weight: 600; color: var(--ink); list-style: none; display: inline-flex; align-items: center; gap: var(--space-2); }
+  pre.code { font: 400 12.5px/1.65 var(--mono); background: var(--well); color: #e8e8ea; border: 1px solid var(--border); border-radius: var(--radius); padding: 14px 16px; overflow-x: auto; margin: 12px 0; }
+  pre.code code { background: none; padding: 0; font: inherit; color: inherit; }
+  details > summary { cursor: pointer; font-weight: 600; color: var(--text); list-style: none; display: inline-flex; align-items: center; gap: 8px; font-size: 13px; }
   details > summary::-webkit-details-marker { display: none; }
-  details > summary svg.i { width: 12px; height: 12px; transition: transform .15s; }
+  details > summary svg.i { width: 12px; height: 12px; color: var(--muted); transition: transform .15s ease; }
+  details > summary:hover { color: var(--accent-ink); }
   details[open] > summary svg.i { transform: rotate(90deg); }
-  details[open] > summary { margin-bottom: var(--space-2); }
-
-  /* ---------- Quiz ---------- */
-  .lx-q__opts { display: grid; gap: var(--space-2); margin-top: var(--space-3); }
-  .lx-opt { border-radius: var(--radius-md); display: flex; gap: var(--space-3); align-items: flex-start; padding: 10px var(--space-3); border: 1px solid var(--border); background: var(--surface); cursor: pointer; }
-  .lx-opt:hover { border-color: var(--border-strong); }
-  .lx-opt input { margin: 3px 0 0; accent-color: var(--primary); }
-  .lx-opt.is-right { border-color: var(--success); background: var(--success-soft); }
-  .lx-opt.is-wrong { border-color: var(--danger); background: var(--danger-soft); }
-  .lx-q__explain { margin-top: var(--space-3); color: var(--ink-muted); }
-
-  /* ---------- Editor ---------- */
-  .lx-editor { width: 100%; min-height: 180px; resize: vertical; display: block;
-    font: 500 13px/1.6 var(--font-mono); tab-size: 2; color: var(--ink); background: var(--surface);
-    border: 1px solid var(--border-strong); border-radius: var(--radius-md); padding: var(--space-3) var(--space-4); }
-  .lx-editor::placeholder { color: var(--ink-subtle); }
-  .lx-editor:focus { outline: 2px solid var(--focus); outline-offset: 2px; }
-
-  .lx-check { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; color: var(--ink-muted); cursor: pointer; }
-  .lx-check input { margin: 0; accent-color: var(--accent); width: 16px; height: 16px; }
-  .lx-en { margin: 0 0 var(--space-3); padding: var(--space-2) var(--space-3); border-left: 2px solid var(--border-strong); background: var(--surface-sunken); border-radius: 0 var(--radius-sm) var(--radius-sm) 0; color: var(--ink); }
+  details[open] > summary { margin-bottom: 8px; }
+  .lx-en { margin: 0 0 14px; padding: 12px 16px; background: var(--raised); border-radius: var(--radius); color: var(--text-2); font-size: 13px; line-height: 21px; }
+  .lx-en::before { content: "Đề gốc"; display: block; font-size: 12px; color: var(--muted); margin-bottom: 4px; }
   .lx-en p { margin: 0; }
 
-  /* ---------- FD tool ---------- */
-  .lx-fd-form { display: flex; flex-direction: column; gap: var(--space-4); }
-  .lx-fd-form label { display: flex; flex-direction: column; gap: 6px; font-weight: 600; }
-  .lx-fd-form label .lx-subtle { font-weight: 400; }
-  .lx-fd-input { min-height: 0; height: 40px; resize: none; }
-  .lx-fd-row { display: grid; gap: var(--space-4); grid-template-columns: repeat(auto-fit, minmax(min(280px, 100%), 1fr)); }
-  .lx-fd-select { height: 32px; max-width: 100%; border: 1px solid var(--border-strong); border-radius: var(--radius-md); background: var(--surface); color: var(--ink); font: inherit; padding: 0 8px; }
+  /* ---------- Quiz & essays ---------- */
+  .lx-qhead { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 16px 20px 0; }
+  .lx-qno { font: 600 13px/18px var(--mono); color: var(--text-2); }
+  .lx-q__opts { display: grid; gap: 8px; margin-top: 14px; }
+  .lx-opt { display: flex; gap: 12px; align-items: flex-start; padding: 10px 14px; border-radius: var(--radius); background: var(--ground); border: 1px solid var(--border); cursor: pointer; }
+  .lx-opt:hover { border-color: var(--control); background: var(--hover); }
+  .lx-opt input { margin: 3px 0 0; accent-color: var(--accent); }
+  .lx-opt.is-right { border-color: var(--accent); background: var(--accent-bg); }
+  .lx-opt.is-wrong { border-color: var(--negative); background: var(--negative-bg); }
+  .lx-q__explain { margin-top: 12px; color: var(--text-2); }
+  .lx-check { display: inline-flex; align-items: center; gap: 8px; font-size: 13px; color: var(--text-2); cursor: pointer; white-space: nowrap; }
+  .lx-check input { margin: 0; accent-color: var(--accent); width: 16px; height: 16px; }
 
-  /* Phone and narrow tablet: a 48px top bar, the sidebar becomes a full-screen sheet */
+  /* ---------- Exercise: list beside the console ---------- */
+  .lx-work { display: grid; grid-template-columns: 272px minmax(0, 1fr); gap: var(--gap); align-items: start; }
+  .lx-exlist { position: sticky; top: 24px; max-height: calc(100vh - 48px); display: flex; flex-direction: column; }
+  .lx-exlist ul { list-style: none; margin: 0; padding: 0 0 8px; overflow-y: auto; scrollbar-width: thin; scrollbar-color: var(--control) transparent; }
+  .lx-exlist a { position: relative; display: grid; grid-template-columns: 44px minmax(0, 1fr) 8px; align-items: center; gap: 10px; min-height: 32px; padding: 6px 16px 6px 20px; color: var(--muted); text-decoration: none; font-size: 13px; }
+  .lx-exlist a:hover { background: var(--hover); color: var(--text); }
+  .lx-exlist li[aria-selected="true"] a { color: var(--text); }
+  .lx-exlist li[aria-selected="true"] a::before { content: ""; position: absolute; left: 0; top: 8px; bottom: 8px; width: 1px; background: var(--accent); }
+  .lx-exlist .lx-list__id { font: 500 12px/18px var(--mono); color: var(--text-2); }
+  .lx-exlist .lx-list__t { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .lx-dot { width: 8px; height: 8px; border-radius: 2px; background: var(--cell); }
+  .lx-dot.is-pass { background: var(--accent); }
+  .lx-dot.is-fail { background: transparent; border: 1px solid var(--warning); }
+  .lx-exhead { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; padding: 18px 20px 14px; }
+  .lx-exhead__id { font: 600 18px/24px var(--mono); letter-spacing: -.01em; }
+  .lx-exmeta { display: flex; flex-wrap: wrap; gap: 6px; flex: 1; }
+
+  .lx-console { background: var(--well); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; }
+  .lx-console:focus-within { border-color: #3d5f8a; }
+  .lx-console__bar { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 8px 14px; border-bottom: 1px solid var(--rule); font-size: 12px; color: var(--muted); }
+  .lx-console__bar label { font: 500 12px/18px var(--mono); color: var(--text-2); }
+  .lx-console__keys { display: flex; flex-wrap: wrap; gap: 6px 14px; align-items: center; }
+  .lx-editor { width: 100%; min-height: 220px; resize: vertical; display: block; margin: 0;
+    font: 400 13.5px/1.65 var(--mono); tab-size: 2; color: #f2f2f4; caret-color: var(--accent); background: transparent;
+    border: 0; border-radius: 0; padding: 14px 16px; }
+  .lx-editor::placeholder { color: #6f7177; }
+  .lx-editor:focus { outline: none; }
+  input.lx-editor { min-height: 0; height: 40px; resize: none; }
+  .lx-field { background: var(--well); border: 1px solid var(--border); border-radius: var(--radius); }
+  .lx-field:focus-within { border-color: #3d5f8a; }
+  .lx-runbar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; padding: 14px 20px 18px; }
+  .lx-pager { display: flex; justify-content: space-between; gap: 12px; }
+
+  /* ---------- Schema & FD ---------- */
+  .lx-tables { display: grid; gap: var(--gap); grid-template-columns: repeat(auto-fill, minmax(min(300px, 100%), 1fr)); align-items: start; }
+  .lx-tables .lx-card__head { padding: 14px 16px 10px 20px; }
+  .lx-tables h3 { font: 600 14px/20px var(--mono); }
+  .lx-cols-list { list-style: none; margin: 0; padding: 0 0 12px; }
+  .lx-cols-list li { display: flex; justify-content: space-between; gap: 12px; padding: 6px 20px; font: 400 13px/18px var(--mono); }
+  .lx-cols-list li + li { border-top: 1px solid var(--rule); }
+  .lx-cols-list .is-pk { color: var(--text); font-weight: 600; text-decoration: underline; text-decoration-color: var(--accent); text-underline-offset: 3px; }
+  .lx-cols-list .lx-subtle { text-align: right; }
+  .lx-fd-form { display: flex; flex-direction: column; gap: 16px; }
+  .lx-fd-form label { display: flex; flex-direction: column; gap: 8px; font-weight: 500; font-size: 13px; }
+  .lx-fd-form label .lx-subtle { font-weight: 400; }
+  .lx-fd-row { display: grid; gap: 16px; grid-template-columns: repeat(auto-fit, minmax(min(280px, 100%), 1fr)); }
+  .lx-select { height: var(--control-height); max-width: 100%; border: 1px solid var(--control); border-radius: 999px; background: var(--surface); color: var(--text); font: inherit; padding: 0 14px; }
+
+  /* ---------- Reading columns with a side panel ---------- */
+  .lx-split { display: grid; grid-template-columns: minmax(0, 1fr) 300px; gap: var(--gap); align-items: start; }
+  .lx-aside { position: sticky; top: 24px; display: flex; flex-direction: column; gap: var(--gap); }
+  .lx-aside .lx-kpi__v { margin-bottom: 4px; }
+  .lx-aside__note { margin: 12px 0 0; font-size: 13px; color: var(--text-2); }
+  .lx-read { max-width: 860px; }
+  .lx-toc { list-style: none; margin: 0; padding: 0 8px 12px; counter-reset: toc; max-height: calc(100vh - 140px); overflow-y: auto; }
+  .lx-toc li { margin: 0; }
+  .lx-toc button { appearance: none; width: 100%; text-align: left; border: 0; background: none; color: var(--muted); font: 400 13px/18px var(--font); padding: 7px 12px; border-radius: var(--radius-sm); cursor: pointer; }
+  .lx-toc button:hover { background: var(--hover); color: var(--text); }
+  .lx-qgrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(36px, 1fr)); gap: 6px; margin-top: 16px; }
+  .lx-qcell { appearance: none; height: 32px; border-radius: var(--radius-sm); border: 1px solid var(--border); background: var(--ground); color: var(--text-2); font: 500 12px/1 var(--mono); cursor: pointer; }
+  .lx-qcell:hover { border-color: var(--control); color: var(--text); }
+  .lx-qcell.is-pass { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .lx-qcell.is-fail { border-color: var(--warning); color: var(--warning); }
+  .lx-qcell.is-picked { border-color: #6f7177; color: var(--text); background: var(--raised); }
+  .lx-howto { display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 7fr); gap: var(--gap); }
+  .lx-howto ul { margin: 0; padding-left: 18px; }
+  .lx-keys { display: grid; grid-template-columns: auto 1fr; gap: 12px 16px; margin: 0; align-items: center; }
+  .lx-keys dt { white-space: nowrap; color: var(--muted); }
+  .lx-keys dd { margin: 0; color: var(--text-2); }
+  .lx-fdgrid { display: grid; grid-template-columns: 400px minmax(0, 1fr); gap: var(--gap); align-items: start; }
+  .lx-fdin { position: sticky; top: 24px; }
+  .lx-fdin .lx-select { max-width: 100%; }
+
+  /* ---------- Tablet & phone: the sidebar folds into a 48px bar and a sheet ---------- */
+  @media (max-width: 1100px) {
+    .lx-split, .lx-fdgrid { grid-template-columns: minmax(0, 1fr); }
+    .lx-aside, .lx-fdin { position: static; }
+    .lx-work { grid-template-columns: 232px minmax(0, 1fr); }
+    .lx-row { grid-template-columns: 48px minmax(160px, 1fr) minmax(160px, 240px) 64px 96px 32px; }
+    .lx-row > .lx-row__ess { display: none; }
+    .lx-weeks { grid-template-columns: repeat(5, minmax(0, 1fr)); row-gap: 16px; }
+    .lx-week:nth-child(5n + 1) { border-left: 0; }
+  }
   @media (max-width: 900px) {
+    :root { --pad: 16px; --gap: 16px; }
     .lx-app { display: block; }
-    .lx-mbar { position: sticky; top: 0; z-index: 25; display: flex; align-items: center; gap: var(--space-2); height: 48px; padding: 0 var(--space-2);
-      background: var(--canvas); border-bottom: 1px solid var(--border); }
-    .lx-mbar .lx-brand__mark { width: 24px; height: 24px; }
+    .lx-mbar { position: sticky; top: 0; z-index: 25; display: flex; align-items: center; gap: 10px; height: 52px; padding: 0 16px 0 4px;
+      background: var(--ground); border-bottom: 1px solid var(--border); }
+    .lx-mbar .lx-brand__mark { width: 22px; height: 22px; }
     .lx-mbar__title { flex: 1; min-width: 0; font-weight: 600; font-size: 14px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-    .lx-mbar .lx-iconbtn { width: 40px; height: 40px; }
+    .lx-mbar .lx-iconbtn { width: 44px; height: 44px; color: var(--text); }
     .lx-mbar .lx-iconbtn svg.i { width: 20px; height: 20px; }
-    .lx-sidebar { display: none; position: fixed; inset: 48px 0 0; z-index: 24; height: auto; border-right: 0; padding: var(--space-4); }
+    .lx-sidebar { display: none; position: fixed; inset: 52px 0 0; z-index: 24; height: auto; border-right: 0; }
     .lx-app.is-navopen .lx-sidebar { display: flex; }
     .lx-app.is-navopen { overflow: hidden; }
     .lx-sidebar > .lx-brand { display: none; }
-    .lx-nav__item, .lx-navpart > summary, .lx-signal { min-height: 44px; font-size: 15px; }
+    .lx-nav { padding-top: 16px; }
+    .lx-nav__item, .lx-signal { min-height: 44px; font-size: 15px; }
+    .lx-nav__sub .lx-nav__item { min-height: 44px; }
     .lx-pop { width: 100%; }
-    .lx-page { padding: var(--space-4) var(--space-4) 48px; gap: var(--space-4); }
-    .lx-kpi { padding: var(--space-3); }
-    .lx-kpi__v { font-size: 22px; line-height: 28px; }
-    .lx-kpi__u { font-size: 13px; }
-    .lx-kpi__n { display: none; }
-    .lx-weeks { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-    .lx-flow__k, .lx-flow__pos { display: none; }
+    .lx-page { padding: 20px var(--pad) 56px; }
+    .lx-h1 { font-size: 22px; line-height: 28px; }
+    .lx-head .lx-actions, .lx-head .lx-btn--primary { width: 100%; }
+    .lx-kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .lx-kpi { padding: 14px 16px; }
+    .lx-kpi:nth-child(3) { border-left: 0; }
+    .lx-kpi:nth-child(n + 3) { border-top: 1px solid var(--rule); }
+    .lx-kpi--lead .lx-kpi__v { font-size: 26px; line-height: 32px; }
+    .lx-row { grid-template-columns: 40px minmax(0, 1fr) auto; grid-template-areas: "k t s" "c c c"; gap: 10px 12px; padding: 14px 16px; }
+    .lx-row--head { display: none; }
+    .lx-row__k { grid-area: k; } .lx-row__t { grid-area: t; } .lx-row .lx-cellmap { grid-area: c; } .lx-row > .lx-row__st { grid-area: s; }
+    .lx-row > .r, .lx-row > .lx-row__go { display: none; }
+    .lx-weeks { grid-template-columns: repeat(3, minmax(0, 1fr)); padding: 0 16px 16px; }
+    .lx-week:nth-child(5n + 1) { border-left: 1px solid var(--rule); }
+    .lx-week:nth-child(3n + 1) { border-left: 0; }
+    .lx-work { grid-template-columns: minmax(0, 1fr); }
+    .lx-weeklist li { grid-template-columns: 72px minmax(0, 1fr); }
+    .lx-weeklist li > :last-child { grid-column: 2; }
+    .lx-exlist { position: static; max-height: none; order: 2; }
+    .lx-exlist ul { max-height: 320px; }
+    .lx-exlist a { min-height: 44px; }
+    .lx-flow__steps { gap: 20px; }
+    .lx-flow__arrows { display: none; }
+    .lx-console__keys { display: none; }
+    .lx-runbar { padding: 12px 16px 16px; }
+    .lx-runbar > .lx-actions { width: 100%; }
+    .lx-runbar > .lx-actions:last-child .lx-btn { flex: 1; }
+    .lx-card__head, .lx-card__body { padding-left: 16px; padding-right: 16px; }
+    .lx-split, .lx-fdgrid, .lx-howto { grid-template-columns: minmax(0, 1fr); }
+    .lx-aside, .lx-fdin { position: static; }
+    .lx-toc { max-height: none; }
   }
 </style>
 </head>
@@ -331,13 +445,13 @@
 <div class="lx-app" id="app">
   <header class="lx-mbar">
     <button class="lx-iconbtn" type="button" id="menuBtn" aria-controls="sidebar" aria-expanded="false" aria-label="Mở menu"><svg class="i" viewBox="0 0 16 16" aria-hidden="true"><path d="M2.5 4.5h11M2.5 8h11M2.5 11.5h11"/></svg></button>
-    <span class="lx-brand__mark"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><ellipse cx="8" cy="3.5" rx="5" ry="2"/><path d="M3 3.5v9c0 1.1 2.2 2 5 2s5-.9 5-2v-9M3 8c0 1.1 2.2 2 5 2s5-.9 5-2"/></svg></span>
+    <span class="lx-brand__mark"><svg viewBox="0 0 28 28" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true"><ellipse cx="14" cy="6.5" rx="9" ry="3.5" fill="currentColor"/><path d="M5 6.5v15c0 1.93 4.03 3.5 9 3.5s9-1.57 9-3.5v-15"/><path d="M5 14c0 1.93 4.03 3.5 9 3.5s9-1.57 9-3.5"/></svg></span>
     <span class="lx-mbar__title" id="mobileTitle"></span>
   </header>
   <aside class="lx-sidebar" id="sidebar">
     <a class="lx-brand" href="../index.html" title="Trang tổng: các part và lịch học">
-      <span class="lx-brand__mark"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><ellipse cx="8" cy="3.5" rx="5" ry="2"/><path d="M3 3.5v9c0 1.1 2.2 2 5 2s5-.9 5-2v-9M3 8c0 1.1 2.2 2 5 2s5-.9 5-2"/></svg></span>
-      <span class="lx-brand__name">CS4420 Practice Lab<span>Database System Concepts</span></span>
+      <span class="lx-brand__mark"><svg viewBox="0 0 28 28" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true"><ellipse cx="14" cy="6.5" rx="9" ry="3.5" fill="currentColor"/><path d="M5 6.5v15c0 1.93 4.03 3.5 9 3.5s9-1.57 9-3.5v-15"/><path d="M5 14c0 1.93 4.03 3.5 9 3.5s9-1.57 9-3.5"/></svg></span>
+      <span class="lx-brand__name">Practice Lab<span>CS4420 · Database Systems</span></span>
     </a>
     <nav class="lx-nav" id="nav" aria-label="Điều hướng"></nav>
     <div class="lx-sidebar__foot">
@@ -575,6 +689,8 @@ async function runForDisplay(sql, { check = null, fresh = false, persist = false
 // ======================================================================
 // Rendering helpers
 // ======================================================================
+const num = (n, unit = '') => `<span class="n">${Number(n).toLocaleString('en-US')}</span>${unit}`;
+
 function cell(v) {
   if (v === null || v === undefined) return '<span class="lx-null">null</span>';
   if (typeof v === 'object') return esc(JSON.stringify(v));
@@ -585,10 +701,10 @@ function tableHtml(table, title, limit = 200) {
   const rows = table.rows.slice(0, limit);
   const n = table.rows.length;
   return `<div class="lx-card">
-    ${title ? `<div class="lx-card__head"><h3 class="lx-h2">${title}</h3><span class="lx-tag">${n.toLocaleString('en-US')} dòng</span></div>` : ''}
-    <div class="lx-scroll"><table class="lx-table lx-table--data"><thead><tr>${table.fields.map(f => `<th>${esc(f)}</th>`).join('')}</tr></thead>
-    <tbody>${rows.length ? rows.map(r => `<tr>${r.map(v => `<td>${cell(v)}</td>`).join('')}</tr>`).join('') : `<tr><td colspan="${table.fields.length}" class="lx-subtle">Không có dòng nào</td></tr>`}</tbody></table></div>
-    ${n > limit ? `<div class="lx-card__foot">Hiển thị ${limit} dòng đầu</div>` : ''}</div>`;
+    ${title ? `<div class="lx-card__head"><h3 class="lx-h2">${title}</h3><span class="lx-card__meta">${num(n)} dòng · ${num(table.fields.length)} cột</span></div>` : ''}
+    <div class="lx-datawrap"><table class="lx-table lx-table--data"><thead><tr>${table.fields.map(f => `<th>${esc(f)}</th>`).join('')}</tr></thead>
+    <tbody>${rows.length ? rows.map(r => `<tr>${r.map(v => `<td>${cell(v)}</td>`).join('')}</tr>`).join('') : `<tr><td colspan="${Math.max(1, table.fields.length)}" class="lx-subtle">Không có dòng nào</td></tr>`}</tbody></table></div>
+    ${n > limit ? `<div class="lx-card__foot">Hiển thị ${limit} dòng đầu trên ${num(n)} dòng</div>` : ''}</div>`;
 }
 
 function callout(kind, html) {
@@ -603,17 +719,19 @@ function resultsHtml(out) {
     if (r.fields.length) parts.push(tableHtml(r, label));
     else notes.push(`Câu lệnh ${i + 1}: OK${r.affectedRows ? `, ${r.affectedRows.toLocaleString('en-US')} dòng bị ảnh hưởng` : ''}`);
   });
-  if (notes.length) parts.unshift(`<div class="lx-card lx-card__body lx-mono lx-subtle">${notes.map(esc).join('<br>')}</div>`);
+  if (notes.length) parts.unshift(`<div class="lx-callout lx-mono">${notes.map(esc).join('<br>')}</div>`);
   if (out.error) parts.push(callout('danger', `<strong>Lỗi SQL.</strong> ${esc(out.error)}`));
   if (out.checkResult) parts.push(tableHtml(out.checkResult, 'Câu truy vấn kiểm tra của hệ thống'));
   return parts.join('');
 }
 
-function pageHead(eyebrow, title, lead, actions = '') {
-  return `<div class="lx-head"><div class="lx-head__text">${eyebrow ? `<div class="lx-eyebrow">${eyebrow}</div>` : ''}
-    <h1 class="lx-h1">${title}</h1>${lead ? `<p class="lx-lead">${lead}</p>` : ''}</div>
+// Title row: the h1, one grey line of context under it, then the lead or the finding.
+function pageHead(title, ctx, lead, actions = '') {
+  return `<div class="lx-head"><div class="lx-head__text">
+    <h1 class="lx-h1">${title}</h1>${ctx ? `<p class="lx-ctx" style="margin:6px 0 0">${ctx}</p>` : ''}${lead || ''}</div>
     ${actions ? `<div class="lx-actions">${actions}</div>` : ''}</div>`;
 }
+const leadP = html => (html ? `<p class="lx-lead">${html}</p>` : '');
 
 // ======================================================================
 // Progress
@@ -621,57 +739,75 @@ function pageHead(eyebrow, title, lead, actions = '') {
 const exStatus = id => store.get('status:' + id, null);
 function chapterProgress(ch) {
   const passed = ch.exercises.filter(ex => exStatus(ex.id) === 'pass').length;
-  const tried = ch.exercises.filter(ex => exStatus(ex.id)).length;
+  const failed = ch.exercises.filter(ex => exStatus(ex.id) === 'fail').length;
+  const tried = passed + failed;
   const essays = store.get('essay:' + ch.store, []).filter(i => i < ch.questions.length).length;
-  return { passed, tried, total: ch.exercises.length, quiz: store.get('quiz:' + ch.store, null),
+  return { passed, failed, tried, total: ch.exercises.length, quiz: store.get('quiz:' + ch.store, null),
     needQuiz: HAS_QUIZ && ch.quiz.length > 0, essays, essayTotal: ch.questions.length };
 }
+const isDone = p => p.passed === p.total && (p.quiz || !p.needQuiz) && p.essays === p.essayTotal;
 function exBadge(id) {
   const s = exStatus(id);
   if (s === 'pass') return '<span class="lx-badge lx-badge--success">Đã đúng</span>';
   if (s === 'fail') return '<span class="lx-badge lx-badge--warning">Chưa đúng</span>';
   return '<span class="lx-badge">Chưa làm</span>';
 }
+const dotClass = id => ({ pass: ' is-pass', fail: ' is-fail' })[exStatus(id)] || '';
+const STATUS_WORD = { pass: 'đã đúng', fail: 'chưa đúng' };
 function chapterBadge(p) {
-  if (p.passed === p.total && (p.quiz || !p.needQuiz) && p.essays === p.essayTotal) return '<span class="lx-badge lx-badge--success">Hoàn thành</span>';
+  if (isDone(p)) return '<span class="lx-badge lx-badge--success">Hoàn thành</span>';
   if (p.tried || p.quiz || p.essays) return '<span class="lx-badge lx-badge--info">Đang học</span>';
   return '<span class="lx-badge">Chưa bắt đầu</span>';
 }
+// Every SQL exercise of a section as one cell: blue solved, amber outline not yet right.
+function cellMap(ch) {
+  return `<div class="lx-cellmap" role="list" aria-label="Bài SQL của ${esc(ch.label)}">${ch.exercises.map(ex =>
+    `<a role="listitem" class="${dotClass(ex.id).trim()}" href="#/${ch.key}/ex/${ex.id}" title="Bài ${esc(ex.id)} · ${esc(ex.topic)}" aria-label="Bài ${esc(ex.id)}: ${STATUS_WORD[exStatus(ex.id)] || 'chưa làm'}"></a>`).join('')}</div>`;
+}
+const LEGEND = '<div class="lx-legend" aria-hidden="true"><span><i class="is-pass"></i>Đã đúng</span><span><i class="is-fail"></i>Chưa đúng</span><span><i></i>Chưa làm</span></div>';
 
 // ======================================================================
-// Sidebar: every part with its sections, then the tools
+// Sidebar: the book's parts, the exam reviews, then the tools
 // ======================================================================
 const nav = $('#nav');
 const app = $('#app');
 const menuBtn = $('#menuBtn');
+const partSlug = p => p.slug || 'part_' + p.number;
+const PART_SLUG = DATA.part.slug || decodeURIComponent(location.pathname.split('/').slice(-2)[0] || '') || partSlug(DATA.part);
+const partGroup = p => p.group || (p.review ? 'exam' : /^part_\d+$/.test(partSlug(p)) ? 'book' : 'exam');
+const partLabel = p => p.label || p.short || `Part ${p.number}`;
+const partTitle = p => String(p.title || '').replace(/^Part \d+\s*[—-]\s*/, '');
+const partKey = p => (partGroup(p) === 'book' ? `P${p.number}` : ({ midterm: 'GK', final: 'CK' })[partSlug(p)] || partLabel(p).slice(0, 3));
+const navKey = c => c.navLabel.replace(/^Chương /, 'Ch ');
+const isMine = v => v === PART_SLUG || (typeof v === 'number' && v === DATA.part.number);
 // Same part: a hash route. Another part: its own playground page.
-const partHref = (p, hash = '') => (p.number === DATA.part.number ? hash || '#/' : `../${p.slug}/playground.html${hash}`);
+const partHref = (p, hash = '') => (partSlug(p) === PART_SLUG ? hash || '#/' : `../${partSlug(p)}/playground.html${hash}`);
 
 function renderNav(path) {
-  const chMatch = path.match(/^\/([\w-]+)\/(?:summary|quiz|questions|ex)/);
-  const here = chMatch ? chMatch[1] : null;
-  const item = (href, html, on, title = '') =>
-    `<a class="lx-nav__item${on ? ' is-active' : ''}" href="${href}"${on ? ' aria-current="page"' : ''}${title ? ` title="${esc(title)}"` : ''}>${html}</a>`;
-  const parts = DATA.parts.map(p => {
-    const cur = p.number === DATA.part.number;
-    const items = [
-      item(partHref(p), '<span class="lx-nav__t">Tổng quan</span>', cur && path === '/'),
-      ...p.chapters.map(c => item(partHref(p, `#/${c.key}`),
-        `<span class="lx-nav__k">${esc(c.navLabel.replace(/^Chương /, 'Ch '))}</span><span class="lx-nav__t">${esc(c.titleVi)}</span>`,
-        cur && here === c.key, `${c.label} — ${c.titleVi}`)),
-    ];
-    return `<details class="lx-navpart${cur ? ' is-current' : ''}"${cur ? ' open' : ''}>
-      <summary><span class="lx-navpart__n">${esc(p.short)}</span><span class="lx-navpart__t">${esc(p.title.replace(/^Part \d+\s*[—-]\s*/, ''))}</span>${icon('caret')}</summary>
-      <div class="lx-navpart__items">${items.join('')}</div></details>`;
-  }).join('');
+  const here = (path.match(/^\/([\w-]+)\/(?:summary|quiz|questions|ex)/) || [])[1];
+  const item = (href, html, on, cls = '', title = '') =>
+    `<a class="lx-nav__item${cls}${on ? ' is-active' : ''}" href="${href}"${on ? ' aria-current="page"' : ''}${title ? ` title="${esc(title)}"` : ''}>${html}</a>`;
+  const navPart = p => {
+    const cur = partSlug(p) === PART_SLUG;
+    const head = item(partHref(p), `<span class="lx-nav__k">${esc(partKey(p))}</span><span class="lx-nav__t">${esc(partTitle(p))}</span>`,
+      cur && path === '/', ` is-part${cur ? ' is-current' : ''}`, `${partLabel(p)} — ${partTitle(p)}`);
+    if (!cur) return head;
+    return head + `<div class="lx-nav__sub">${DATA.chapters.map(c => {
+      const pr = chapterProgress(c);
+      return item(`#/${c.key}`, `<span class="lx-nav__k">${esc(navKey(c))}</span><span class="lx-nav__t">${esc(c.titleVi)}</span><span class="lx-nav__c">${pr.passed}/${pr.total}</span>`,
+        here === c.key, '', `${c.label} — ${c.titleVi}`);
+    }).join('')}</div>`;
+  };
+  const group = (label, list) => (list.length ? `<div class="lx-nav__group"><div class="lx-nav__label">${label}</div>${list.map(navPart).join('')}</div>` : '');
   const tools = [
     item('#/sandbox', `${icon('terminal')}<span class="lx-nav__t">SQL tự do</span>`, path === '/sandbox'),
     item('#/schema', `${icon('table')}<span class="lx-nav__t">Lược đồ cơ sở dữ liệu</span>`, path === '/schema'),
     DATA.part.fdTool ? item('#/fd', `${icon('key')}<span class="lx-nav__t">Phụ thuộc hàm (FD)</span>`, path === '/fd') : '',
     item('../index.html', `${icon('calendar')}<span class="lx-nav__t">Lịch học &amp; kế hoạch thi</span>`, false),
   ].join('');
-  nav.innerHTML = `<div class="lx-nav__group">${parts}</div>
-    <div class="lx-nav__group"><div class="lx-nav__label">Công cụ</div>${tools}</div>`;
+  nav.innerHTML = group('Theo sách', DATA.parts.filter(p => partGroup(p) === 'book')) +
+    group('Ôn thi', DATA.parts.filter(p => partGroup(p) === 'exam')) +
+    `<div class="lx-nav__group"><div class="lx-nav__label">Công cụ</div>${tools}</div>`;
 }
 
 // Phone: the sidebar is a full-screen sheet behind the menu button.
@@ -685,7 +821,7 @@ nav.addEventListener('click', e => { if (e.target.closest('a')) toggleNav(false)
 document.addEventListener('keydown', e => { if (e.key === 'Escape' && app.classList.contains('is-navopen')) { toggleNav(false); menuBtn.focus(); } });
 
 function renderContext(ch) {
-  $('#mobileTitle').textContent = ch ? `${ch.navLabel} · ${ch.titleVi}` : DATA.part.title;
+  $('#mobileTitle').textContent = ch ? `${ch.navLabel} · ${ch.titleVi}` : `${partLabel(DATA.part)} · ${partTitle(DATA.part)}`;
 }
 
 // ======================================================================
@@ -693,80 +829,97 @@ function renderContext(ch) {
 // ======================================================================
 const main = $('#main');
 
-// The course's fifteen weeks, this part's weeks marked, exam weeks named.
+// The course's fifteen weeks; this part's weeks carry the blue line, exams are named.
 function weekStrip() {
-  const mine = DATA.schedule.filter(w => w.parts.includes(DATA.part.number));
+  const mine = DATA.schedule.filter(w => w.parts.some(isMine));
+  const examOf = w => (w.exam === 'midterm' ? 'Thi giữa kỳ' : w.exam === 'final' ? 'Thi cuối kỳ' : '');
   return `<div class="lx-card">
-    <div class="lx-card__head"><h2 class="lx-h2">Lịch 15 tuần</h2><span class="lx-subtle">${esc(DATA.part.weeks || '')}${mine.length ? ` · ${mine.length} tuần dùng part này` : ''}</span></div>
-    <div class="lx-weeks" role="list">${DATA.schedule.map(w => {
-      const on = w.parts.includes(DATA.part.number);
-      const exam = w.exam === 'midterm' ? 'Thi giữa kỳ' : w.exam === 'final' ? 'Thi cuối kỳ' : '';
-      return `<div class="lx-week${on ? ' is-on' : ''}${exam ? ' is-exam' : ''}" role="listitem" title="Tuần ${w.week}: ${esc(w.content)}${w.note ? ` — ${esc(w.note)}` : ''}">
-        <span class="lx-week__n">Tuần ${w.week}</span><span class="lx-week__t">${exam ? `<strong>${exam}</strong>` : esc(w.content)}</span></div>`;
-    }).join('')}</div></div>`;
+    <div class="lx-card__head"><h2 class="lx-h2">Lịch 15 tuần</h2><span class="lx-card__meta">${esc(DATA.part.weeks || '')}${mine.length ? ` · ${mine.length} tuần dùng part này` : ''}</span></div>
+    <div class="lx-weeks lx-weeks--thin" role="list">${DATA.schedule.map(w => `<div class="lx-week${w.parts.some(isMine) ? ' is-on' : ''}" role="listitem" title="Tuần ${w.week}: ${esc(w.content)}${w.note ? ` — ${esc(w.note)}` : ''}">
+        <span class="lx-week__n">T${w.week}</span>${examOf(w) ? `<span class="lx-week__exam">${examOf(w)}</span>` : ''}</div>`).join('')}</div>
+    ${mine.length ? `<ul class="lx-weeklist">${mine.map(w => `<li><span class="n">Tuần ${w.week}</span><span>${esc(examOf(w) || w.content)}</span><span class="lx-subtle">${esc(w.note || '')}</span></li>`).join('')}</ul>`
+      : '<p class="lx-subtle" style="margin:0;padding:0 20px 20px">Part này học ngoài lịch 15 tuần.</p>'}</div>`;
 }
 
 function viewHome() {
   const progress = DATA.chapters.map(chapterProgress);
-  const passed = progress.reduce((n, p) => n + p.passed, 0);
-  const essays = progress.reduce((n, p) => n + p.essays, 0);
-  const essayTotal = progress.reduce((n, p) => n + p.essayTotal, 0);
+  const sum = k => progress.reduce((n, p) => n + p[k], 0);
+  const passed = sum('passed'), failed = sum('failed'), essays = sum('essays'), essayTotal = sum('essayTotal');
   const quizChapters = DATA.chapters.filter((ch, i) => progress[i].quiz);
-  const quizzes = quizChapters.map(ch => progress[DATA.chapters.indexOf(ch)]);
   const quizPct = quizChapters.length
-    ? (100 * quizzes.reduce((n, p) => n + p.quiz.best, 0) / quizChapters.reduce((n, ch) => n + ch.quiz.length, 0)).toFixed(1) + '%'
+    ? (100 * quizChapters.reduce((n, ch) => n + progress[DATA.chapters.indexOf(ch)].quiz.best, 0) / quizChapters.reduce((n, ch) => n + ch.quiz.length, 0)).toFixed(1)
     : null;
   // Continue where the student left off: the first section not finished yet.
-  const done = p => p.passed === p.total && (p.quiz || !p.needQuiz) && p.essays === p.essayTotal;
-  const next = DATA.chapters.find((ch, i) => !done(progress[i])) || DATA.chapters[0];
+  const nextI = progress.findIndex(p => !isDone(p));
+  const next = DATA.chapters[nextI < 0 ? 0 : nextI];
   const started = progress.some(p => p.tried || p.quiz || p.essays);
+  const doneCount = progress.filter(isDone).length;
   const pct = (a, b) => (b ? (100 * a / b).toFixed(1) : 0);
+  const unit = esc(DATA.part.unit.toLowerCase());
+  const failCh = DATA.chapters.find((ch, i) => progress[i].failed);
+  const firstFail = failCh && failCh.exercises.find(ex => exStatus(ex.id) === 'fail');
+  const find = nextI < 0
+    ? `Đã hoàn thành cả ${num(DATA.chapters.length)} ${unit}. Đọc lại phần ghi nhớ trước khi thi.`
+    : failed
+      ? `${num(failed)} bài SQL đã kiểm tra nhưng chưa đúng. Bài đầu tiên cần làm lại: <a href="#/${failCh.key}/ex/${firstFail.id}">${esc(firstFail.id)}</a>.`
+      : started
+        ? `Đã đúng ${num(passed)}/${num(TOTAL_EXERCISES)} bài SQL. Tiếp theo là ${esc(next.label)}: ${esc(next.titleVi)}.`
+        : `Chưa bắt đầu. Mở ${esc(next.label)} và làm theo thứ tự: ${stepsOf(next).map(s => s.label.toLowerCase()).join(', ')}.`;
   const third = HAS_QUIZ
-    ? `<div class="lx-kpi"><div class="lx-kpi__k">Tỉ lệ đúng trắc nghiệm</div><div class="lx-kpi__v">${quizPct || '<span class="lx-dash">–</span>'}</div>
-        <div class="lx-kpi__n">${quizPct ? `${quizzes.length}/${DATA.chapters.length} ${esc(DATA.part.unit.toLowerCase())} đã làm, tính điểm cao nhất` : 'Chưa làm phần nào'}</div></div>`
-    : `<div class="lx-kpi"><div class="lx-kpi__k">${esc(DATA.part.unit)} đã hoàn thành</div><div class="lx-kpi__v">${progress.filter(done).length}<span class="lx-kpi__u"> /${DATA.chapters.length}</span></div>
-        <div class="lx-kpi__n">Đúng hết bài SQL và đã tự chấm hết câu tự luận</div></div>`;
-  main.innerHTML = pageHead(`CS4420 › ${esc(DATA.parts.find(p => p.number === DATA.part.number).short)}`, esc(DATA.part.title), esc(DATA.part.lead),
-      `<a class="lx-btn lx-btn--primary" href="#/${next.key}">${started ? 'Tiếp tục' : 'Bắt đầu'}: ${esc(next.label)} ${icon('open')}</a>`) + `
+    ? `<div class="lx-kpi"><div class="lx-kpi__k">Trắc nghiệm đúng</div><div class="lx-kpi__v">${quizPct === null ? '<span class="lx-dash">–</span>' : `${quizPct}<span class="lx-kpi__u">%</span>`}</div>
+        <div class="lx-kpi__n">${quizPct === null ? `Chưa làm ${unit} nào` : `${quizChapters.length}/${DATA.chapters.length} ${unit} đã làm, điểm cao nhất`}</div></div>`
+    : `<div class="lx-kpi"><div class="lx-kpi__k">${esc(DATA.part.unit)} hoàn thành</div><div class="lx-kpi__v">${doneCount}<span class="lx-kpi__u"> /${DATA.chapters.length}</span></div>
+        <div class="lx-kpi__n">Đúng hết bài SQL và tự chấm hết tự luận</div></div>`;
+  main.innerHTML = pageHead(esc(partTitle(DATA.part)),
+      `${esc(partLabel(DATA.part))}${DATA.part.weeks ? ` · ${esc(DATA.part.weeks)}` : ''} · ${num(DATA.chapters.length)} ${unit} · ${num(TOTAL_EXERCISES)} bài SQL · ${num(essayTotal)} câu tự luận`,
+      `<p class="lx-find">${find}</p>`,
+      `<a class="lx-btn lx-btn--primary" href="#/${next.key}">${started ? 'Tiếp tục' : 'Bắt đầu'} ${esc(next.label)} ${icon('open')}</a>`) + `
     <div class="lx-card lx-kpis">
-      <div class="lx-kpi"><div class="lx-kpi__k">Bài tập SQL đã đúng</div><div class="lx-kpi__v">${passed}<span class="lx-kpi__u"> /${TOTAL_EXERCISES}</span></div>
-        <div class="lx-progress" aria-hidden="true"><i style="width:${pct(passed, TOTAL_EXERCISES)}%"></i></div></div>
-      <div class="lx-kpi"><div class="lx-kpi__k">Câu tự luận đã tự chấm</div><div class="lx-kpi__v">${essays}<span class="lx-kpi__u"> /${essayTotal}</span></div>
-        <div class="lx-progress" aria-hidden="true"><i style="width:${pct(essays, essayTotal)}%"></i></div></div>
+      <div class="lx-kpi lx-kpi--lead"><div class="lx-kpi__k">Bài SQL đã đúng</div><div class="lx-kpi__v">${passed}<span class="lx-kpi__u"> /${TOTAL_EXERCISES}</span></div>
+        <div class="lx-meter" role="img" aria-label="${pct(passed, TOTAL_EXERCISES)}%"><i style="width:${pct(passed, TOTAL_EXERCISES)}%"></i></div></div>
+      <div class="lx-kpi"><div class="lx-kpi__k">Bài chưa đúng</div><div class="lx-kpi__v">${failed}</div>
+        <div class="lx-kpi__n">${failed ? 'Đã kiểm tra, kết quả chưa khớp đáp án' : 'Không có bài nào đang sai'}</div></div>
+      <div class="lx-kpi"><div class="lx-kpi__k">Tự luận đã tự chấm</div><div class="lx-kpi__v">${essays}<span class="lx-kpi__u"> /${essayTotal}</span></div>
+        <div class="lx-kpi__n">Viết ra giấy, so với gợi ý, rồi đánh dấu</div></div>
       ${third}
     </div>
     <div class="lx-card">
-      <div class="lx-card__head"><h2 class="lx-h2">Nội dung</h2><span class="lx-subtle">Database System Concepts, 7th Edition</span></div>
-      <div class="lx-scroll"><table class="lx-table">
-        <thead><tr><th>${esc(DATA.part.unit)}</th><th class="r">Tự luận</th><th class="r">Bài SQL</th><th>Tiến độ SQL</th>${HAS_QUIZ ? '<th class="r">Trắc nghiệm</th>' : ''}<th>Trạng thái</th><th class="act"><span class="lx-sr">Mở</span></th></tr></thead>
-        <tbody>${DATA.chapters.map((ch, i) => {
+      <div class="lx-card__head"><h2 class="lx-h2">Bản đồ bài tập</h2>${LEGEND}</div>
+      <div class="lx-map">
+        <div class="lx-row lx-row--head" aria-hidden="true"><span></span><span>${esc(DATA.part.unit)}</span><span>Mỗi ô là một bài SQL</span><span class="r">SQL</span><span class="r lx-row__ess">Tự luận</span><span>Trạng thái</span><span></span></div>
+        ${DATA.chapters.map((ch, i) => {
           const p = progress[i];
-          return `<tr>
-            <td><a class="lx-cell__main" href="#/${ch.key}">${esc(ch.label)} · ${esc(ch.titleVi)}</a><div class="lx-cell__sub">${esc(ch.title)}${ch.source ? ` · ${esc(ch.source)}` : ''}</div></td>
-            <td class="r">${p.essays}<span class="lx-subtle"> /${p.essayTotal}</span></td>
-            <td class="r">${p.passed}<span class="lx-subtle"> /${p.total}</span></td>
-            <td><div class="lx-progress" aria-label="${p.passed} trên ${p.total} bài"><i style="width:${pct(p.passed, p.total)}%"></i></div></td>
-            ${HAS_QUIZ ? `<td class="r">${p.quiz ? `${p.quiz.best}<span class="lx-subtle"> /${ch.quiz.length}</span>` : '<span class="lx-dash">–</span>'}</td>` : ''}
-            <td>${chapterBadge(p)}</td>
-            <td class="act"><a class="lx-iconbtn" href="#/${ch.key}" data-tip="Mở ${esc(ch.label)}" aria-label="Mở ${esc(ch.label)}">${icon('open')}</a></td>
-          </tr>`;
-        }).join('')}</tbody>
-      </table></div>
+          return `<div class="lx-row">
+            <span class="lx-row__k">${esc(navKey(ch))}</span>
+            <div class="lx-row__t"><a href="#/${ch.key}">${esc(ch.titleVi)}</a><div class="lx-row__sub">${esc(ch.title)}${ch.source ? ` · ${esc(ch.source)}` : ''}${p.quiz ? ` · trắc nghiệm ${p.quiz.best}/${ch.quiz.length}` : ''}</div></div>
+            ${cellMap(ch)}
+            <span class="r">${p.passed}<small>/${p.total}</small></span>
+            <span class="r lx-row__ess">${p.essays}<small>/${p.essayTotal}</small></span>
+            <span class="lx-row__st">${chapterBadge(p)}</span>
+            <a class="lx-iconbtn lx-row__go" href="#/${ch.key}" data-tip="Mở ${esc(ch.label)}" aria-label="Mở ${esc(ch.label)}">${icon('open')}</a>
+          </div>`;
+        }).join('')}
+      </div>
     </div>
     ${weekStrip()}
     <div class="lx-card">
-      <div class="lx-card__head"><h2 class="lx-h2">Cách dùng</h2><button class="lx-btn lx-btn--ghost" id="resetProgress">${icon('reset')} Xoá tiến độ</button></div>
-      <div class="lx-card__body lx-prose"><ul>
-        <li>Mỗi ${esc(DATA.part.unit.toLowerCase())} có ${PART_STEPS.length} bước: ${PART_STEPS.map(s => s.label.toLowerCase()).join(', ')}. Dùng mũi tên trên thanh bước để chuyển bước.</li>
-        <li>Câu tự luận: viết câu trả lời ra giấy, mở gợi ý đáp án để so, rồi đánh dấu “Đã tự chấm”.</li>
-        <li>Trong bài tập: <code>Ctrl + Enter</code> để chạy, <code>Ctrl + Shift + Enter</code> để kiểm tra.</li>
-        <li>Bài tập chạy trong một transaction rồi <code>rollback</code>, nên dữ liệu gốc không đổi. Muốn thay đổi được giữ lại, dùng Công cụ › SQL tự do.</li>
-        <li>Bài gắn nhãn “Có câu kiểm tra” được chấm bằng một câu truy vấn chạy sau code của bạn; bài gắn nhãn “Database mới” được dùng <code>begin</code>, <code>commit</code>, <code>rollback</code>.</li>
-        <li>Tiến độ và code được lưu riêng cho từng part, trong trình duyệt này.</li>
-      </ul></div>
+      <div class="lx-card__head"><h2 class="lx-h2">Cách dùng</h2><button class="lx-btn lx-btn--ghost" id="resetProgress">${icon('reset')} Xoá tiến độ part này</button></div>
+      <div class="lx-card__body lx-howto">
+        <dl class="lx-keys">
+          <dt><kbd>Ctrl</kbd> + <kbd>Enter</kbd></dt><dd>Chạy câu SQL trong ô trả lời</dd>
+          <dt><kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>Enter</kbd></dt><dd>Kiểm tra với đáp án và lưu kết quả</dd>
+          <dt><kbd>Tab</kbd></dt><dd>Thụt lề hai dấu cách trong ô trả lời</dd>
+        </dl>
+        <ul class="lx-prose">
+          <li>Mỗi ${unit} có ${PART_STEPS.length} bước: ${PART_STEPS.map(s => s.label.toLowerCase()).join(', ')}.</li>
+          <li>Tự luận: viết ra giấy như trong phòng thi, mở gợi ý để so, rồi đánh dấu “Đã tự chấm”.</li>
+          <li>Bài tập chạy trong một transaction rồi <code>rollback</code>, dữ liệu gốc không đổi. Muốn giữ thay đổi, dùng SQL tự do.</li>
+          <li>Tiến độ và code được lưu riêng cho từng part, trong trình duyệt này.</li>
+        </ul>
+      </div>
     </div>`;
   $('#resetProgress').addEventListener('click', () => {
-    if (!confirm('Xoá toàn bộ tiến độ và code của part này đã lưu trong trình duyệt?')) return;
+    if (!confirm(`Xoá toàn bộ tiến độ và code của ${partLabel(DATA.part)} đã lưu trong trình duyệt?`)) return;
     try { Object.keys(localStorage).filter(k => k.startsWith(STORE_PREFIX)).forEach(k => localStorage.removeItem(k)); } catch { /* ignore */ }
     route();
   });
@@ -777,18 +930,17 @@ function flowNav(ch, stepKey) {
   const i = steps.findIndex(s => s.key === stepKey);
   const href = s => stepHref(ch, s.key);
   const prev = steps[i - 1], next = steps[i + 1];
+  const count = { quiz: ch.quiz.length, questions: ch.questions.length, ex: ch.exercises.length };
+  const arrow = (s, dir) => `<a class="lx-iconbtn${s ? '' : ' is-off'}" ${s ? `href="${href(s)}"` : 'aria-disabled="true"'} data-tip="${s ? `${dir}: ${s.label}` : (dir === 'Bước trước' ? 'Đây là bước đầu' : 'Đây là bước cuối')}" aria-label="${s ? `${dir}: ${s.label}` : dir}">${icon(dir === 'Bước trước' ? 'back' : 'open')}</a>`;
   return `<nav class="lx-flow" aria-label="Các bước học ${esc(ch.label)}">
-    <span class="lx-flow__k">${esc(ch.label)}</span>
-    <a class="lx-iconbtn lx-flow__arrow${prev ? '' : ' is-off'}" ${prev ? `href="${href(prev)}"` : 'aria-disabled="true"'} data-tip="${prev ? `Về bước trước: ${prev.label}` : 'Đây là bước đầu'}" aria-label="${prev ? `Về bước trước: ${prev.label}` : 'Đây là bước đầu'}">${icon('back')}</a>
-    <ol class="lx-flow__steps">${steps.map((s, j) => `${j ? `<svg class="lx-flow__sep" viewBox="0 0 12 12" aria-hidden="true"><path d="M4 2l4 4-4 4"/></svg>` : ''}
-      <li class="lx-flow__step${j === i ? ' is-active' : ''}"><a href="${href(s)}"${j === i ? ' aria-current="step"' : ''}><span class="lx-flow__n">${j + 1}</span>${s.label}</a></li>`).join('')}</ol>
-    <span class="lx-flow__pos">Bước ${i + 1}/${steps.length}</span>
-    <a class="lx-iconbtn lx-flow__arrow lx-flow__arrow--next${next ? '' : ' is-off'}" ${next ? `href="${href(next)}"` : 'aria-disabled="true"'} data-tip="${next ? `Sang bước sau: ${next.label}` : 'Đây là bước cuối'}" aria-label="${next ? `Sang bước sau: ${next.label}` : 'Đây là bước cuối'}">${icon('open')}</a>
+    <ol class="lx-flow__steps">${steps.map((s, j) => `<li><a class="lx-tab${j === i ? ' is-active' : ''}" href="${href(s)}"${j === i ? ' aria-current="step"' : ''}>${s.label}${count[s.key] ? `<span class="n">${count[s.key]}</span>` : ''}</a></li>`).join('')}</ol>
+    <div class="lx-flow__arrows">${arrow(prev, 'Bước trước')}${arrow(next, 'Bước sau')}</div>
   </nav>`;
 }
 
-function chapterPage(ch, step, lead, actions = '') {
-  return pageHead(`${esc(ch.label)} · ${esc(ch.title)}`, esc(ch.titleVi), lead, actions) + flowNav(ch, step);
+function chapterPage(ch, step, lead) {
+  const p = chapterProgress(ch);
+  return pageHead(esc(ch.titleVi), `${esc(ch.label)} · ${esc(ch.title)} · ${num(p.passed)}/${num(p.total)} bài SQL đúng · ${num(p.essays)}/${num(p.essayTotal)} tự luận đã chấm`, leadP(lead)) + flowNav(ch, step);
 }
 
 // Footer link to the step after `key`, or back to the first step at the end.
@@ -802,20 +954,27 @@ function nextStepFoot(ch, key) {
     : `<div class="lx-card__foot"><span>Đây là bước cuối của ${esc(ch.label)}</span><a class="lx-btn" href="${stepHref(ch, steps[0].key)}">Về ${esc(steps[0].label.toLowerCase())}</a></div>`;
 }
 
+// A side column that follows the reader: an outline, a score, a checklist.
+const split = (mainHtml, asideHtml) => `<div class="lx-split"><div class="lx-stack">${mainHtml}</div><aside class="lx-aside">${asideHtml}</aside></div>`;
+
 function viewSummary(ch) {
   const label = PART_STEPS.find(s => s.key === 'summary').label;
-  main.innerHTML = chapterPage(ch, 'summary', stepsOf(ch)[0].key === 'summary' ? 'Đọc kỹ phần này trước khi làm bài.' : 'Tra cứu nhanh kiến thức và các bẫy hay gặp. Đọc lại trước khi thi.') + `
-    <div class="lx-card"><div class="lx-card__head"><h2 class="lx-h2">${esc(label)}</h2></div>
-    <div class="lx-card__body lx-prose">${ch.summary}</div>
-    ${nextStepFoot(ch, 'summary')}</div>`;
+  main.innerHTML = chapterPage(ch, 'summary', stepsOf(ch)[0].key === 'summary' ? 'Đọc kỹ phần này trước khi làm bài.' : 'Tra cứu nhanh kiến thức và các bẫy hay gặp. Đọc lại trước khi thi.') +
+    split(`<div class="lx-card"><div class="lx-card__body lx-prose lx-read" id="summaryBody">${ch.summary}</div>${nextStepFoot(ch, 'summary')}</div>`,
+      `<div class="lx-card"><div class="lx-card__head"><h2 class="lx-h2">${esc(label)}</h2></div><ol class="lx-toc" id="toc"></ol></div>`);
+  const heads = [...main.querySelectorAll('#summaryBody h3')];
+  $('#toc').innerHTML = heads.length
+    ? heads.map((h, i) => `<li><button type="button" data-h="${i}">${esc(h.textContent)}</button></li>`).join('')
+    : '<li class="lx-subtle">Một mục duy nhất</li>';
+  $('#toc').addEventListener('click', e => { const b = e.target.closest('[data-h]'); if (b) heads[+b.dataset.h].scrollIntoView({ behavior: reduceMotion.matches ? 'auto' : 'smooth', block: 'start' }); });
 }
 
 function viewQuiz(ch) {
   const saved = store.get('quiz:' + ch.store, null);
-  main.innerHTML = chapterPage(ch, 'quiz', `${ch.quiz.length} câu, mỗi câu một đáp án đúng. ${saved ? `Điểm cao nhất của bạn: ${saved.best}/${ch.quiz.length}.` : 'Chưa làm lần nào.'}`) + `
-    <form id="quiz" class="lx-stack">${ch.quiz.map((q, i) => `
+  main.innerHTML = chapterPage(ch, 'quiz', `${ch.quiz.length} câu, mỗi câu một đáp án đúng.`) + `<form id="quiz">` +
+    split(ch.quiz.map((q, i) => `
       <fieldset class="lx-card" data-i="${i}" style="margin:0;padding:0">
-        <div class="lx-card__head"><legend class="lx-h2" style="float:left;padding:0">Câu ${i + 1}</legend><span class="lx-q__state"></span></div>
+        <div class="lx-qhead"><legend class="lx-qno" style="float:left;padding:0">Câu ${i + 1}</legend><span class="lx-q__state"></span></div>
         <div class="lx-card__body lx-prose">
           <div>${q.q}</div>
           <div class="lx-q__opts">${q.options.map((o, j) => `
@@ -823,13 +982,28 @@ function viewQuiz(ch) {
           </div>
           <div class="lx-q__explain" hidden></div>
         </div>
-      </fieldset>`).join('')}
-      <div class="lx-card"><div class="lx-card__foot" style="border-top:0">
-        <span id="score" role="status">Chọn đáp án cho từng câu rồi nộp bài.</span>
-        <div class="lx-actions"><button class="lx-btn" type="button" id="retry">${icon('reset')} Làm lại</button><button class="lx-btn lx-btn--primary" type="submit">${icon('check')} Nộp bài</button></div>
-      </div></div>
-    </form>`;
+      </fieldset>`).join(''),
+      `<div class="lx-card">
+        <div class="lx-card__head"><h2 class="lx-h2">Bài làm</h2><span class="lx-card__meta">Cao nhất ${saved ? `${num(saved.best)}/${num(ch.quiz.length)}` : '–'}</span></div>
+        <div class="lx-card__body">
+          <div class="lx-kpi__v"><span id="answered">0</span><span class="lx-kpi__u"> /${ch.quiz.length} đã chọn</span></div>
+          <div class="lx-meter" aria-hidden="true"><i id="answeredBar" style="width:0"></i></div>
+          <div class="lx-qgrid" id="quizGrid">${ch.quiz.map((q, i) => `<button type="button" class="lx-qcell" data-go="${i}" aria-label="Câu ${i + 1}">${i + 1}</button>`).join('')}</div>
+          <p id="score" role="status" class="lx-aside__note">Chọn đáp án cho từng câu rồi nộp bài.</p>
+        </div>
+        <div class="lx-card__foot"><button class="lx-btn" type="button" id="retry">${icon('reset')} Làm lại</button><button class="lx-btn lx-btn--primary" type="submit">${icon('check')} Nộp bài</button></div>
+      </div>`) + `</form>`;
   const form = $('#quiz');
+  form.addEventListener('change', () => {
+    const n = form.querySelectorAll('input[type=radio]:checked').length;
+    $('#answered').textContent = n;
+    $('#answeredBar').style.width = `${(100 * n / ch.quiz.length).toFixed(1)}%`;
+    ch.quiz.forEach((q, i) => $(`#quizGrid [data-go="${i}"]`).classList.toggle('is-picked', !!form.querySelector(`input[name="q${i}"]:checked`)));
+  });
+  $('#quizGrid').addEventListener('click', e => {
+    const b = e.target.closest('[data-go]');
+    if (b) form.querySelector(`[data-i="${b.dataset.go}"]`).scrollIntoView({ behavior: reduceMotion.matches ? 'auto' : 'smooth', block: 'start' });
+  });
   form.addEventListener('submit', e => {
     e.preventDefault();
     let score = 0;
@@ -842,6 +1016,9 @@ function viewQuiz(ch) {
         l.classList.toggle('is-wrong', !!picked && Number(picked.value) === j && j !== q.answer);
       });
       if (ok) score++;
+      const qc = $(`#quizGrid [data-go="${i}"]`);
+      qc.classList.remove('is-picked'); qc.classList.toggle('is-pass', !!ok); qc.classList.toggle('is-fail', !ok);
+      qc.setAttribute('aria-label', `Câu ${i + 1}: ${ok ? 'đúng' : picked ? 'sai' : 'bỏ trống'}`);
       box.querySelector('.lx-q__state').innerHTML = ok
         ? '<span class="lx-badge lx-badge--success">Đúng</span>'
         : picked ? '<span class="lx-badge lx-badge--danger">Sai</span>' : '<span class="lx-badge">Bỏ trống</span>';
@@ -851,7 +1028,7 @@ function viewQuiz(ch) {
     });
     const best = Math.max(score, saved?.best ?? 0);
     store.set('quiz:' + ch.store, { best, last: score });
-    $('#score').innerHTML = `Kết quả: <strong>${score}/${ch.quiz.length}</strong> (${(100 * score / ch.quiz.length).toFixed(1)}%). Điểm cao nhất: ${best}/${ch.quiz.length}.`;
+    $('#score').innerHTML = `Kết quả: <strong class="n">${score}/${ch.quiz.length}</strong> (${(100 * score / ch.quiz.length).toFixed(1)}%). Điểm cao nhất: <span class="n">${best}/${ch.quiz.length}</span>.`;
     renderContext(ch);
   });
   $('#retry').addEventListener('click', () => viewQuiz(ch));
@@ -860,19 +1037,34 @@ function viewQuiz(ch) {
 function viewQuestions(ch) {
   const key = 'essay:' + ch.store;
   const done = new Set(store.get(key, []));
-  main.innerHTML = chapterPage(ch, 'questions', 'Viết câu trả lời ra giấy như trong phòng thi, sau đó mở gợi ý đáp án để so và đánh dấu đã tự chấm.') +
-    `<div class="lx-stack">${ch.questions.map((q, i) => `<div class="lx-card">
-      <div class="lx-card__head"><h2 class="lx-h2">Câu ${i + 1}</h2>
+  main.innerHTML = chapterPage(ch, 'questions', 'Viết câu trả lời ra giấy như trong phòng thi, rồi mở gợi ý đáp án để so và đánh dấu đã tự chấm.') +
+    split(ch.questions.map((q, i) => `<div class="lx-card" id="essay-${i}">
+      <div class="lx-qhead"><h2 class="lx-qno">Câu ${i + 1}</h2>
         <label class="lx-check"><input type="checkbox" data-essay="${i}"${done.has(i) ? ' checked' : ''}> Đã tự chấm</label></div>
-      <div class="lx-card__body lx-prose">${q.en ? `<blockquote class="lx-en lx-prose" lang="en">${q.en}</blockquote>` : ''}<p style="margin-top:0">${q.q}</p>
-      <details><summary>${icon('caret')} Gợi ý đáp án</summary>${q.answer}</details></div></div>`).join('')}
-      <div class="lx-card">${nextStepFoot(ch, 'questions')}</div></div>`;
+      <div class="lx-card__body lx-prose">${q.en ? `<blockquote class="lx-en" lang="en">${q.en}</blockquote>` : ''}<p style="margin-top:0">${q.q}</p>
+      <details><summary>${icon('caret')} Gợi ý đáp án</summary>${q.answer}</details></div></div>`).join('') +
+      `<div class="lx-card">${nextStepFoot(ch, 'questions')}</div>`,
+      `<div class="lx-card">
+        <div class="lx-card__head"><h2 class="lx-h2">Tự chấm</h2><span class="lx-card__meta"><span id="essayN">${done.size}</span>/${ch.questions.length}</span></div>
+        <div class="lx-card__body"><div class="lx-meter" aria-hidden="true"><i id="essayBar" style="width:${(100 * done.size / ch.questions.length).toFixed(1)}%"></i></div>
+          <div class="lx-qgrid" id="essayGrid">${ch.questions.map((q, i) => `<button type="button" class="lx-qcell${done.has(i) ? ' is-pass' : ''}" data-go="${i}" aria-label="Câu ${i + 1}${done.has(i) ? ': đã tự chấm' : ''}">${i + 1}</button>`).join('')}</div>
+        </div>
+      </div>`);
   main.querySelectorAll('[data-essay]').forEach(box => box.addEventListener('change', () => {
     const set = new Set(store.get(key, []));
     if (box.checked) set.add(+box.dataset.essay); else set.delete(+box.dataset.essay);
     store.set(key, [...set].sort((a, b) => a - b));
+    $(`[data-go="${box.dataset.essay}"]`).classList.toggle('is-pass', box.checked);
+    $('#essayN').textContent = set.size;
+    $('#essayBar').style.width = `${(100 * set.size / ch.questions.length).toFixed(1)}%`;
   }));
+  $('#essayGrid').addEventListener('click', e => {
+    const b = e.target.closest('[data-go]');
+    if (b) $(`#essay-${b.dataset.go}`).scrollIntoView({ behavior: reduceMotion.matches ? 'auto' : 'smooth', block: 'start' });
+  });
 }
+
+const KEYS = '<span class="lx-console__keys"><span><kbd>Ctrl</kbd> + <kbd>Enter</kbd> chạy</span><span><kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>Enter</kbd> kiểm tra</span></span>';
 
 function viewExercise(ch, id) {
   const ex = EXERCISES.get(id) && EXERCISES.get(id).chapter === ch.key ? EXERCISES.get(id) : EXERCISES.get(ch.exercises[0].id);
@@ -881,13 +1073,20 @@ function viewExercise(ch, id) {
   const code = store.get('code:' + ex.id, '');
   const p = chapterProgress(ch);
 
-  main.innerHTML = chapterPage(ch, 'ex', 'Viết câu SQL, chạy để xem kết quả, rồi kiểm tra với đáp án.') + `
-    <div class="lx-cols">
-      <section class="lx-main lx-stack">
+  main.innerHTML = chapterPage(ch, 'ex', '') + `
+    <div class="lx-work">
+      <aside class="lx-card lx-exlist" aria-label="Danh sách bài tập">
+        <div class="lx-card__head"><h2 class="lx-h2">Bài tập</h2><span class="lx-card__meta" id="exCount">${num(p.passed)}/${num(p.total)} đúng</span></div>
+        <ul id="exList">${ch.exercises.map(e => `
+          <li${e.id === ex.id ? ' aria-selected="true"' : ''} data-id="${e.id}"><a href="#/${ch.key}/ex/${e.id}"${e.id === ex.id ? ' aria-current="true"' : ''}>
+            <span class="lx-list__id">${e.id}</span><span class="lx-list__t">${esc(e.topic)}</span><span class="lx-dot${dotClass(e.id)}" aria-label="${STATUS_WORD[exStatus(e.id)] || 'chưa làm'}"></span></a></li>`).join('')}
+        </ul>
+      </aside>
+      <section class="lx-stack">
         <div class="lx-card">
-          <div class="lx-card__head">
-            <div class="lx-actions">
-              <h2 class="lx-h2 lx-mono" style="font-size:15px">Bài ${ex.id}</h2>
+          <div class="lx-exhead">
+            <h2 class="lx-exhead__id">Bài ${ex.id}</h2>
+            <div class="lx-exmeta">
               <span class="lx-tag">${esc(ex.topic)}</span>
               <span class="lx-tag">${LEVELS[ex.level]}</span>
               ${ex.check ? '<span class="lx-tag" title="Chấm bằng một câu truy vấn chạy sau code của bạn">Có câu kiểm tra</span>' : ''}
@@ -896,16 +1095,16 @@ function viewExercise(ch, id) {
             </div>
             <span id="exState">${exBadge(ex.id)}</span>
           </div>
-          <div class="lx-card__body lx-stack">
-            ${ex.en ? `<blockquote class="lx-en lx-prose" lang="en">${ex.en}</blockquote>` : ''}
+          <div class="lx-card__body lx-stack" style="padding-top:0">
+            ${ex.en ? `<blockquote class="lx-en" lang="en">${ex.en}</blockquote>` : ''}
             <div class="lx-prose">${ex.prompt}</div>
             ${ex.hint ? `<details><summary>${icon('caret')} Gợi ý</summary><div class="lx-prose">${ex.hint}</div></details>` : ''}
-            <div>
-              <label for="editor" class="lx-eyebrow" style="display:block">Câu trả lời</label>
+            <div class="lx-console">
+              <div class="lx-console__bar"><label for="editor">Câu trả lời</label>${KEYS}</div>
               <textarea class="lx-editor" id="editor" spellcheck="false" placeholder="-- Viết câu SQL của bạn ở đây">${esc(code)}</textarea>
             </div>
           </div>
-          <div class="lx-card__foot">
+          <div class="lx-runbar">
             <div class="lx-actions">
               <button class="lx-btn lx-btn--ghost" id="showExpected">${icon('table')} Kết quả mong đợi</button>
               <button class="lx-btn lx-btn--ghost" id="showSolution">${icon('eye')} Xem đáp án</button>
@@ -918,19 +1117,11 @@ function viewExercise(ch, id) {
         </div>
         <div id="feedback"></div>
         <div id="output" class="lx-stack"></div>
-        <div class="lx-actions">
-          ${prev ? `<a class="lx-btn" href="#/${ch.key}/ex/${prev.id}">${icon('back')} Bài ${prev.id}</a>` : ''}
-          <span class="lx-spacer"></span>
-          ${next ? `<a class="lx-btn" href="#/${ch.key}/ex/${next.id}">Bài ${next.id} ${icon('open')}</a>` : ''}
+        <div class="lx-pager">
+          ${prev ? `<a class="lx-btn" href="#/${ch.key}/ex/${prev.id}">${icon('back')} Bài ${prev.id}</a>` : '<span></span>'}
+          ${next ? `<a class="lx-btn" href="#/${ch.key}/ex/${next.id}">Bài ${next.id} ${icon('open')}</a>` : `<a class="lx-btn" href="${stepHref(ch, stepsOf(ch)[0].key)}">Về đầu ${esc(ch.label)}</a>`}
         </div>
       </section>
-      <aside class="lx-side lx-card" aria-label="Danh sách bài tập">
-        <div class="lx-card__head"><h2 class="lx-h2">Bài tập · ${esc(ch.label)}</h2><span class="lx-tag" id="exCount">${p.passed}/${p.total} đã đúng</span></div>
-        <ul class="lx-list lx-list--scroll" id="exList">${ch.exercises.map(e => `
-          <li${e.id === ex.id ? ' aria-selected="true"' : ''} data-id="${e.id}"><a href="#/${ch.key}/ex/${e.id}"${e.id === ex.id ? ' aria-current="true"' : ''}>
-            <span class="lx-list__id">${e.id}</span><span class="lx-list__t">${esc(e.topic)}</span>${exBadge(e.id)}</a></li>`).join('')}
-        </ul>
-      </aside>
     </div>`;
 
   $('#exList [aria-selected="true"]')?.scrollIntoView({ block: 'nearest' });
@@ -969,10 +1160,11 @@ function viewExercise(ch, id) {
         : callout('warning', `<strong>Chưa đúng.</strong> ${esc(res.reason)}`);
       output.innerHTML = res.actual ? tableHtml(res.actual, ex.check ? 'Câu kiểm tra với code của bạn (đã chuẩn hoá)' : 'Kết quả của bạn (đã chuẩn hoá)') : '';
       $('#exState').innerHTML = exBadge(ex.id);
-      const li = $(`#exList [data-id="${ex.id}"] .lx-badge`);
-      if (li) li.outerHTML = exBadge(ex.id);
+      const dot = $(`#exList [data-id="${ex.id}"] .lx-dot`);
+      if (dot) { dot.className = 'lx-dot' + dotClass(ex.id); dot.setAttribute('aria-label', STATUS_WORD[exStatus(ex.id)]); }
       const np = chapterProgress(ch);
-      $('#exCount').textContent = `${np.passed}/${np.total} đã đúng`;
+      $('#exCount').innerHTML = `${num(np.passed)}/${num(np.total)} đúng`;
+      renderNav(location.hash.slice(1).split('?')[0]);
       renderContext(ch);
     } catch (e) {
       feedback.innerHTML = callout('danger', esc(e.message));
@@ -989,7 +1181,7 @@ function viewExercise(ch, id) {
   $('#showSolution').addEventListener('click', () => {
     feedback.innerHTML = '';
     output.innerHTML = `<div class="lx-card"><div class="lx-card__head"><h3 class="lx-h2">Đáp án tham khảo</h3>
-        <button class="lx-iconbtn" id="useSolution" data-tip="Chép đáp án vào ô trả lời" aria-label="Chép đáp án vào ô trả lời">${icon('copy')}</button></div>
+        <button class="lx-btn lx-btn--ghost" id="useSolution">${icon('copy')} Chép vào ô trả lời</button></div>
       <div class="lx-card__body"><pre class="code" style="margin:0"><code>${esc(ex.solution)}</code></pre></div>
       <div class="lx-card__foot">Có thể có nhiều cách viết đúng khác.</div></div>`;
     $('#useSolution').addEventListener('click', () => { editor.value = ex.solution; store.set('code:' + ex.id, editor.value); editor.focus(); });
@@ -998,15 +1190,16 @@ function viewExercise(ch, id) {
 
 function viewSandbox(initial) {
   const code = initial ?? store.get('sandbox', 'select * from instructor;');
-  main.innerHTML = pageHead('Công cụ', 'SQL tự do',
-    'Thay đổi ở đây được giữ lại trên database dùng chung cho tới khi tải lại trang hoặc nạp lại dữ liệu gốc. Thử tạo bảng, view, function, transaction tuỳ ý.',
+  main.innerHTML = pageHead('SQL tự do', `Công cụ · ${CORE_COUNT ? `University database, ${num(TABLE_COUNT)} bảng` : `${num(TABLE_COUNT)} bảng`} · thay đổi được giữ tới khi tải lại trang`,
+    leadP('Thử tạo bảng, view, function, transaction tuỳ ý. Bấm “Nạp lại dữ liệu gốc” để quay về dữ liệu ban đầu.'),
     `<button class="lx-btn" id="reset">${icon('reset')} Nạp lại dữ liệu gốc</button>`) + `
     <div class="lx-card">
-      <div class="lx-card__body"><label for="editor" class="lx-eyebrow" style="display:block">Câu lệnh SQL</label>
-        <textarea class="lx-editor" id="editor" spellcheck="false" style="min-height:220px">${esc(code)}</textarea></div>
-      <div class="lx-card__foot">
-        <button class="lx-btn lx-btn--ghost" id="tables">${icon('table')} Liệt kê bảng</button>
-        <button class="lx-btn lx-btn--primary" id="run" title="Ctrl + Enter">${icon('play')} Chạy</button>
+      <div class="lx-card__body" style="padding-bottom:0"><div class="lx-console">
+        <div class="lx-console__bar"><label for="editor">Câu lệnh SQL</label><span class="lx-console__keys"><span><kbd>Ctrl</kbd> + <kbd>Enter</kbd> chạy</span></span></div>
+        <textarea class="lx-editor" id="editor" spellcheck="false" style="min-height:260px">${esc(code)}</textarea></div></div>
+      <div class="lx-runbar">
+        <div class="lx-actions"><button class="lx-btn lx-btn--ghost" id="tables">${icon('table')} Liệt kê bảng</button></div>
+        <div class="lx-actions"><button class="lx-btn lx-btn--primary" id="run" title="Ctrl + Enter">${icon('play')} Chạy</button></div>
       </div>
     </div>
     <div id="feedback"></div>
@@ -1024,24 +1217,23 @@ function viewSandbox(initial) {
   $('#tables').addEventListener('click', () => run(`select table_name, table_type from information_schema.tables where table_schema = 'public' order by table_type, table_name;`));
   $('#reset').addEventListener('click', async () => {
     await serial(resetShared);
-    feedback.innerHTML = callout('success', 'Đã nạp lại University database.');
+    feedback.innerHTML = callout('success', 'Đã nạp lại dữ liệu gốc.');
     output.innerHTML = '';
   });
   if (initial) run(initial);
 }
 
 function viewSchema() {
-  const section = tables => `<div class="lx-grid" style="grid-template-columns:repeat(auto-fill,minmax(min(300px,100%),1fr))">${
+  const section = tables => `<div class="lx-tables">${
     tables.map(t => `<div class="lx-card">
-      <div class="lx-card__head"><h3 class="lx-h2 lx-mono" style="font-size:14px">${t.table}</h3>
-        <a class="lx-iconbtn" href="#/sandbox?table=${t.table}" data-tip="Xem dữ liệu bảng ${t.table}" aria-label="Xem dữ liệu bảng ${t.table}">${icon('open')}</a></div>
-      <div class="lx-scroll"><table class="lx-table"><thead><tr><th>Cột</th><th>Kiểu</th><th></th></tr></thead><tbody>${t.columns.map(c => `
-        <tr><td class="lx-mono"${c.pk ? ' style="font-weight:700;text-decoration:underline"' : ''}>${esc(c.column)}</td><td class="lx-subtle">${esc(c.type)}</td>
-        <td class="r">${c.pk ? '<span class="lx-tag">Primary key</span>' : ''}</td></tr>`).join('')}</tbody></table></div>
+      <div class="lx-card__head"><h3>${t.table}</h3>
+        <a class="lx-iconbtn" href="#/sandbox?table=${t.table}" data-tip="Xem dữ liệu ${t.table}" aria-label="Xem dữ liệu bảng ${t.table}">${icon('open')}</a></div>
+      <ul class="lx-cols-list">${t.columns.map(c => `
+        <li><span${c.pk ? ' class="is-pk"' : ''}>${esc(c.column)}</span><span class="lx-subtle">${esc(c.type)}</span></li>`).join('')}</ul>
     </div>`).join('')}</div>`;
-  main.innerHTML = pageHead('Công cụ', 'Lược đồ cơ sở dữ liệu',
-    'Thuộc tính gạch chân là primary key. Hàm tiện ích: <code class="lx-mono">try_sql(text)</code> trả về ok hoặc mã SQLSTATE của lỗi; <code class="lx-mono">sql_value(text)</code> trả về giá trị đầu tiên của một truy vấn.') +
-    DATA.schemaGroups.map(g => `<div class="lx-stack"><h2 class="lx-h2">${esc(g.title)}</h2>${g.note ? `<p class="lx-subtle" style="margin:0">${g.note}</p>` : ''}${section(g.tables)}</div>`).join('');
+  main.innerHTML = pageHead('Lược đồ cơ sở dữ liệu', `Công cụ · ${num(TABLE_COUNT)} bảng trong ${num(DATA.schemaGroups.length)} nhóm`,
+    leadP('Cột gạch chân là primary key. Hàm tiện ích: <code class="lx-code">try_sql(text)</code> trả về ok hoặc mã SQLSTATE của lỗi; <code class="lx-code">sql_value(text)</code> trả về giá trị đầu tiên của một truy vấn.')) +
+    DATA.schemaGroups.map(g => `<section class="lx-stack"><h2 class="lx-section"><b>${esc(g.title)}</b> · ${num(g.tables.length)} bảng</h2>${g.note ? `<p class="lx-subtle" style="margin:0">${g.note}</p>` : ''}${section(g.tables)}</section>`).join('');
 }
 
 // ======================================================================
@@ -1128,22 +1320,21 @@ function viewFd(params) {
   const saved = store.get('fd:input', null);
   const preset = FD_PRESETS[Number(params.get('preset'))];
   const input = preset || saved || FD_PRESETS[0];
-  main.innerHTML = pageHead('Công cụ', 'Phụ thuộc hàm (FD)',
-    'Tự kiểm tra bài tập Chương 7: bao đóng thuộc tính, candidate key, canonical cover, kiểm tra BCNF/3NF, phân rã BCNF và 3NF, lossless và bảo toàn phụ thuộc. Hãy làm tay trước, rồi dùng công cụ để đối chiếu từng bước.') + `
-    <div class="lx-card"><div class="lx-card__head"><h2 class="lx-h2">Đầu vào</h2>
-      <select class="lx-fd-select" id="fdPreset" aria-label="Ví dụ có sẵn"><option value="">Ví dụ có sẵn…</option>${FD_PRESETS.map((p, i) => `<option value="${i}">${esc(p.name)}</option>`).join('')}</select></div>
+  main.innerHTML = pageHead('Phụ thuộc hàm (FD)', `Công cụ · Chương 7 · ${num(FD_PRESETS.length)} ví dụ có sẵn`,
+    leadP('Bao đóng thuộc tính, candidate key, canonical cover, kiểm tra BCNF/3NF, phân rã BCNF và 3NF, lossless và bảo toàn phụ thuộc. Hãy làm tay trước, rồi dùng công cụ để đối chiếu từng bước.')) + `
+    <div class="lx-fdgrid">
+    <div class="lx-card lx-fdin"><div class="lx-card__head"><h2 class="lx-h2">Đầu vào</h2>
+      <select class="lx-select" id="fdPreset" aria-label="Ví dụ có sẵn"><option value="">Ví dụ có sẵn…</option>${FD_PRESETS.map((p, i) => `<option value="${i}">${esc(p.name)}</option>`).join('')}</select></div>
       <div class="lx-card__body lx-fd-form">
-        <label>Lược đồ R <span class="lx-subtle">— viết liền nếu mỗi thuộc tính là một chữ cái (ABCDE), hoặc phân cách bằng dấu phẩy</span>
-          <input class="lx-editor lx-fd-input" id="fdR" spellcheck="false" value="${esc(input.R)}"></label>
-        <label>Tập phụ thuộc hàm F <span class="lx-subtle">— mỗi dòng một FD, dạng <code>A -> BC</code> hoặc <code>ID, x -> name</code></span>
-          <textarea class="lx-editor" id="fdF" spellcheck="false" style="min-height:120px">${esc(input.F)}</textarea></label>
-        <div class="lx-fd-row">
-          <label>Tính bao đóng của α <span class="lx-subtle">(tuỳ chọn)</span><input class="lx-editor lx-fd-input" id="fdAlpha" spellcheck="false" value="${esc(input.alpha || '')}"></label>
-          <label>Kiểm tra một phân rã <span class="lx-subtle">(tuỳ chọn, mỗi dòng một lược đồ)</span><textarea class="lx-editor" id="fdDecomp" spellcheck="false" style="min-height:64px">${esc(input.decomp || '')}</textarea></label>
-        </div>
+        <label>Lược đồ R <span class="lx-subtle">Viết liền nếu mỗi thuộc tính là một chữ cái (ABCDE), hoặc phân cách bằng dấu phẩy</span>
+          <span class="lx-field"><input class="lx-editor" id="fdR" spellcheck="false" value="${esc(input.R)}"></span></label>
+        <label>Tập phụ thuộc hàm F <span class="lx-subtle">Mỗi dòng một FD, dạng <code class="lx-code">A -> BC</code> hoặc <code class="lx-code">ID, x -> name</code></span>
+          <span class="lx-field"><textarea class="lx-editor" id="fdF" spellcheck="false" style="min-height:132px">${esc(input.F)}</textarea></span></label>
+        <label>Tính bao đóng của α <span class="lx-subtle">Tuỳ chọn</span><span class="lx-field"><input class="lx-editor" id="fdAlpha" spellcheck="false" value="${esc(input.alpha || '')}"></span></label>
+        <label>Kiểm tra một phân rã <span class="lx-subtle">Tuỳ chọn, mỗi dòng một lược đồ</span><span class="lx-field"><textarea class="lx-editor" id="fdDecomp" spellcheck="false" style="min-height:76px">${esc(input.decomp || '')}</textarea></span></label>
       </div>
-      <div class="lx-card__foot"><span class="lx-subtle">Kết quả cập nhật khi bạn gõ</span><button class="lx-btn lx-btn--primary" id="fdRun" type="button">${icon('play')} Phân tích</button></div></div>
-    <div class="lx-stack" id="fdOut" aria-live="polite"></div>`;
+      <div class="lx-card__foot"><span>Kết quả cập nhật khi bạn gõ</span><button class="lx-btn lx-btn--primary" id="fdRun" type="button">${icon('play')} Phân tích</button></div></div>
+    <div class="lx-stack" id="fdOut" aria-live="polite"></div></div>`;
   const read = () => ({ R: $('#fdR').value, F: $('#fdF').value, alpha: $('#fdAlpha').value, decomp: $('#fdDecomp').value });
   const render = () => {
     const value = read();
@@ -1209,9 +1400,6 @@ function route() {
     viewHome();
   }
   window.scrollTo(0, 0);
-  main.classList.remove('is-entering');
-  void main.offsetWidth; // restart the entrance animation
-  main.classList.add('is-entering');
 }
 window.addEventListener('hashchange', route);
 route();

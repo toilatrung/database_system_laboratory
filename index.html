@@ -6,408 +6,573 @@
 <meta name="robots" content="noindex">
 <title>CS4420 Practice Lab</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500&display=swap">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap">
 <style>
-  /* ---------- LabelX design tokens (light) ---------- */
+  /* ======================================================================
+     CS4420 Practice Lab — "data terminal": a dark console read in long sessions.
+     Cards sit darker than the ground; every selection is one 1px PostgreSQL-blue
+     line as wide as its label; every figure, ID and query is set in JetBrains Mono.
+     Grid: 248px sidebar + fluid canvas, 40px side padding, one 24px gap everywhere.
+     ====================================================================== */
   :root {
-    --canvas: #f7f7f8;
-    --surface: #ffffff;
-    --surface-sunken: #f3f4f6;
-    --surface-selected: #eef0f3;
-    --hover: rgba(17,24,39,.045);
-    --selected: #e8e9ec;
-    --accent: #9d2235;
-    --accent-soft: #f7ebed;
-    --border: #e3e6ea;
-    --border-strong: #8c93a0;
-    --ink: #1a1d23;
-    --ink-muted: #4b5262;
-    --ink-subtle: #5f6570;
-    --primary: #1f2933;
-    --primary-hover: #38424f;
-    --on-primary: #ffffff;
-    --focus: #1f2933;
-    --success: #146c43;
-    --success-soft: #e6f4ec;
-    --warning: #8a5300;
-    --warning-soft: #fdf2d8;
-    --danger: #b42318;
-    --danger-soft: #fdecea;
-    --info: #1d5ea8;
-    --info-soft: #e7effa;
-    --neutral: #475061;
-    --neutral-soft: #eceef2;
-    --font-sans: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
-    --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Consolas, monospace;
-    --space-1: 4px; --space-2: 8px; --space-3: 12px; --space-4: 16px; --space-6: 24px; --space-8: 32px;
-    --radius-sm: 4px; --radius-md: 6px; --radius-lg: 8px; --radius-full: 999px;
-    --shadow-menu: 0 8px 24px rgba(17,24,39,0.12);
-    --sidebar-width: 264px; --control-height: 32px;
-    color-scheme: light;
+    --ground: #171719;
+    --surface: #131217;
+    --raised: #212023;
+    --well: #0d0d10;
+    --hover: #1d1c21;
+    --border: #262529;
+    --rule: #1f1e23;
+    --control: #3a3a3e;
+    --text: #ffffff;
+    --text-2: #cfcfd3;
+    --muted: #8f9197;
+    --accent: #4a8ad6;
+    --accent-ink: #8bb6ea;
+    --accent-bg: #16202e;
+    --positive: #44a282;
+    --negative: #e5566f;
+    --negative-bg: #2c1a20;
+    --warning: #d9a441;
+    --warning-bg: #2a2416;
+    --cell: #2c2b31;
+    --shadow: 0 12px 28px rgba(0,0,0,.2);
+    --shadow-menu: 0 16px 40px rgba(0,0,0,.45);
+    --font: "Public Sans", Inter, system-ui, -apple-system, "Segoe UI", sans-serif;
+    --mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Consolas, monospace;
+    --radius: 6px; --radius-sm: 4px;
+    --gap: 24px; --pad: 40px;
+    --sidebar: 248px; --control-height: 34px;
+    color-scheme: dark;
   }
 
   * { box-sizing: border-box; }
   html, body { margin: 0; }
-  body { background: var(--canvas); color: var(--ink); font: 400 14px/20px var(--font-sans); -webkit-font-smoothing: antialiased; }
-  :focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
-  a { color: var(--ink); }
+  body { background: var(--ground); color: var(--text); font: 400 13px/20px var(--font); -webkit-font-smoothing: antialiased; }
+  ::selection { background: #2b4f7c; color: #fff; }
+  :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  a { color: var(--text); }
+  h1, h2, h3 { margin: 0; }
+  .n, .lx-mono { font-family: var(--mono); font-variant-numeric: tabular-nums; }
+  .lx-mono { font-size: 12px; font-weight: 500; }
+  .lx-subtle, .lx-dash { color: var(--muted); }
+  .lx-sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
   svg.i { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; flex: none; }
 
-  /* ---------- App shell: sidebar on the page ground, content beside it ---------- */
-  .lx-app { display: grid; grid-template-columns: var(--sidebar-width) minmax(0, 1fr); min-height: 100vh; }
-  .lx-sidebar { position: sticky; top: 0; height: 100vh; display: flex; flex-direction: column; gap: var(--space-4);
-    padding: var(--space-4) var(--space-3) var(--space-3); border-right: 1px solid var(--border); background: var(--canvas); }
-  .lx-brand { display: flex; align-items: center; gap: 10px; padding: var(--space-1) var(--space-2); color: var(--ink); text-decoration: none; }
-  .lx-brand__mark { width: 28px; height: 28px; flex: none; display: grid; place-items: center; border-radius: var(--radius-md); background: var(--accent); color: #fff; }
-  .lx-brand__mark svg { width: 16px; height: 16px; }
-  .lx-brand__name { font: 600 14px/18px var(--font-sans); letter-spacing: -.01em; }
-  .lx-brand__name span { display: block; font-weight: 400; font-size: 12px; line-height: 16px; color: var(--ink-subtle); }
-  .lx-nav { flex: 1; min-height: 0; overflow-y: auto; display: flex; flex-direction: column; gap: var(--space-4); margin: 0 calc(-1 * var(--space-1)); padding: 0 var(--space-1); }
-  .lx-nav__group { display: flex; flex-direction: column; gap: 2px; }
-  .lx-nav__label { padding: 0 var(--space-2) var(--space-1); font-size: 12px; line-height: 16px; color: var(--ink-subtle); }
-  .lx-nav__item { display: flex; align-items: center; gap: var(--space-2); min-height: 32px; padding: 6px var(--space-2); border-radius: var(--radius-md);
-    color: var(--ink-muted); text-decoration: none; font-size: 13px; line-height: 18px; }
-  .lx-nav__item:hover { background: var(--hover); color: var(--ink); }
-  .lx-nav__item.is-active { background: var(--selected); color: var(--ink); font-weight: 600; }
-  .lx-nav__item svg.i { color: var(--ink-subtle); }
-  .lx-nav__k { flex: none; width: 44px; color: var(--ink-subtle); font-variant-numeric: tabular-nums; white-space: nowrap; }
-  .lx-nav__item.is-active .lx-nav__k { color: var(--ink-muted); }
-  .lx-nav__t { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .lx-navpart > summary { display: flex; width: 100%; align-items: center; gap: var(--space-2); min-height: 32px; padding: 6px var(--space-2); margin: 0;
-    border-radius: var(--radius-md); font-size: 13px; line-height: 18px; font-weight: 500; color: var(--ink-muted); }
-  .lx-navpart > summary:hover { background: var(--hover); color: var(--ink); }
-  .lx-navpart.is-current > summary { color: var(--ink); font-weight: 600; }
-  .lx-navpart > summary svg.i { margin-left: auto; width: 12px; height: 12px; color: var(--ink-subtle); }
-  .lx-navpart[open] > summary { margin-bottom: 2px; }
-  .lx-navpart__n { flex: none; width: 44px; }
-  .lx-navpart__t { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .lx-navpart__items { display: flex; flex-direction: column; gap: 2px; margin: 0 0 var(--space-2) var(--space-3); padding-left: var(--space-2); border-left: 1px solid var(--border); }
-  .lx-sidebar__foot { border-top: 1px solid var(--border); padding-top: var(--space-3); }
+  /* ---------- Shell: labelled sidebar on the ground, one rule, canvas beside it ---------- */
+  .lx-app { display: grid; grid-template-columns: var(--sidebar) minmax(0, 1fr); min-height: 100vh; }
+  .lx-sidebar { position: sticky; top: 0; height: 100vh; display: flex; flex-direction: column; border-right: 1px solid var(--border); background: var(--ground); }
+  .lx-brand { display: flex; align-items: center; gap: 12px; padding: 20px 20px 18px; color: var(--text); text-decoration: none; }
+  .lx-brand__mark { width: 28px; height: 28px; flex: none; color: var(--accent); }
+  .lx-brand__mark svg { width: 100%; height: 100%; display: block; }
+  .lx-brand__name { font: 600 14px/18px var(--font); letter-spacing: -.01em; }
+  .lx-brand__name span { display: block; font: 400 12px/16px var(--font); color: var(--muted); }
+  .lx-nav { flex: 1; min-height: 0; overflow-y: auto; padding: 4px 12px 16px; display: flex; flex-direction: column; gap: 20px; scrollbar-width: thin; scrollbar-color: var(--control) transparent; }
+  .lx-nav__group { display: flex; flex-direction: column; }
+  .lx-nav__label { padding: 0 8px 6px; font-size: 12px; line-height: 16px; color: var(--muted); }
+  .lx-nav__item { position: relative; display: flex; align-items: center; gap: 10px; min-height: 32px; margin-bottom: 2px; padding: 6px 8px; border-radius: var(--radius-sm);
+    color: var(--muted); text-decoration: none; font-size: 13px; line-height: 18px; }
+  .lx-nav__item:hover { background: var(--hover); color: var(--text); }
+  .lx-nav__item.is-active { color: var(--text); }
+  .lx-nav__item.is-active::before { content: ""; position: absolute; left: 0; top: 7px; bottom: 7px; width: 1px; background: var(--accent); }
+  .lx-nav__item.is-part.is-current { color: var(--text); font-weight: 600; }
+  .lx-nav__k { flex: none; min-width: 34px; font: 500 12px/18px var(--mono); color: var(--muted); white-space: nowrap; }
+  .lx-nav__item.is-active .lx-nav__k, .lx-nav__item.is-current .lx-nav__k { color: var(--text-2); }
+  .lx-nav__t { min-width: 0; flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .lx-nav__c { flex: none; font: 400 11px/18px var(--mono); color: var(--muted); }
+  .lx-nav__sub { display: flex; flex-direction: column; margin: 0 0 6px 20px; }
+  .lx-nav__sub .lx-nav__item { min-height: 30px; padding: 5px 8px; }
+  .lx-sidebar__foot { padding: 12px; border-top: 1px solid var(--border); }
   .lx-content { min-width: 0; }
   .lx-mbar { display: none; }
 
-  /* ---------- Database signal: green when PostgreSQL is ready ---------- */
+  /* ---------- PostgreSQL signal ---------- */
   .lx-signalwrap { position: relative; }
-  .lx-signal { appearance: none; display: flex; align-items: center; gap: 10px; width: 100%; height: var(--control-height); padding: 0 var(--space-2);
-    border: 0; border-radius: var(--radius-md); background: transparent; color: var(--ink-muted); font: 500 13px/1 var(--font-sans); cursor: help; text-align: left; }
-  .lx-signal:hover, .lx-signalwrap.is-open .lx-signal { background: var(--hover); color: var(--ink); }
-  .lx-signal__dot { width: 8px; height: 8px; flex: none; border-radius: 50%; background: var(--border-strong); transition: background-color .4s ease; }
-  .is-ready .lx-signal__dot { background: var(--success); }
-  [data-state="error"] .lx-signal__dot { background: var(--danger); }
+  .lx-signal { appearance: none; display: flex; align-items: center; gap: 10px; width: 100%; height: var(--control-height); padding: 0 8px;
+    border: 0; border-radius: var(--radius-sm); background: transparent; color: var(--muted); font: 500 12px/1 var(--font); cursor: help; text-align: left; }
+  .lx-signal:hover, .lx-signalwrap.is-open .lx-signal { background: var(--hover); color: var(--text); }
+  .lx-signal__dot { width: 8px; height: 8px; flex: none; border-radius: 50%; background: var(--control); transition: background-color .4s ease; }
+  .is-ready .lx-signal__dot { background: var(--positive); }
+  [data-state="error"] .lx-signal__dot { background: var(--negative); }
+  [data-state="loading"] .lx-signal__dot, [data-state="reloading"] .lx-signal__dot { animation: lx-blink 1.2s ease-in-out infinite; background: var(--warning); }
+  @keyframes lx-blink { 50% { opacity: .35; } }
   .lx-signal__label { display: inline-block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-
-  .lx-pop { position: absolute; bottom: calc(100% + 6px); left: 0; width: 360px; max-width: calc(100vw - 32px); z-index: 30;
-    background: var(--surface); color: var(--ink); text-align: left; border: 1px solid var(--border); border-radius: var(--radius-lg);
-    box-shadow: var(--shadow-menu);
+  .lx-pop { position: absolute; bottom: calc(100% + 8px); left: 0; width: 380px; max-width: calc(100vw - 32px); z-index: 30;
+    background: var(--raised); color: var(--text); border: 1px solid var(--control); border-radius: var(--radius); box-shadow: var(--shadow-menu);
     opacity: 0; visibility: hidden; transform: translateY(4px); transition: opacity .16s ease, transform .18s ease, visibility 0s linear .18s; }
-  .lx-signalwrap:hover .lx-pop, .lx-signalwrap:focus-within .lx-pop, .lx-signalwrap.is-open .lx-pop {
-    opacity: 1; visibility: visible; transform: none; transition-delay: 0s; }
-  .lx-pop__head { display: flex; align-items: center; justify-content: space-between; gap: var(--space-3); padding: var(--space-3) var(--space-4); border-bottom: 1px solid var(--border); }
-  .lx-pop__title { font-weight: 600; }
-  .lx-pop__body { padding: var(--space-3) var(--space-4); font-size: 13px; line-height: 20px; color: var(--ink-muted); }
-  .lx-pop__body p { margin: 0 0 var(--space-2); }
+  .lx-signalwrap:hover .lx-pop, .lx-signalwrap:focus-within .lx-pop, .lx-signalwrap.is-open .lx-pop { opacity: 1; visibility: visible; transform: none; transition-delay: 0s; }
+  .lx-pop__head { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 14px 16px 10px; }
+  .lx-pop__title { font-weight: 600; font-size: 14px; }
+  .lx-pop__body { padding: 0 16px 14px; font-size: 13px; line-height: 20px; color: var(--text-2); }
+  .lx-pop__body p { margin: 0 0 8px; }
   .lx-pop__body ol { margin: 0; padding-left: 18px; }
-  .lx-pop__body li { margin: 0 0 var(--space-2); }
-  .lx-pop__body code { font: 500 12px/1 var(--font-mono); color: var(--ink); background: var(--surface-sunken); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 1px 4px; }
-  .lx-pop__body .lx-kv { display: grid; grid-template-columns: auto 1fr; gap: 4px var(--space-3); margin: 0 0 var(--space-2); }
-  .lx-pop__body .lx-kv dt { color: var(--ink-subtle); }
-  .lx-pop__body .lx-kv dd { margin: 0; color: var(--ink); font-weight: 500; }
-  .lx-pop__foot { display: flex; justify-content: flex-end; gap: var(--space-2); padding: 10px var(--space-4); border-top: 1px solid var(--border); }
+  .lx-pop__body li { margin: 0 0 6px; }
+  .lx-pop__body code { font: 500 12px/1 var(--mono); color: var(--text); background: var(--well); border-radius: var(--radius-sm); padding: 2px 5px; }
+  .lx-pop__body .lx-kv { display: grid; grid-template-columns: auto 1fr; gap: 4px 16px; margin: 0 0 10px; }
+  .lx-pop__body .lx-kv dt { color: var(--muted); }
+  .lx-pop__body .lx-kv dd { margin: 0; color: var(--text); }
+  .lx-pop__foot { display: flex; justify-content: flex-end; gap: 8px; padding: 0 16px 14px; }
 
-  /* ---------- Motion ---------- */
-  .lx-btn, .lx-iconbtn, .lx-nav__item, .lx-navpart > summary, .lx-flow__step a, .lx-flow__n, .lx-list > li > a, .lx-opt,
-  .lx-table td, .lx-editor { transition: background-color .15s ease, color .15s ease, border-color .15s ease, box-shadow .15s ease; }
-  .lx-iconbtn::after { transform: translateY(2px); transition: opacity .15s ease, transform .15s ease; }
-  .lx-iconbtn:hover::after, .lx-iconbtn:focus-visible::after { transform: none; }
-  details > summary svg.i { transition: transform .2s ease, opacity .2s ease; }
-  .lx-progress > i { transition: width .5s cubic-bezier(.2,.7,.3,1); }
-  .lx-callout, .lx-q__explain:not([hidden]) { animation: lx-fade-up .22s ease-out; }
-  .lx-page.is-entering { animation: lx-fade-up .24s ease-out; }
-  @keyframes lx-fade-up { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
-  @media (prefers-reduced-motion: reduce) {
-    *, *::before, *::after { animation: none !important; transition: none !important; }
-  }
+  /* ---------- Feedback motion only: no entrances ---------- */
+  .lx-btn, .lx-iconbtn, .lx-nav__item, .lx-tab, .lx-row, .lx-opt, .lx-cellmap a, .lx-week, .lx-exlist a, .lx-editor { transition: background-color .15s ease, color .15s ease, border-color .15s ease, transform .15s ease; }
+  .lx-btn:active, .lx-iconbtn:active { transform: translateY(1px); }
+  .lx-callout, .lx-q__explain:not([hidden]) { animation: lx-in .2s ease-out; }
+  @keyframes lx-in { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+  @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; transition: none !important; } }
 
-  /* ---------- Page ---------- */
-  .lx-page { max-width: 1200px; margin: 0 auto; padding: var(--space-8) var(--space-8) 64px; display: flex; flex-direction: column; gap: var(--space-6); }
-  .lx-head { display: flex; flex-wrap: wrap; align-items: flex-start; justify-content: space-between; gap: var(--space-4); }
-  .lx-head__text { flex: 1 1 520px; max-width: 840px; }
-  .lx-eyebrow { font: 400 13px/18px var(--font-sans); color: var(--ink-subtle); margin-bottom: var(--space-1); }
-  .lx-h1 { margin: 0 0 6px; font-size: 26px; line-height: 32px; font-weight: 600; letter-spacing: -.02em; }
-  .lx-h2 { margin: 0; font-size: 15px; line-height: 22px; font-weight: 600; }
-  .lx-lead { margin: 0; color: var(--ink-muted); }
-  .lx-actions { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2); }
+  /* ---------- Canvas, title row ---------- */
+  .lx-page { max-width: 1320px; padding: 36px var(--pad) 80px; display: flex; flex-direction: column; gap: var(--gap); }
+  .lx-head { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 16px 24px; }
+  .lx-head__text { flex: 1 1 520px; min-width: 0; max-width: 880px; }
+  .lx-h1 { font-size: 26px; line-height: 32px; font-weight: 600; letter-spacing: -.02em; }
+  .lx-ctx { margin: 0 0 6px; font-size: 13px; line-height: 18px; color: var(--muted); }
+  .lx-ctx .n { color: var(--text-2); font-size: 12px; }
+  .lx-lead { margin: 10px 0 0; color: var(--text-2); font-size: 14px; line-height: 22px; max-width: 780px; }
+  .lx-find { margin: 10px 0 0; font-size: 14px; line-height: 22px; color: var(--text); }
+  .lx-find .n { font-size: 13px; }
+  .lx-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
   .lx-spacer { flex: 1; }
-  .lx-stack { display: flex; flex-direction: column; gap: var(--space-4); }
-  .lx-grid { display: grid; gap: var(--space-4); grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); }
-  .lx-cols { display: flex; flex-wrap: wrap; gap: var(--space-4); align-items: flex-start; }
-  .lx-main { flex: 999 1 560px; min-width: 0; }
-  .lx-side { flex: 1 1 320px; min-width: 0; max-width: 100%; overflow: hidden; }
-  .lx-subtle { color: var(--ink-subtle); }
-  .lx-mono { font-family: var(--font-mono); font-size: 12px; font-weight: 500; }
+  .lx-stack { display: flex; flex-direction: column; gap: 16px; }
+  .lx-h2 { font-size: 16px; line-height: 22px; font-weight: 600; }
+  .lx-section { font-size: 20px; line-height: 26px; font-weight: 400; color: var(--muted); }
+  .lx-section b { color: var(--text); font-weight: 600; }
 
-  /* ---------- Buttons ---------- */
-  .lx-btn { display: inline-flex; align-items: center; gap: var(--space-2); height: var(--control-height); padding: 0 var(--space-3);
-    border-radius: var(--radius-md); border: 1px solid var(--border-strong); background: var(--surface); color: var(--ink);
-    font: 500 13px/1 var(--font-sans); cursor: pointer; white-space: nowrap; text-decoration: none; }
-  .lx-btn:hover { background: var(--surface-sunken); }
-  .lx-btn--primary { background: var(--primary); border-color: var(--primary); color: var(--on-primary); }
-  .lx-btn--primary:hover { background: var(--primary-hover); }
-  .lx-btn--ghost { border-color: transparent; background: transparent; color: var(--ink-muted); }
-  .lx-btn--ghost:hover { background: var(--surface-sunken); color: var(--ink); }
-  .lx-btn[disabled] { opacity: .45; cursor: not-allowed; }
-  .lx-btn .lx-kbd { font: 500 11px/1 var(--font-mono); opacity: .7; }
+  /* ---------- Buttons: pills; primary inverted white ---------- */
+  .lx-btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; height: var(--control-height); padding: 0 16px;
+    border-radius: 999px; border: 1px solid var(--control); background: transparent; color: var(--text);
+    font: 500 13px/1 var(--font); cursor: pointer; white-space: nowrap; text-decoration: none; }
+  .lx-btn:hover { background: var(--raised); border-color: #55555b; }
+  .lx-btn--primary { background: #fff; border-color: #fff; color: #111; font-weight: 600; }
+  .lx-btn--primary:hover { background: #dcdce0; border-color: #dcdce0; }
+  .lx-btn--ghost { border-color: transparent; color: var(--text-2); padding: 0 12px; }
+  .lx-btn--ghost:hover { background: var(--raised); border-color: transparent; color: var(--text); }
+  .lx-btn[disabled] { opacity: .5; cursor: progress; }
+  .lx-iconbtn { position: relative; display: inline-grid; place-items: center; width: 32px; height: 32px; border: 0; border-radius: 999px;
+    background: transparent; color: var(--muted); cursor: pointer; text-decoration: none; flex: none; }
+  .lx-iconbtn:hover { background: var(--raised); color: var(--text); }
+  .lx-iconbtn::after { content: attr(data-tip); position: absolute; bottom: calc(100% + 6px); right: 0; white-space: nowrap; padding: 5px 9px;
+    border-radius: var(--radius-sm); background: #f2f2f3; color: #111; font: 500 12px/16px var(--font); opacity: 0; pointer-events: none; z-index: 10; transform: translateY(2px); transition: opacity .15s ease, transform .15s ease; }
+  .lx-iconbtn:hover::after, .lx-iconbtn:focus-visible::after { opacity: 1; transform: none; }
+  .lx-iconbtn.is-off { opacity: .35; pointer-events: none; }
+  kbd { font: 500 11px/1 var(--mono); padding: 3px 6px; border-radius: var(--radius-sm); background: var(--raised); color: var(--text-2); border: 1px solid var(--control); white-space: nowrap; }
 
-  .lx-iconbtn { position: relative; display: inline-grid; place-items: center; width: 32px; height: 32px; border: 0; border-radius: var(--radius-md);
-    background: transparent; color: var(--ink-muted); cursor: pointer; text-decoration: none; }
-  .lx-iconbtn:hover { background: var(--surface-sunken); color: var(--ink); }
-  .lx-iconbtn::after { content: attr(data-tip); position: absolute; bottom: calc(100% + 2px); right: 0; white-space: nowrap; padding: 4px 8px;
-    border-radius: 4px; background: var(--primary); color: var(--on-primary); font: 500 12px/16px var(--font-sans); opacity: 0; pointer-events: none; z-index: 10; }
-  .lx-iconbtn:hover::after, .lx-iconbtn:focus-visible::after { opacity: 1; }
+  /* ---------- Status: a dot and a word; blue = solved, amber = not yet ---------- */
+  .lx-badge { display: inline-flex; align-items: center; gap: 7px; flex: none; white-space: nowrap; font: 500 12px/18px var(--font); color: var(--muted); }
+  .lx-badge::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: var(--control); }
+  .lx-badge--success { color: var(--accent-ink); } .lx-badge--success::before { background: var(--accent); }
+  .lx-badge--info { color: var(--text-2); } .lx-badge--info::before { background: var(--text-2); }
+  .lx-badge--warning { color: var(--warning); } .lx-badge--warning::before { background: var(--warning); }
+  .lx-badge--danger { color: var(--negative); } .lx-badge--danger::before { background: var(--negative); }
+  .lx-tag { display: inline-flex; align-items: center; height: 22px; padding: 0 9px; border-radius: 999px; background: var(--raised); color: var(--text-2);
+    font: 500 12px/1 var(--font); white-space: nowrap; flex: none; text-decoration: none; }
+  a.lx-tag:hover { background: #2e2d33; color: var(--text); }
 
-  /* ---------- Badges & tags ---------- */
-  .lx-badge { display: inline-flex; align-items: center; height: 20px; padding: 0 var(--space-2); border-radius: var(--radius-sm);
-    font: 500 12px/1 var(--font-sans); white-space: nowrap; background: var(--neutral-soft); color: var(--neutral); }
-  .lx-badge--success { background: var(--success-soft); color: var(--success); }
-  .lx-badge--warning { background: var(--warning-soft); color: var(--warning); }
-  .lx-badge--danger { background: var(--danger-soft); color: var(--danger); }
-  .lx-badge--info { background: var(--info-soft); color: var(--info); }
-  .lx-tag { display: inline-flex; align-items: center; height: 20px; padding: 0 6px; border-radius: var(--radius-sm); background: var(--neutral-soft);
-    color: var(--neutral); font: 500 12px/1 var(--font-sans); white-space: nowrap; }
-
-  /* ---------- Card, table, list ---------- */
-  .lx-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); }
-  .lx-card__head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--space-3); padding: var(--space-3) var(--space-4); border-bottom: 1px solid var(--border); }
-  .lx-card__body { padding: var(--space-4); }
-  .lx-card__foot { padding: 10px var(--space-4); border-top: 1px solid var(--border); font-size: 12px; color: var(--ink-subtle); display: flex; flex-wrap: wrap; gap: var(--space-3); justify-content: space-between; align-items: center; }
+  /* ---------- Cards: darker than the ground ---------- */
+  .lx-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow); min-width: 0; }
+  .lx-card__head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 16px; padding: 16px 20px; }
+  .lx-card__head + .lx-card__body { padding-top: 0; }
+  .lx-card__meta { font-size: 13px; color: var(--muted); }
+  .lx-card__body { padding: 20px; }
+  .lx-card__foot { padding: 14px 20px; border-top: 1px solid var(--rule); font-size: 13px; color: var(--muted); display: flex; flex-wrap: wrap; gap: 12px; justify-content: space-between; align-items: center; }
   .lx-scroll { overflow-x: auto; }
-  .lx-card > .lx-scroll:last-child { border-radius: 0 0 var(--radius-lg) var(--radius-lg); }
+
+  /* Tables: rules and alignment */
   .lx-table { width: 100%; border-collapse: collapse; font-size: 13px; }
-  .lx-table th { text-align: left; padding: 10px var(--space-4) 8px; color: var(--ink-subtle);
-    font: 500 12px/16px var(--font-sans); border-bottom: 1px solid var(--border); white-space: nowrap; }
-  .lx-table td { padding: var(--space-3) var(--space-4); border-bottom: 1px solid var(--border); vertical-align: middle; }
+  .lx-table th { text-align: left; padding: 8px 20px; color: var(--muted); font: 400 12px/16px var(--font); border-bottom: 1px solid var(--border); white-space: nowrap; }
+  .lx-table td { padding: 11px 20px; border-bottom: 1px solid var(--rule); vertical-align: middle; }
   .lx-table tbody tr:last-child td { border-bottom: 0; }
-  .lx-table tbody tr:hover td { background: var(--surface-sunken); }
   .lx-table .r { text-align: right; font-variant-numeric: tabular-nums; }
-  .lx-table .act { width: 1%; text-align: right; padding-top: 0; padding-bottom: 0; }
-  .lx-cell__main { font-weight: 600; color: var(--ink); text-decoration: none; }
-  a.lx-cell__main:hover { text-decoration: underline; }
-  .lx-cell__sub { font-size: 12px; line-height: 16px; color: var(--ink-subtle); margin-top: 2px; }
-  .lx-table--data td, .lx-table--data th { font-family: var(--font-mono); font-size: 12px; text-transform: none; letter-spacing: 0; white-space: pre; padding: 8px var(--space-4); }
-  .lx-table--data th { font-weight: 600; color: var(--ink-muted); background: var(--surface-sunken); }
-  .lx-null { color: var(--ink-subtle); font-style: italic; }
+  .lx-table--data { font: 400 12px/18px var(--mono); }
+  .lx-table--data th { font: 500 12px/16px var(--mono); color: var(--text-2); position: sticky; top: 0; background: var(--surface); }
+  .lx-table--data td, .lx-table--data th { padding: 7px 16px; white-space: pre; }
+  .lx-table--data tbody tr:hover td { background: var(--hover); }
+  .lx-table--data td:first-child, .lx-table--data th:first-child { padding-left: 20px; }
+  .lx-datawrap { max-height: 480px; overflow: auto; border-top: 1px solid var(--rule); }
+  .lx-null { color: var(--muted); font-style: italic; }
 
-  .lx-list { list-style: none; margin: 0; padding: 0; }
-  .lx-list > li > a { display: flex; align-items: center; gap: var(--space-3); padding: 10px var(--space-4); border-bottom: 1px solid var(--border); text-decoration: none; color: var(--ink); }
-  .lx-list > li:last-child > a { border-bottom: 0; }
-  .lx-list > li > a:hover { background: var(--surface-sunken); }
-  .lx-list > li[aria-selected="true"] > a { background: var(--selected); font-weight: 600; }
-  .lx-list__id { font: 500 12px/16px var(--font-mono); width: 36px; flex: none; }
-  .lx-list__t { flex: 1; min-width: 0; font-size: 13px; color: var(--ink-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .lx-list--scroll { max-height: 640px; overflow-y: auto; }
+  /* KPI strip: one container, divided */
+  .lx-kpis { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  .lx-kpi { padding: 18px 24px 20px; display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+  .lx-kpi + .lx-kpi { border-left: 1px solid var(--rule); }
+  .lx-kpi__k { font-size: 13px; line-height: 18px; color: var(--muted); }
+  .lx-kpi__v { font: 500 22px/28px var(--mono); font-variant-numeric: tabular-nums; letter-spacing: -.02em; }
+  .lx-kpi--lead .lx-kpi__v { font-size: 32px; line-height: 38px; font-weight: 600; }
+  .lx-kpi__u { font-size: 14px; color: var(--muted); letter-spacing: 0; font-weight: 400; font-family: var(--font); }
+  .lx-kpi__n { font-size: 13px; line-height: 18px; color: var(--muted); }
+  .lx-meter { position: relative; height: 4px; border-radius: 2px; background: var(--cell); overflow: hidden; margin-top: 6px; }
+  .lx-meter > i { position: absolute; inset: 0 auto 0 0; background: var(--accent); border-radius: 2px; transition: width .5s cubic-bezier(.2,.7,.3,1); }
 
-  .lx-kpis { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); }
-  .lx-kpi { padding: var(--space-4) var(--space-6) 18px; display: flex; flex-direction: column; gap: 6px; min-width: 0; }
-  .lx-kpi + .lx-kpi { border-left: 1px solid var(--border); }
-  .lx-kpi__k { font-size: 13px; line-height: 18px; color: var(--ink-muted); }
-  .lx-kpi__v { font-size: 28px; line-height: 34px; font-weight: 600; letter-spacing: -.02em; font-variant-numeric: tabular-nums; }
-  .lx-kpi__u { font-size: 15px; font-weight: 500; color: var(--ink-subtle); letter-spacing: 0; }
-  .lx-kpi__n { font-size: 12px; line-height: 16px; color: var(--ink-subtle); }
-  .lx-kpi .lx-progress { margin-top: 4px; }
-  .lx-dash { color: var(--ink-subtle); }
-  .lx-sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+  /* ---------- Signature: every SQL exercise as one cell ---------- */
+  .lx-map { display: flex; flex-direction: column; }
+  .lx-row { display: grid; grid-template-columns: 52px minmax(200px, 1fr) minmax(240px, 380px) 72px 72px 112px 32px; align-items: center; gap: 0 20px;
+    padding: 14px 20px; border-top: 1px solid var(--rule); text-decoration: none; color: var(--text); }
+  .lx-row:hover { background: var(--hover); }
+  .lx-row--head { padding-top: 0; padding-bottom: 10px; border-top: 0; color: var(--muted); font-size: 12px; line-height: 16px; }
+  .lx-row--head:hover { background: none; }
+  .lx-row--head .r { font-family: var(--font); font-size: 12px; }
+  .lx-row__k { font: 600 13px/18px var(--mono); color: var(--text-2); }
+  .lx-row__t { min-width: 0; }
+  .lx-row__t a { color: var(--text); text-decoration: none; font-weight: 600; }
+  .lx-row__t a:hover { color: var(--accent-ink); }
+  .lx-row__sub { font-size: 13px; line-height: 18px; color: var(--muted); margin-top: 3px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .lx-row .r { text-align: right; font-family: var(--mono); font-variant-numeric: tabular-nums; font-size: 13px; }
+  .lx-row .r small { color: var(--muted); font-size: 12px; }
+  .lx-cellmap { display: flex; flex-wrap: wrap; gap: 3px; }
+  .lx-cellmap a, .lx-cellmap span { display: block; width: 12px; height: 12px; border-radius: 2px; background: var(--cell); }
+  .lx-cellmap .is-pass { background: var(--accent); }
+  .lx-cellmap .is-fail { background: transparent; border: 1px solid var(--warning); }
+  .lx-cellmap a:hover { background: var(--text-2); }
+  .lx-cellmap--empty { font-size: 12px; color: var(--muted); }
+  .lx-legend { display: flex; flex-wrap: wrap; gap: 6px 16px; font-size: 13px; color: var(--muted); }
+  .lx-legend span { display: inline-flex; align-items: center; gap: 6px; }
+  .lx-legend i { width: 10px; height: 10px; border-radius: 2px; background: var(--cell); }
+  .lx-legend i.is-pass { background: var(--accent); }
+  .lx-legend i.is-fail { background: transparent; border: 1px solid var(--warning); }
 
-  /* Fifteen weeks of the course: this part's weeks tinted, exam weeks marked */
-  .lx-weeks { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 6px; padding: var(--space-4); }
-  .lx-week { display: flex; flex-direction: column; gap: 4px; min-width: 0; min-height: 64px; padding: 8px 10px; border-radius: var(--radius-md);
-    background: var(--surface-sunken); color: var(--ink-muted); font-size: 12px; line-height: 16px; }
-  .lx-week__n { font-weight: 600; color: var(--ink-muted); font-variant-numeric: tabular-nums; white-space: nowrap; }
-  .lx-week__t { overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
-  .lx-week.is-on { background: var(--accent-soft); color: var(--ink-muted); box-shadow: inset 0 -2px 0 var(--accent); }
-  .lx-week.is-on .lx-week__n { color: var(--accent); }
-  .lx-week.is-exam { background: var(--surface); box-shadow: inset 0 0 0 1px var(--ink); color: var(--ink); }
-  .lx-week.is-exam strong { font-weight: 600; }
-  .lx-progress { height: 6px; border-radius: 3px; background: var(--neutral-soft); overflow: hidden; min-width: 96px; }
-  .lx-progress > i { display: block; height: 100%; background: var(--accent); }
+  /* ---------- Fifteen weeks: this part's weeks carry the blue line ---------- */
+  .lx-weeks { display: grid; grid-template-columns: repeat(15, minmax(0, 1fr)); gap: 0; padding: 0 20px 20px; }
+  .lx-week { position: relative; display: flex; flex-direction: column; gap: 6px; min-width: 0; padding: 12px 10px 4px; border-top: 1px solid var(--control); color: var(--muted); font-size: 12px; line-height: 16px; text-decoration: none; }
+  .lx-week + .lx-week { border-left: 1px solid var(--rule); }
+  .lx-week__n { font: 600 13px/16px var(--mono); color: var(--text-2); }
+  .lx-week__t { overflow: hidden; display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical; }
+  .lx-week.is-on { color: var(--text-2); }
+  .lx-week.is-on::before { content: ""; position: absolute; left: 0; right: 0; top: -1px; height: 1px; background: var(--accent); }
+  .lx-week.is-on .lx-week__n { color: var(--text); }
+  .lx-week__exam { color: var(--warning); font-weight: 600; }
+  .lx-weeks--thin .lx-week { min-height: 56px; }
+  .lx-weeklist { list-style: none; margin: 0; padding: 0 20px 12px; }
+  .lx-weeklist li { display: grid; grid-template-columns: 80px minmax(0, 1fr) minmax(0, 1fr); gap: 16px; padding: 10px 0; border-top: 1px solid var(--rule); font-size: 13px; }
+  .lx-weeklist .n { color: var(--text-2); font-size: 12px; }
+  button.lx-week { appearance: none; background: none; border-right: 0; border-bottom: 0; text-align: left; font: inherit; cursor: pointer; }
+  button.lx-week:hover { background: var(--hover); }
+  .lx-week.is-now { background: var(--accent-bg); }
+  .lx-week.is-now::before { content: ""; position: absolute; left: 0; right: 0; top: -1px; height: 2px; background: var(--accent); }
 
-  .lx-callout { border-radius: var(--radius-lg); display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-3); padding: var(--space-3) var(--space-4); background: var(--info-soft); color: var(--ink); }
-  .lx-callout--success { background: var(--success-soft); }
-  .lx-callout--warning { background: var(--warning-soft); }
-  .lx-callout--danger { background: var(--danger-soft); }
+  .lx-callout { border-radius: var(--radius); display: flex; flex-wrap: wrap; align-items: center; gap: 12px; padding: 12px 16px; background: var(--raised); color: var(--text); font-size: 13px; }
+  .lx-callout a { color: inherit; }
+  .lx-callout--success { background: var(--accent-bg); color: #d6e6fa; }
+  .lx-callout--warning { background: var(--warning-bg); color: #f0d49c; }
+  .lx-callout--danger { background: var(--negative-bg); color: #f6b8c3; font-family: var(--mono); font-size: 12px; }
+  .lx-callout--danger strong { font-family: var(--font); }
   .lx-callout__text { flex: 1 1 320px; }
 
-  /* ---------- Flow navigation (Tóm tắt → Trắc nghiệm → Tự luận → Bài tập) ---------- */
-  .lx-flow { display: flex; align-items: center; gap: var(--space-3); padding: 0 var(--space-3) 0 var(--space-4); min-height: 48px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); }
-  .lx-flow__k { font: 500 13px/18px var(--font-sans); color: var(--ink-muted); padding-right: var(--space-4); border-right: 1px solid var(--border); white-space: nowrap; }
-  .lx-flow__arrow { border: 1px solid var(--border-strong); background: var(--surface); color: var(--ink); }
-  .lx-flow__arrow.is-off { opacity: .35; pointer-events: none; }
-  .lx-flow__arrow::after { bottom: auto; top: calc(100% + 4px); right: auto; left: 0; }
-  .lx-flow__arrow--next::after { left: auto; right: 0; }
-  .lx-flow__steps { flex: 1; display: flex; align-items: center; gap: var(--space-2); margin: 0; padding: 0; list-style: none; overflow-x: auto; scrollbar-width: none; }
-  .lx-flow__step a { border-radius: var(--radius-md); display: inline-flex; align-items: center; gap: var(--space-2); height: 32px; padding: 0 var(--space-3); color: var(--ink-muted); text-decoration: none; font-size: 13px; font-weight: 500; white-space: nowrap; }
-  .lx-flow__step a:hover { background: var(--surface-sunken); color: var(--ink); }
-  .lx-flow__step.is-active a { background: var(--surface-selected); color: var(--ink); font-weight: 600; box-shadow: inset 0 -2px 0 var(--primary); }
-  .lx-flow__n { display: inline-grid; place-items: center; width: 18px; height: 18px; border: 1px solid var(--border-strong); border-radius: 50%; font-size: 11px; line-height: 1; }
-  .lx-flow__step.is-active .lx-flow__n { background: var(--primary); border-color: var(--primary); color: var(--on-primary); }
-  .lx-flow__sep { width: 12px; height: 12px; flex: none; fill: none; stroke: var(--border-strong); stroke-width: 1.5; }
-  .lx-flow__pos { font: 500 12px/16px var(--font-mono); color: var(--ink-muted); white-space: nowrap; }
+  /* ---------- Step tabs on one rule ---------- */
+  .lx-flow { display: flex; align-items: flex-end; gap: 8px; border-bottom: 1px solid var(--border); }
+  .lx-flow__steps { flex: 1; display: flex; gap: 28px; margin: 0; padding: 0; list-style: none; overflow-x: auto; scrollbar-width: none; }
+  .lx-tab { position: relative; display: inline-flex; align-items: center; gap: 8px; height: 42px; color: var(--muted); text-decoration: none; font-size: 14px; font-weight: 500; white-space: nowrap; }
+  .lx-tab:hover { color: var(--text); }
+  .lx-tab .n { font-size: 12px; color: var(--muted); }
+  .lx-tab.is-active { color: var(--text); }
+  .lx-tab.is-active::after { content: ""; position: absolute; left: 0; right: 0; bottom: -1px; height: 1px; background: var(--accent); }
+  .lx-flow__arrows { display: flex; gap: 4px; padding-bottom: 5px; }
+  .lx-flow__arrows .lx-iconbtn::after { bottom: auto; top: calc(100% + 6px); }
 
-  /* ---------- Reading content (summaries, answers) ---------- */
-  .lx-prose { color: var(--ink); line-height: 22px; }
-  .lx-prose h3 { font-size: 15px; line-height: 22px; font-weight: 600; margin: var(--space-6) 0 var(--space-2); padding-top: var(--space-4); border-top: 1px solid var(--border); }
-  .lx-prose h3:first-child { margin-top: 0; padding-top: 0; border-top: 0; }
-  .lx-prose p { margin: var(--space-2) 0; }
-  .lx-prose ul, .lx-prose ol { padding-left: 20px; margin: var(--space-2) 0; }
-  .lx-prose li { margin: var(--space-1) 0; }
-  .lx-prose code { font: 500 12.5px/1 var(--font-mono); background: var(--surface-sunken); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 1px 4px; }
-  .lx-prose strong { font-weight: 600; }
-  .lx-prose .table-scroll { overflow-x: auto; margin: var(--space-3) 0; border: 1px solid var(--border); border-radius: var(--radius-md); }
+  /* ---------- Reading ---------- */
+  .lx-prose { color: #ececef; font-size: 14px; line-height: 23px; }
+  .lx-prose h3 { font-size: 16px; line-height: 22px; font-weight: 600; color: var(--text); margin: 28px 0 8px; }
+  .lx-prose h3:first-child { margin-top: 0; }
+  .lx-prose p { margin: 8px 0; }
+  .lx-prose ul, .lx-prose ol { padding-left: 20px; margin: 8px 0; }
+  .lx-prose li { margin: 4px 0; }
+  .lx-prose li::marker { color: var(--muted); }
+  .lx-prose a { color: var(--accent-ink); }
+  .lx-prose code, .lx-code { font: 500 12.5px/1 var(--mono); background: var(--raised); color: #f0f0f2; border-radius: var(--radius-sm); padding: 2px 5px; }
+  .lx-prose strong { font-weight: 600; color: var(--text); }
+  .lx-prose .table-scroll { overflow-x: auto; margin: 12px 0; border: 1px solid var(--border); border-radius: var(--radius); }
   .lx-prose table { width: 100%; border-collapse: collapse; font-size: 13px; }
-  .lx-prose th { text-align: left; padding: 8px var(--space-3); color: var(--ink-subtle); font: 500 12px/16px var(--font-sans); border-bottom: 1px solid var(--border); }
-  .lx-prose td { padding: 8px var(--space-3); border-bottom: 1px solid var(--border); vertical-align: top; }
+  .lx-prose th { text-align: left; padding: 8px 12px; color: var(--muted); font: 400 12px/16px var(--font); border-bottom: 1px solid var(--border); }
+  .lx-prose td { padding: 8px 12px; border-bottom: 1px solid var(--rule); vertical-align: top; }
   .lx-prose tr:last-child td { border-bottom: 0; }
-  pre.code { font: 500 12.5px/1.6 var(--font-mono); background: var(--surface-sunken); border: 1px solid var(--border); border-radius: var(--radius-md); padding: var(--space-3) var(--space-4); overflow-x: auto; margin: var(--space-3) 0; }
-  pre.code code { background: none; border: 0; padding: 0; font: inherit; }
-  details > summary { cursor: pointer; font-weight: 600; color: var(--ink); list-style: none; display: inline-flex; align-items: center; gap: var(--space-2); }
+  pre.code { font: 400 12.5px/1.65 var(--mono); background: var(--well); color: #e8e8ea; border: 1px solid var(--border); border-radius: var(--radius); padding: 14px 16px; overflow-x: auto; margin: 12px 0; }
+  pre.code code { background: none; padding: 0; font: inherit; color: inherit; }
+  details > summary { cursor: pointer; font-weight: 600; color: var(--text); list-style: none; display: inline-flex; align-items: center; gap: 8px; font-size: 13px; }
   details > summary::-webkit-details-marker { display: none; }
-  details > summary svg.i { width: 12px; height: 12px; transition: transform .15s; }
+  details > summary svg.i { width: 12px; height: 12px; color: var(--muted); transition: transform .15s ease; }
+  details > summary:hover { color: var(--accent-ink); }
   details[open] > summary svg.i { transform: rotate(90deg); }
-  details[open] > summary { margin-bottom: var(--space-2); }
-
-  /* ---------- Quiz ---------- */
-  .lx-q__opts { display: grid; gap: var(--space-2); margin-top: var(--space-3); }
-  .lx-opt { border-radius: var(--radius-md); display: flex; gap: var(--space-3); align-items: flex-start; padding: 10px var(--space-3); border: 1px solid var(--border); background: var(--surface); cursor: pointer; }
-  .lx-opt:hover { border-color: var(--border-strong); }
-  .lx-opt input { margin: 3px 0 0; accent-color: var(--primary); }
-  .lx-opt.is-right { border-color: var(--success); background: var(--success-soft); }
-  .lx-opt.is-wrong { border-color: var(--danger); background: var(--danger-soft); }
-  .lx-q__explain { margin-top: var(--space-3); color: var(--ink-muted); }
-
-  /* ---------- Editor ---------- */
-  .lx-editor { width: 100%; min-height: 180px; resize: vertical; display: block;
-    font: 500 13px/1.6 var(--font-mono); tab-size: 2; color: var(--ink); background: var(--surface);
-    border: 1px solid var(--border-strong); border-radius: var(--radius-md); padding: var(--space-3) var(--space-4); }
-  .lx-editor::placeholder { color: var(--ink-subtle); }
-  .lx-editor:focus { outline: 2px solid var(--focus); outline-offset: 2px; }
-
-  .lx-check { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; color: var(--ink-muted); cursor: pointer; }
-  .lx-check input { margin: 0; accent-color: var(--accent); width: 16px; height: 16px; }
-  .lx-en { margin: 0 0 var(--space-3); padding: var(--space-2) var(--space-3); border-left: 2px solid var(--border-strong); background: var(--surface-sunken); border-radius: 0 var(--radius-sm) var(--radius-sm) 0; color: var(--ink); }
+  details[open] > summary { margin-bottom: 8px; }
+  .lx-en { margin: 0 0 14px; padding: 12px 16px; background: var(--raised); border-radius: var(--radius); color: var(--text-2); font-size: 13px; line-height: 21px; }
+  .lx-en::before { content: "Đề gốc"; display: block; font-size: 12px; color: var(--muted); margin-bottom: 4px; }
   .lx-en p { margin: 0; }
 
-  /* ---------- FD tool ---------- */
-  .lx-fd-form { display: flex; flex-direction: column; gap: var(--space-4); }
-  .lx-fd-form label { display: flex; flex-direction: column; gap: 6px; font-weight: 600; }
-  .lx-fd-form label .lx-subtle { font-weight: 400; }
-  .lx-fd-input { min-height: 0; height: 40px; resize: none; }
-  .lx-fd-row { display: grid; gap: var(--space-4); grid-template-columns: repeat(auto-fit, minmax(min(280px, 100%), 1fr)); }
-  .lx-fd-select { height: 32px; max-width: 100%; border: 1px solid var(--border-strong); border-radius: var(--radius-md); background: var(--surface); color: var(--ink); font: inherit; padding: 0 8px; }
+  /* ---------- Quiz & essays ---------- */
+  .lx-qhead { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 16px 20px 0; }
+  .lx-qno { font: 600 13px/18px var(--mono); color: var(--text-2); }
+  .lx-q__opts { display: grid; gap: 8px; margin-top: 14px; }
+  .lx-opt { display: flex; gap: 12px; align-items: flex-start; padding: 10px 14px; border-radius: var(--radius); background: var(--ground); border: 1px solid var(--border); cursor: pointer; }
+  .lx-opt:hover { border-color: var(--control); background: var(--hover); }
+  .lx-opt input { margin: 3px 0 0; accent-color: var(--accent); }
+  .lx-opt.is-right { border-color: var(--accent); background: var(--accent-bg); }
+  .lx-opt.is-wrong { border-color: var(--negative); background: var(--negative-bg); }
+  .lx-q__explain { margin-top: 12px; color: var(--text-2); }
+  .lx-check { display: inline-flex; align-items: center; gap: 8px; font-size: 13px; color: var(--text-2); cursor: pointer; white-space: nowrap; }
+  .lx-check input { margin: 0; accent-color: var(--accent); width: 16px; height: 16px; }
 
-  /* Phone and narrow tablet: a 48px top bar, the sidebar becomes a full-screen sheet */
+  /* ---------- Exercise: list beside the console ---------- */
+  .lx-work { display: grid; grid-template-columns: 272px minmax(0, 1fr); gap: var(--gap); align-items: start; }
+  .lx-exlist { position: sticky; top: 24px; max-height: calc(100vh - 48px); display: flex; flex-direction: column; }
+  .lx-exlist ul { list-style: none; margin: 0; padding: 0 0 8px; overflow-y: auto; scrollbar-width: thin; scrollbar-color: var(--control) transparent; }
+  .lx-exlist a { position: relative; display: grid; grid-template-columns: 44px minmax(0, 1fr) 8px; align-items: center; gap: 10px; min-height: 32px; padding: 6px 16px 6px 20px; color: var(--muted); text-decoration: none; font-size: 13px; }
+  .lx-exlist a:hover { background: var(--hover); color: var(--text); }
+  .lx-exlist li[aria-selected="true"] a { color: var(--text); }
+  .lx-exlist li[aria-selected="true"] a::before { content: ""; position: absolute; left: 0; top: 8px; bottom: 8px; width: 1px; background: var(--accent); }
+  .lx-exlist .lx-list__id { font: 500 12px/18px var(--mono); color: var(--text-2); }
+  .lx-exlist .lx-list__t { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .lx-dot { width: 8px; height: 8px; border-radius: 2px; background: var(--cell); }
+  .lx-dot.is-pass { background: var(--accent); }
+  .lx-dot.is-fail { background: transparent; border: 1px solid var(--warning); }
+  .lx-exhead { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; padding: 18px 20px 14px; }
+  .lx-exhead__id { font: 600 18px/24px var(--mono); letter-spacing: -.01em; }
+  .lx-exmeta { display: flex; flex-wrap: wrap; gap: 6px; flex: 1; }
+
+  .lx-console { background: var(--well); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; }
+  .lx-console:focus-within { border-color: #3d5f8a; }
+  .lx-console__bar { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 8px 14px; border-bottom: 1px solid var(--rule); font-size: 12px; color: var(--muted); }
+  .lx-console__bar label { font: 500 12px/18px var(--mono); color: var(--text-2); }
+  .lx-console__keys { display: flex; flex-wrap: wrap; gap: 6px 14px; align-items: center; }
+  .lx-editor { width: 100%; min-height: 220px; resize: vertical; display: block; margin: 0;
+    font: 400 13.5px/1.65 var(--mono); tab-size: 2; color: #f2f2f4; caret-color: var(--accent); background: transparent;
+    border: 0; border-radius: 0; padding: 14px 16px; }
+  .lx-editor::placeholder { color: #6f7177; }
+  .lx-editor:focus { outline: none; }
+  input.lx-editor { min-height: 0; height: 40px; resize: none; }
+  .lx-field { background: var(--well); border: 1px solid var(--border); border-radius: var(--radius); }
+  .lx-field:focus-within { border-color: #3d5f8a; }
+  .lx-runbar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; padding: 14px 20px 18px; }
+  .lx-pager { display: flex; justify-content: space-between; gap: 12px; }
+
+  /* ---------- Schema & FD ---------- */
+  .lx-tables { display: grid; gap: var(--gap); grid-template-columns: repeat(auto-fill, minmax(min(300px, 100%), 1fr)); align-items: start; }
+  .lx-tables .lx-card__head { padding: 14px 16px 10px 20px; }
+  .lx-tables h3 { font: 600 14px/20px var(--mono); }
+  .lx-cols-list { list-style: none; margin: 0; padding: 0 0 12px; }
+  .lx-cols-list li { display: flex; justify-content: space-between; gap: 12px; padding: 6px 20px; font: 400 13px/18px var(--mono); }
+  .lx-cols-list li + li { border-top: 1px solid var(--rule); }
+  .lx-cols-list .is-pk { color: var(--text); font-weight: 600; text-decoration: underline; text-decoration-color: var(--accent); text-underline-offset: 3px; }
+  .lx-cols-list .lx-subtle { text-align: right; }
+  .lx-fd-form { display: flex; flex-direction: column; gap: 16px; }
+  .lx-fd-form label { display: flex; flex-direction: column; gap: 8px; font-weight: 500; font-size: 13px; }
+  .lx-fd-form label .lx-subtle { font-weight: 400; }
+  .lx-fd-row { display: grid; gap: 16px; grid-template-columns: repeat(auto-fit, minmax(min(280px, 100%), 1fr)); }
+  .lx-select { height: var(--control-height); max-width: 100%; border: 1px solid var(--control); border-radius: 999px; background: var(--surface); color: var(--text); font: inherit; padding: 0 14px; }
+
+  /* ---------- Reading columns with a side panel ---------- */
+  .lx-split { display: grid; grid-template-columns: minmax(0, 1fr) 300px; gap: var(--gap); align-items: start; }
+  .lx-aside { position: sticky; top: 24px; display: flex; flex-direction: column; gap: var(--gap); }
+  .lx-aside .lx-kpi__v { margin-bottom: 4px; }
+  .lx-aside__note { margin: 12px 0 0; font-size: 13px; color: var(--text-2); }
+  .lx-read { max-width: 860px; }
+  .lx-toc { list-style: none; margin: 0; padding: 0 8px 12px; counter-reset: toc; max-height: calc(100vh - 140px); overflow-y: auto; }
+  .lx-toc li { margin: 0; }
+  .lx-toc button { appearance: none; width: 100%; text-align: left; border: 0; background: none; color: var(--muted); font: 400 13px/18px var(--font); padding: 7px 12px; border-radius: var(--radius-sm); cursor: pointer; }
+  .lx-toc button:hover { background: var(--hover); color: var(--text); }
+  .lx-qgrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(36px, 1fr)); gap: 6px; margin-top: 16px; }
+  .lx-qcell { appearance: none; height: 32px; border-radius: var(--radius-sm); border: 1px solid var(--border); background: var(--ground); color: var(--text-2); font: 500 12px/1 var(--mono); cursor: pointer; }
+  .lx-qcell:hover { border-color: var(--control); color: var(--text); }
+  .lx-qcell.is-pass { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .lx-qcell.is-fail { border-color: var(--warning); color: var(--warning); }
+  .lx-qcell.is-picked { border-color: #6f7177; color: var(--text); background: var(--raised); }
+  .lx-howto { display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 7fr); gap: var(--gap); }
+  .lx-howto ul { margin: 0; padding-left: 18px; }
+  .lx-keys { display: grid; grid-template-columns: auto 1fr; gap: 12px 16px; margin: 0; align-items: center; }
+  .lx-keys dt { white-space: nowrap; color: var(--muted); }
+  .lx-keys dd { margin: 0; color: var(--text-2); }
+  .lx-fdgrid { display: grid; grid-template-columns: 400px minmax(0, 1fr); gap: var(--gap); align-items: start; }
+  .lx-fdin { position: sticky; top: 24px; }
+  .lx-fdin .lx-select { max-width: 100%; }
+
+  /* ---------- Tablet & phone: the sidebar folds into a 48px bar and a sheet ---------- */
+  @media (max-width: 1100px) {
+    .lx-split, .lx-fdgrid { grid-template-columns: minmax(0, 1fr); }
+    .lx-aside, .lx-fdin { position: static; }
+    .lx-work { grid-template-columns: 232px minmax(0, 1fr); }
+    .lx-row { grid-template-columns: 48px minmax(160px, 1fr) minmax(160px, 240px) 64px 96px 32px; }
+    .lx-row > .lx-row__ess { display: none; }
+    .lx-weeks { grid-template-columns: repeat(5, minmax(0, 1fr)); row-gap: 16px; }
+    .lx-week:nth-child(5n + 1) { border-left: 0; }
+  }
   @media (max-width: 900px) {
+    :root { --pad: 16px; --gap: 16px; }
     .lx-app { display: block; }
-    .lx-mbar { position: sticky; top: 0; z-index: 25; display: flex; align-items: center; gap: var(--space-2); height: 48px; padding: 0 var(--space-2);
-      background: var(--canvas); border-bottom: 1px solid var(--border); }
-    .lx-mbar .lx-brand__mark { width: 24px; height: 24px; }
+    .lx-mbar { position: sticky; top: 0; z-index: 25; display: flex; align-items: center; gap: 10px; height: 52px; padding: 0 16px 0 4px;
+      background: var(--ground); border-bottom: 1px solid var(--border); }
+    .lx-mbar .lx-brand__mark { width: 22px; height: 22px; }
     .lx-mbar__title { flex: 1; min-width: 0; font-weight: 600; font-size: 14px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-    .lx-mbar .lx-iconbtn { width: 40px; height: 40px; }
+    .lx-mbar .lx-iconbtn { width: 44px; height: 44px; color: var(--text); }
     .lx-mbar .lx-iconbtn svg.i { width: 20px; height: 20px; }
-    .lx-sidebar { display: none; position: fixed; inset: 48px 0 0; z-index: 24; height: auto; border-right: 0; padding: var(--space-4); }
+    .lx-sidebar { display: none; position: fixed; inset: 52px 0 0; z-index: 24; height: auto; border-right: 0; }
     .lx-app.is-navopen .lx-sidebar { display: flex; }
     .lx-app.is-navopen { overflow: hidden; }
     .lx-sidebar > .lx-brand { display: none; }
-    .lx-nav__item, .lx-navpart > summary, .lx-signal { min-height: 44px; font-size: 15px; }
+    .lx-nav { padding-top: 16px; }
+    .lx-nav__item, .lx-signal { min-height: 44px; font-size: 15px; }
+    .lx-nav__sub .lx-nav__item { min-height: 44px; }
     .lx-pop { width: 100%; }
-    .lx-page { padding: var(--space-4) var(--space-4) 48px; gap: var(--space-4); }
-    .lx-kpi { padding: var(--space-3); }
-    .lx-kpi__v { font-size: 22px; line-height: 28px; }
-    .lx-kpi__u { font-size: 13px; }
-    .lx-kpi__n { display: none; }
-    .lx-weeks { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-    .lx-flow__k, .lx-flow__pos { display: none; }
+    .lx-page { padding: 20px var(--pad) 56px; }
+    .lx-h1 { font-size: 22px; line-height: 28px; }
+    .lx-head .lx-actions, .lx-head .lx-btn--primary { width: 100%; }
+    .lx-kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .lx-kpi { padding: 14px 16px; }
+    .lx-kpi:nth-child(3) { border-left: 0; }
+    .lx-kpi:nth-child(n + 3) { border-top: 1px solid var(--rule); }
+    .lx-kpi--lead .lx-kpi__v { font-size: 26px; line-height: 32px; }
+    .lx-row { grid-template-columns: 40px minmax(0, 1fr) auto; grid-template-areas: "k t s" "c c c"; gap: 10px 12px; padding: 14px 16px; }
+    .lx-row--head { display: none; }
+    .lx-row__k { grid-area: k; } .lx-row__t { grid-area: t; } .lx-row .lx-cellmap { grid-area: c; } .lx-row > .lx-row__st { grid-area: s; }
+    .lx-row > .r, .lx-row > .lx-row__go { display: none; }
+    .lx-weeks { grid-template-columns: repeat(3, minmax(0, 1fr)); padding: 0 16px 16px; }
+    .lx-week:nth-child(5n + 1) { border-left: 1px solid var(--rule); }
+    .lx-week:nth-child(3n + 1) { border-left: 0; }
+    .lx-work { grid-template-columns: minmax(0, 1fr); }
+    .lx-weeklist li { grid-template-columns: 72px minmax(0, 1fr); }
+    .lx-weeklist li > :last-child { grid-column: 2; }
+    .lx-exlist { position: static; max-height: none; order: 2; }
+    .lx-exlist ul { max-height: 320px; }
+    .lx-exlist a { min-height: 44px; }
+    .lx-flow__steps { gap: 20px; }
+    .lx-flow__arrows { display: none; }
+    .lx-console__keys { display: none; }
+    .lx-runbar { padding: 12px 16px 16px; }
+    .lx-runbar > .lx-actions { width: 100%; }
+    .lx-runbar > .lx-actions:last-child .lx-btn { flex: 1; }
+    .lx-card__head, .lx-card__body { padding-left: 16px; padding-right: 16px; }
+    .lx-split, .lx-fdgrid, .lx-howto { grid-template-columns: minmax(0, 1fr); }
+    .lx-aside, .lx-fdin { position: static; }
+    .lx-toc { max-height: none; }
   }
 </style>
 <style>
-  .hub-pn { white-space: nowrap; color: var(--ink-subtle); vertical-align: top !important; }
-  .hub-links { margin-top: 6px; }
-  .hub-links { display: flex; flex-wrap: wrap; gap: 4px; }
-  .hub-links a { text-decoration: none; }
-  .hub-links a:hover { background: var(--selected); color: var(--ink); }
-  tr.hub-exam td { background: var(--accent-soft); }
-  tr.hub-exam .lx-cell__main { font-weight: 600; }
+  .hub-stepper { display: inline-flex; align-items: center; gap: 4px; height: var(--control-height); padding: 0 2px; border: 1px solid var(--control); border-radius: 999px; }
+  .hub-stepper .lx-iconbtn { width: 30px; height: 30px; }
+  .hub-stepper .lx-iconbtn::after { bottom: auto; top: calc(100% + 6px); }
+  .hub-stepper output { min-width: 76px; text-align: center; font-size: 13px; color: var(--text-2); }
+  .hub-stepper output .n { color: var(--text); font-weight: 600; }
+  .hub-rows { display: flex; flex-direction: column; }
+  .hub-row { display: grid; grid-template-columns: 52px minmax(200px, 1fr) minmax(220px, 420px) 72px 72px 32px; align-items: center; gap: 0 20px; padding: 14px 20px; border-top: 1px solid var(--rule); }
+  .hub-row:hover { background: var(--hover); }
+  .hub-row--head { padding-top: 0; padding-bottom: 10px; border-top: 0; color: var(--muted); font-size: 12px; line-height: 16px; }
+  .hub-row--head:hover { background: none; }
+  .hub-row--head .r { font-family: var(--font); font-size: 12px; }
+  .hub-row .r { text-align: right; font-family: var(--mono); font-variant-numeric: tabular-nums; }
+  .hub-row .r small { color: var(--muted); font-size: 12px; }
+  .hub-row .lx-cellmap { gap: 2px; }
+  .hub-row .lx-cellmap a { width: 10px; height: 10px; }
+  .hub-empty { padding: 4px 20px 20px; color: var(--muted); }
+  .hub-word { font-family: var(--font); font-weight: 600; letter-spacing: -.01em; }
+  .lx-week__t { -webkit-line-clamp: 3; }
+  .lx-kpi__v .n { font: inherit; }
+  @media (max-width: 1100px) { .hub-row { grid-template-columns: 48px minmax(160px, 1fr) minmax(160px, 260px) 64px 32px; } .hub-row > .hub-ess { display: none; } }
+  @media (max-width: 900px) {
+    .hub-row { grid-template-columns: 40px minmax(0, 1fr) auto; grid-template-areas: "k t s" "c c c"; gap: 10px 12px; padding: 14px 16px; }
+    .hub-row--head { display: none; }
+    .hub-row > .lx-row__k { grid-area: k; } .hub-row > .lx-row__t { grid-area: t; } .hub-row > .lx-cellmap { grid-area: c; } .hub-row > .hub-sql { grid-area: s; }
+    .hub-row > .hub-ess, .hub-row > .lx-iconbtn { display: none; }
+    .lx-head > .lx-actions { width: auto; }
+  }
 </style>
 </head>
 <body>
 <div class="lx-app" id="app">
   <header class="lx-mbar">
     <button class="lx-iconbtn" type="button" id="menuBtn" aria-controls="sidebar" aria-expanded="false" aria-label="Mở menu"><svg class="i" viewBox="0 0 16 16" aria-hidden="true"><path d="M2.5 4.5h11M2.5 8h11M2.5 11.5h11"/></svg></button>
-    <span class="lx-brand__mark"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><ellipse cx="8" cy="3.5" rx="5" ry="2"/><path d="M3 3.5v9c0 1.1 2.2 2 5 2s5-.9 5-2v-9M3 8c0 1.1 2.2 2 5 2s5-.9 5-2"/></svg></span><span class="lx-mbar__title">CS4420 Practice Lab</span>
+    <span class="lx-brand__mark"><svg viewBox="0 0 28 28" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true"><ellipse cx="14" cy="6.5" rx="9" ry="3.5" fill="currentColor"/><path d="M5 6.5v15c0 1.93 4.03 3.5 9 3.5s9-1.57 9-3.5v-15"/><path d="M5 14c0 1.93 4.03 3.5 9 3.5s9-1.57 9-3.5"/></svg></span><span class="lx-mbar__title">CS4420 Practice Lab</span>
   </header>
   <aside class="lx-sidebar" id="sidebar">
-    <a class="lx-brand" href="index.html"><span class="lx-brand__mark"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><ellipse cx="8" cy="3.5" rx="5" ry="2"/><path d="M3 3.5v9c0 1.1 2.2 2 5 2s5-.9 5-2v-9M3 8c0 1.1 2.2 2 5 2s5-.9 5-2"/></svg></span><span class="lx-brand__name">CS4420 Practice Lab<span>Database System Concepts</span></span></a>
+    <a class="lx-brand" href="index.html"><span class="lx-brand__mark"><svg viewBox="0 0 28 28" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true"><ellipse cx="14" cy="6.5" rx="9" ry="3.5" fill="currentColor"/><path d="M5 6.5v15c0 1.93 4.03 3.5 9 3.5s9-1.57 9-3.5v-15"/><path d="M5 14c0 1.93 4.03 3.5 9 3.5s9-1.57 9-3.5"/></svg></span><span class="lx-brand__name">Practice Lab<span>CS4420 · Database Systems</span></span></a>
     <nav class="lx-nav" aria-label="Các part">
-      <div class="lx-nav__group"><a class="lx-nav__item is-active" href="index.html" aria-current="page"><span class="lx-nav__t">Trang tổng &amp; lịch học</span></a></div>
-      <div class="lx-nav__group"><details class="lx-navpart" open><summary><span class="lx-navpart__n">Part 1</span><span class="lx-navpart__t">Chương 1 đến 5</span><svg class="i" viewBox="0 0 16 16" aria-hidden="true"><path d="M6 4l4 4-4 4"/></svg></summary>
-  <div class="lx-navpart__items"><a class="lx-nav__item" href="part_1/playground.html"><span class="lx-nav__t">Tổng quan</span></a><a class="lx-nav__item" href="part_1/playground.html#/ch1" title="Chương 1 — Giới thiệu về hệ cơ sở dữ liệu"><span class="lx-nav__k">Ch 1</span><span class="lx-nav__t">Giới thiệu về hệ cơ sở dữ liệu</span></a><a class="lx-nav__item" href="part_1/playground.html#/ch2" title="Chương 2 — Mô hình quan hệ &amp; Đại số quan hệ"><span class="lx-nav__k">Ch 2</span><span class="lx-nav__t">Mô hình quan hệ &amp; Đại số quan hệ</span></a><a class="lx-nav__item" href="part_1/playground.html#/ch3" title="Chương 3 — Nhập môn SQL"><span class="lx-nav__k">Ch 3</span><span class="lx-nav__t">Nhập môn SQL</span></a><a class="lx-nav__item" href="part_1/playground.html#/ch4" title="Chương 4 — SQL trung cấp"><span class="lx-nav__k">Ch 4</span><span class="lx-nav__t">SQL trung cấp</span></a><a class="lx-nav__item" href="part_1/playground.html#/ch5" title="Chương 5 — SQL nâng cao"><span class="lx-nav__k">Ch 5</span><span class="lx-nav__t">SQL nâng cao</span></a></div></details><details class="lx-navpart" open><summary><span class="lx-navpart__n">Part 2</span><span class="lx-navpart__t">Chương 6 và 7</span><svg class="i" viewBox="0 0 16 16" aria-hidden="true"><path d="M6 4l4 4-4 4"/></svg></summary>
-  <div class="lx-navpart__items"><a class="lx-nav__item" href="part_2/playground.html"><span class="lx-nav__t">Tổng quan</span></a><a class="lx-nav__item" href="part_2/playground.html#/ch6" title="Chương 6 — Thiết kế CSDL bằng mô hình E-R"><span class="lx-nav__k">Ch 6</span><span class="lx-nav__t">Thiết kế CSDL bằng mô hình E-R</span></a><a class="lx-nav__item" href="part_2/playground.html#/ch7" title="Chương 7 — Chuẩn hoá (Relational Database Design)"><span class="lx-nav__k">Ch 7</span><span class="lx-nav__t">Chuẩn hoá (Relational Database Design)</span></a></div></details><details class="lx-navpart" open><summary><span class="lx-navpart__n">Part 3</span><span class="lx-navpart__t">Ôn tập giữa kỳ</span><svg class="i" viewBox="0 0 16 16" aria-hidden="true"><path d="M6 4l4 4-4 4"/></svg></summary>
-  <div class="lx-navpart__items"><a class="lx-nav__item" href="part_3/playground.html"><span class="lx-nav__t">Tổng quan</span></a><a class="lx-nav__item" href="part_3/playground.html#/gk1" title="Ôn GK · Phần 1 — Practice Exercises Chương 1–2 (Introduction, Relational Model)"><span class="lx-nav__k">GK1</span><span class="lx-nav__t">Practice Exercises Chương 1–2 (Introduction, Relational Model)</span></a><a class="lx-nav__item" href="part_3/playground.html#/gk2" title="Ôn GK · Phần 2 — Practice Exercises Chương 3 (Introduction to SQL)"><span class="lx-nav__k">GK2</span><span class="lx-nav__t">Practice Exercises Chương 3 (Introduction to SQL)</span></a><a class="lx-nav__item" href="part_3/playground.html#/gk3" title="Ôn GK · Phần 3 — Practice Exercises Chương 4 (Intermediate SQL)"><span class="lx-nav__k">GK3</span><span class="lx-nav__t">Practice Exercises Chương 4 (Intermediate SQL)</span></a><a class="lx-nav__item" href="part_3/playground.html#/gk4" title="Đề thi thử GK — Đề thi thử giữa kỳ — Chương 1–4"><span class="lx-nav__k">Đề GK</span><span class="lx-nav__t">Đề thi thử giữa kỳ — Chương 1–4</span></a></div></details><details class="lx-navpart" open><summary><span class="lx-navpart__n">Part 4</span><span class="lx-navpart__t">Ôn tập cuối kỳ</span><svg class="i" viewBox="0 0 16 16" aria-hidden="true"><path d="M6 4l4 4-4 4"/></svg></summary>
-  <div class="lx-navpart__items"><a class="lx-nav__item" href="part_4/playground.html"><span class="lx-nav__t">Tổng quan</span></a><a class="lx-nav__item" href="part_4/playground.html#/ck1" title="Ôn CK · Phần 1 — Practice Exercises Chương 6 (E-R)"><span class="lx-nav__k">CK1</span><span class="lx-nav__t">Practice Exercises Chương 6 (E-R)</span></a><a class="lx-nav__item" href="part_4/playground.html#/ck2" title="Ôn CK · Phần 2 — Practice Exercises Chương 7 (Normalization)"><span class="lx-nav__k">CK2</span><span class="lx-nav__t">Practice Exercises Chương 7 (Normalization)</span></a><a class="lx-nav__item" href="part_4/playground.html#/ck3" title="Ôn CK · Phần 3 — Ôn nhanh SQL &amp; đại số quan hệ (phòng câu tổng hợp)"><span class="lx-nav__k">CK3</span><span class="lx-nav__t">Ôn nhanh SQL &amp; đại số quan hệ (phòng câu tổng hợp)</span></a><a class="lx-nav__item" href="part_4/playground.html#/ck4" title="Đề thi thử CK — Đề thi thử cuối kỳ — Chương 6–7"><span class="lx-nav__k">Đề CK</span><span class="lx-nav__t">Đề thi thử cuối kỳ — Chương 6–7</span></a></div></details></div>
+      <div class="lx-nav__group"><a class="lx-nav__item is-active" href="index.html" aria-current="page"><svg class="i" viewBox="0 0 16 16" aria-hidden="true"><path d="M2.5 4h11v9.5h-11zM2.5 7h11M5.5 2.5v3M10.5 2.5v3"/></svg><span class="lx-nav__t">Lịch học &amp; tiến độ</span></a></div>
+      <div class="lx-nav__group"><div class="lx-nav__label">Theo sách</div><a class="lx-nav__item is-part" href="part_1/playground.html" title="Part 1 — Chương 1 đến 5"><span class="lx-nav__k">P1</span><span class="lx-nav__t">Chương 1 đến 5</span></a><a class="lx-nav__item is-part" href="part_2/playground.html" title="Part 2 — Chương 6 và 7"><span class="lx-nav__k">P2</span><span class="lx-nav__t">Chương 6 và 7</span></a><a class="lx-nav__item is-part" href="part_3/playground.html" title="Part 3 — Chương 8 và 9"><span class="lx-nav__k">P3</span><span class="lx-nav__t">Chương 8 và 9</span></a><a class="lx-nav__item is-part" href="part_4/playground.html" title="Part 4 — Chương 10 và 11"><span class="lx-nav__k">P4</span><span class="lx-nav__t">Chương 10 và 11</span></a><a class="lx-nav__item is-part" href="part_5/playground.html" title="Part 5 — Chương 12, 13 và 14"><span class="lx-nav__k">P5</span><span class="lx-nav__t">Chương 12, 13 và 14</span></a><a class="lx-nav__item is-part" href="part_6/playground.html" title="Part 6 — Chương 15 và 16"><span class="lx-nav__k">P6</span><span class="lx-nav__t">Chương 15 và 16</span></a><a class="lx-nav__item is-part" href="part_7/playground.html" title="Part 7 — Chương 17, 18 và 19"><span class="lx-nav__k">P7</span><span class="lx-nav__t">Chương 17, 18 và 19</span></a><a class="lx-nav__item is-part" href="part_8/playground.html" title="Part 8 — Chương 20 đến 23"><span class="lx-nav__k">P8</span><span class="lx-nav__t">Chương 20 đến 23</span></a><a class="lx-nav__item is-part" href="part_9/playground.html" title="Part 9 — Chương 24, 25 và 26"><span class="lx-nav__k">P9</span><span class="lx-nav__t">Chương 24, 25 và 26</span></a></div>
+      <div class="lx-nav__group"><div class="lx-nav__label">Ôn thi</div><a class="lx-nav__item is-part" href="midterm/playground.html" title="Ôn giữa kỳ — Ôn tập giữa kỳ"><span class="lx-nav__k">GK</span><span class="lx-nav__t">Ôn tập giữa kỳ</span></a><a class="lx-nav__item is-part" href="final/playground.html" title="Ôn cuối kỳ — Ôn tập cuối kỳ"><span class="lx-nav__k">CK</span><span class="lx-nav__t">Ôn tập cuối kỳ</span></a></div>
     </nav>
   </aside>
-  <div class="lx-content"><main class="lx-page">
-  <div class="lx-head"><div class="lx-head__text"><div class="lx-eyebrow">CS4420 · Database System Concepts, 7th Ed.</div>
-    <h1 class="lx-h1">Bộ luyện tập theo lịch học</h1>
-    <p class="lx-lead">Bốn part: học theo chương (Part 1, 2) và ôn thi (Part 3 giữa kỳ, Part 4 cuối kỳ). Phần ôn thi bám sát <strong>Practice Exercises</strong> của sách — đề thi chủ yếu lấy từ đây. Mọi câu SQL chạy trên PostgreSQL ngay trong trình duyệt.</p></div></div>
-  <div class="lx-card"><div class="lx-card__head"><h2 class="lx-h2">Các part</h2><a class="lx-subtle" style="font-size:12px" href="https://www.db-book.com/Practice-Exercises/index-solu.html">Practice Exercises (db-book.com)</a></div>
-    <div class="lx-scroll"><table class="lx-table"><thead><tr><th>Part</th><th>Nội dung</th><th>Tuần</th><th class="r">Tự luận</th><th class="r">Bài SQL</th><th class="act"><span class="lx-sr">Mở</span></th></tr></thead><tbody><tr>
-    <td class="hub-pn">Part 1</td>
-    <td><a class="lx-cell__main" href="part_1/playground.html">Chương 1 đến 5</a><div class="lx-cell__sub">Introduction · Relational Model · SQL (cơ bản, trung cấp, nâng cao)</div>
-      <div class="hub-links"><a class="lx-tag" href="part_1/playground.html#/ch1" title="Chương 1 — Giới thiệu về hệ cơ sở dữ liệu">Chương 1</a><a class="lx-tag" href="part_1/playground.html#/ch2" title="Chương 2 — Mô hình quan hệ &amp; Đại số quan hệ">Chương 2</a><a class="lx-tag" href="part_1/playground.html#/ch3" title="Chương 3 — Nhập môn SQL">Chương 3</a><a class="lx-tag" href="part_1/playground.html#/ch4" title="Chương 4 — SQL trung cấp">Chương 4</a><a class="lx-tag" href="part_1/playground.html#/ch5" title="Chương 5 — SQL nâng cao">Chương 5</a></div></td>
-    <td>Tuần 1–7</td>
-    <td class="r">29</td><td class="r">131</td>
-    <td class="act"><a class="lx-btn" href="part_1/playground.html">Mở</a></td></tr><tr>
-    <td class="hub-pn">Part 2</td>
-    <td><a class="lx-cell__main" href="part_2/playground.html">Chương 6 và 7</a><div class="lx-cell__sub">Thiết kế CSDL bằng mô hình E-R · Chuẩn hoá (Normalization)</div>
-      <div class="hub-links"><a class="lx-tag" href="part_2/playground.html#/ch6" title="Chương 6 — Thiết kế CSDL bằng mô hình E-R">Chương 6</a><a class="lx-tag" href="part_2/playground.html#/ch7" title="Chương 7 — Chuẩn hoá (Relational Database Design)">Chương 7</a></div></td>
-    <td>Tuần 9–12</td>
-    <td class="r">22</td><td class="r">39</td>
-    <td class="act"><a class="lx-btn" href="part_2/playground.html">Mở</a></td></tr><tr>
-    <td class="hub-pn">Part 3</td>
-    <td><a class="lx-cell__main" href="part_3/playground.html">Ôn tập giữa kỳ</a><div class="lx-cell__sub">Chương 1–4 theo Practice Exercises của sách + đề thi thử</div>
-      <div class="hub-links"><a class="lx-tag" href="part_3/playground.html#/gk1" title="Ôn GK · Phần 1 — Practice Exercises Chương 1–2 (Introduction, Relational Model)">GK1</a><a class="lx-tag" href="part_3/playground.html#/gk2" title="Ôn GK · Phần 2 — Practice Exercises Chương 3 (Introduction to SQL)">GK2</a><a class="lx-tag" href="part_3/playground.html#/gk3" title="Ôn GK · Phần 3 — Practice Exercises Chương 4 (Intermediate SQL)">GK3</a><a class="lx-tag" href="part_3/playground.html#/gk4" title="Đề thi thử GK — Đề thi thử giữa kỳ — Chương 1–4">Đề GK</a></div></td>
-    <td>Tuần 7–8</td>
-    <td class="r">33</td><td class="r">80</td>
-    <td class="act"><a class="lx-btn" href="part_3/playground.html">Mở</a></td></tr><tr>
-    <td class="hub-pn">Part 4</td>
-    <td><a class="lx-cell__main" href="part_4/playground.html">Ôn tập cuối kỳ</a><div class="lx-cell__sub">Chương 6–7 theo Practice Exercises của sách, ôn lại SQL nền tảng + đề thi thử</div>
-      <div class="hub-links"><a class="lx-tag" href="part_4/playground.html#/ck1" title="Ôn CK · Phần 1 — Practice Exercises Chương 6 (E-R)">CK1</a><a class="lx-tag" href="part_4/playground.html#/ck2" title="Ôn CK · Phần 2 — Practice Exercises Chương 7 (Normalization)">CK2</a><a class="lx-tag" href="part_4/playground.html#/ck3" title="Ôn CK · Phần 3 — Ôn nhanh SQL &amp; đại số quan hệ (phòng câu tổng hợp)">CK3</a><a class="lx-tag" href="part_4/playground.html#/ck4" title="Đề thi thử CK — Đề thi thử cuối kỳ — Chương 6–7">Đề CK</a></div></td>
-    <td>Tuần 13–15</td>
-    <td class="r">43</td><td class="r">54</td>
-    <td class="act"><a class="lx-btn" href="part_4/playground.html">Mở</a></td></tr></tbody></table></div></div>
-  <div class="lx-card">
-    <div class="lx-card__head"><h2 class="lx-h2">Lịch học &amp; kế hoạch thi</h2><span class="lx-subtle" style="font-size:12px">Bấm nhãn để mở đúng phần luyện tập</span></div>
-    <div class="lx-scroll"><table class="lx-table"><thead><tr><th class="r">Tuần</th><th>Nội dung</th><th>Thi</th><th>Luyện tập</th></tr></thead><tbody><tr><td class="r">1</td><td><div class="lx-cell__main">Introduction, Relational Model (first 2 operators)</div></td>
-    <td></td><td><div class="hub-links"><a class="lx-tag" href="part_1/playground.html#/ch1" title="Giới thiệu về hệ cơ sở dữ liệu">P1 · Chương 1</a> <a class="lx-tag" href="part_1/playground.html#/ch2" title="Mô hình quan hệ &amp; Đại số quan hệ">P1 · Chương 2</a></div></td></tr><tr><td class="r">2</td><td><div class="lx-cell__main">Relational Model (last 4 operators)</div></td>
-    <td></td><td><div class="hub-links"><a class="lx-tag" href="part_1/playground.html#/ch2" title="Mô hình quan hệ &amp; Đại số quan hệ">P1 · Chương 2</a></div></td></tr><tr><td class="r">3</td><td><div class="lx-cell__main">Introduction to SQL — tới slide 25 &amp; Practice</div></td>
-    <td></td><td><div class="hub-links"><a class="lx-tag" href="part_1/playground.html#/ch3" title="Nhập môn SQL">P1 · Chương 3</a></div></td></tr><tr><td class="r">4</td><td><div class="lx-cell__main">Introduction to SQL — slide 25–47 &amp; Practice</div></td>
-    <td></td><td><div class="hub-links"><a class="lx-tag" href="part_1/playground.html#/ch3" title="Nhập môn SQL">P1 · Chương 3</a></div></td></tr><tr><td class="r">5</td><td><div class="lx-cell__main">Introduction to SQL — slide 48–62 &amp; Practice</div><div class="lx-cell__sub">Project Announcement</div></td>
-    <td></td><td><div class="hub-links"><a class="lx-tag" href="part_1/playground.html#/ch3" title="Nhập môn SQL">P1 · Chương 3</a></div></td></tr><tr><td class="r">6</td><td><div class="lx-cell__main">Intermediate SQL</div></td>
-    <td></td><td><div class="hub-links"><a class="lx-tag" href="part_1/playground.html#/ch4" title="SQL trung cấp">P1 · Chương 4</a></div></td></tr><tr><td class="r">7</td><td><div class="lx-cell__main">Intermediate SQL</div><div class="lx-cell__sub">Bắt đầu ôn giữa kỳ</div></td>
-    <td></td><td><div class="hub-links"><a class="lx-tag" href="part_1/playground.html#/ch4" title="SQL trung cấp">P1 · Chương 4</a> <a class="lx-tag" href="part_3/playground.html#/gk1" title="Practice Exercises Chương 1–2 (Introduction, Relational Model)">P3 · GK1</a></div></td></tr><tr class="hub-exam"><td class="r">8</td><td><div class="lx-cell__main">Midterm</div><div class="lx-cell__sub">Chương 1–4</div></td>
-    <td><span class="lx-badge lx-badge--warning">Thi giữa kỳ</span></td><td><div class="hub-links"><a class="lx-tag" href="part_3/playground.html#/gk1" title="Practice Exercises Chương 1–2 (Introduction, Relational Model)">P3 · GK1</a> <a class="lx-tag" href="part_3/playground.html#/gk2" title="Practice Exercises Chương 3 (Introduction to SQL)">P3 · GK2</a> <a class="lx-tag" href="part_3/playground.html#/gk3" title="Practice Exercises Chương 4 (Intermediate SQL)">P3 · GK3</a> <a class="lx-tag" href="part_3/playground.html#/gk4" title="Đề thi thử giữa kỳ — Chương 1–4">P3 · Đề GK</a></div></td></tr><tr><td class="r">9</td><td><div class="lx-cell__main">ER design — Chapter 6, tới slide 43</div></td>
-    <td></td><td><div class="hub-links"><a class="lx-tag" href="part_2/playground.html#/ch6" title="Thiết kế CSDL bằng mô hình E-R">P2 · Chương 6</a></div></td></tr><tr><td class="r">10</td><td><div class="lx-cell__main">ER design — Chapter 6, slide 44–73</div></td>
-    <td></td><td><div class="hub-links"><a class="lx-tag" href="part_2/playground.html#/ch6" title="Thiết kế CSDL bằng mô hình E-R">P2 · Chương 6</a></div></td></tr><tr><td class="r">11</td><td><div class="lx-cell__main">Normalization — Chapter 7, tới slide 21</div></td>
-    <td></td><td><div class="hub-links"><a class="lx-tag" href="part_2/playground.html#/ch7" title="Chuẩn hoá (Relational Database Design)">P2 · Chương 7</a></div></td></tr><tr><td class="r">12</td><td><div class="lx-cell__main">Normalization — Chapter 7, slide 21–35</div></td>
-    <td></td><td><div class="hub-links"><a class="lx-tag" href="part_2/playground.html#/ch7" title="Chuẩn hoá (Relational Database Design)">P2 · Chương 7</a></div></td></tr><tr><td class="r">13</td><td><div class="lx-cell__main">Team Project Presentation</div><div class="lx-cell__sub">Song song: ôn cuối kỳ</div></td>
-    <td></td><td><div class="hub-links"><a class="lx-tag" href="part_4/playground.html#/ck1" title="Practice Exercises Chương 6 (E-R)">P4 · CK1</a> <a class="lx-tag" href="part_4/playground.html#/ck2" title="Practice Exercises Chương 7 (Normalization)">P4 · CK2</a></div></td></tr><tr><td class="r">14</td><td><div class="lx-cell__main">Team Project Presentation</div><div class="lx-cell__sub">Song song: ôn cuối kỳ</div></td>
-    <td></td><td><div class="hub-links"><a class="lx-tag" href="part_4/playground.html#/ck3" title="Ôn nhanh SQL &amp; đại số quan hệ (phòng câu tổng hợp)">P4 · CK3</a></div></td></tr><tr class="hub-exam"><td class="r">15</td><td><div class="lx-cell__main">Final Exam</div><div class="lx-cell__sub">Chương 6–7 (+ SQL nền tảng)</div></td>
-    <td><span class="lx-badge lx-badge--danger">Thi cuối kỳ</span></td><td><div class="hub-links"><a class="lx-tag" href="part_4/playground.html#/ck1" title="Practice Exercises Chương 6 (E-R)">P4 · CK1</a> <a class="lx-tag" href="part_4/playground.html#/ck2" title="Practice Exercises Chương 7 (Normalization)">P4 · CK2</a> <a class="lx-tag" href="part_4/playground.html#/ck3" title="Ôn nhanh SQL &amp; đại số quan hệ (phòng câu tổng hợp)">P4 · CK3</a> <a class="lx-tag" href="part_4/playground.html#/ck4" title="Đề thi thử cuối kỳ — Chương 6–7">P4 · Đề CK</a></div></td></tr></tbody></table></div>
-  </div>
+  <div class="lx-content"><main class="lx-page" id="main">
+    <div class="lx-head"><div class="lx-head__text">
+      <h1 class="lx-h1">Lịch học &amp; tiến độ</h1>
+      <p class="lx-ctx" style="margin:6px 0 0">CS4420 · Database System Concepts, 7th Ed. · 9 part theo sách, 2 phần ôn thi · 592 bài SQL chấm trên PostgreSQL trong trình duyệt</p>
+      <p class="lx-find" id="find">Học theo chương ở các part theo sách; trước mỗi kỳ thi, làm phần ôn thi tương ứng — bám sát Practice Exercises của sách.</p></div>
+      <div class="lx-actions"><div class="hub-stepper" role="group" aria-label="Tuần hiện tại">
+        <button class="lx-iconbtn" type="button" id="weekPrev" data-tip="Tuần trước" aria-label="Tuần trước"><svg class="i" viewBox="0 0 16 16" aria-hidden="true"><path d="M10 4L6 8l4 4"/></svg></button>
+        <output id="weekOut" aria-live="polite">Tuần <span class="n">1</span></output>
+        <button class="lx-iconbtn" type="button" id="weekNext" data-tip="Tuần sau" aria-label="Tuần sau"><svg class="i" viewBox="0 0 16 16" aria-hidden="true"><path d="M6 4l4 4-4 4"/></svg></button>
+      </div></div>
+    </div>
+    <div class="lx-card lx-kpis" id="kpis"></div>
+    <div class="lx-card" id="thisWeek"></div>
+    <div class="lx-card"><div class="lx-card__head"><h2 class="lx-h2">Lịch 15 tuần</h2><span class="lx-card__meta">Chọn một tuần để xem phần cần luyện</span></div><div class="lx-weeks" id="weeks"></div></div>
+    <div class="lx-card" id="book"></div>
+    <div class="lx-card" id="exam"></div>
   </main></div>
 </div>
+<script id="hubData" type="application/json">{"parts":[{"slug":"part_1","key":"P1","label":"Part 1","title":"Chương 1 đến 5","subtitle":"Introduction · Relational Model · SQL (cơ bản, trung cấp, nâng cao)","weeks":"Tuần 1–7","group":"book","storage":"cs4420p1","chapters":[{"key":"ch1","nav":"Chương 1","title":"Giới thiệu về hệ cơ sở dữ liệu","store":"1","essays":6,"ex":[["1.01","warm-up"],["1.02","warm-up"],["1.03","data dictionary"]]},{"key":"ch2","nav":"Chương 2","title":"Mô hình quan hệ & Đại số quan hệ","store":"2","essays":7,"ex":[["2.01","σ select"],["2.02","σ select"],["2.03","σ select"],["2.04","Π project"],["2.05","composition"],["2.06","× product"],["2.07","⋈ join"],["2.08","∪ union"],["2.09","∩ intersection"],["2.10","− difference"],["2.11","ρ rename"],["2.12","𝒢 aggregation"],["2.13","𝒢 aggregation"],["2.14","keys"]]},{"key":"ch3","nav":"Chương 3","title":"Nhập môn SQL","store":"3","essays":4,"ex":[["3.01","select"],["3.02","distinct"],["3.03","arithmetic"],["3.04","where"],["3.05","between"],["3.06","order by"],["3.07","like"],["3.08","like"],["3.09","string functions"],["3.10","from (join)"],["3.11","from (join)"],["3.12","rename"],["3.13","self join"],["3.14","tuple comparison"],["3.15","union"],["3.16","union all"],["3.17","except"],["3.18","null"],["3.19","null"],["3.20","aggregate"],["3.21","count distinct"],["3.22","group by"],["3.23","having"],["3.24","group by"],["3.25","group by + join"],["3.26","having"],["3.27","in"],["3.28","not in"],["3.29","in (tuple)"],["3.30","some"],["3.31","all"],["3.32","all"],["3.33","exists"],["3.34","not exists"],["3.35","not exists"],["3.36","\"unique\""],["3.37","from subquery"],["3.38","with"],["3.39","with"],["3.40","scalar subquery"],["3.41","insert"],["3.42","insert null"],["3.43","insert ... select"],["3.44","delete"],["3.45","delete"],["3.46","update"],["3.47","update case"],["3.48","update scalar subquery"],["3.49","alter table"],["3.50","create table"]]},{"key":"ch4","nav":"Chương 4","title":"SQL trung cấp","store":"4","essays":6,"ex":[["4.01","natural join"],["4.02","natural join (đúng)"],["4.03","natural join (bẫy)"],["4.04","join using"],["4.05","inner join on"],["4.06","left outer join"],["4.07","left outer join"],["4.08","right outer join"],["4.09","full outer join"],["4.10","outer join + count"],["4.11","create view"],["4.12","create view"],["4.13","view of view"],["4.14","update view"],["4.15","with check option"],["4.16","materialized view"],["4.17","commit"],["4.18","rollback"],["4.19","savepoint"],["4.20","check / pk / fk"],["4.21","unique"],["4.22","on delete set null"],["4.23","deferred constraint"],["4.24","timestamp / interval"],["4.25","date + interval"],["4.26","domain"],["4.27","domain as type"],["4.28","index"],["4.29","grant"],["4.30","revoke"],["4.31","roles chain"],["4.32","authorization on views"],["4.33","with grant option"],["4.34","revoke cascade"]]},{"key":"ch5","nav":"Chương 5","title":"SQL nâng cao","store":"5","essays":6,"ex":[["5.01","function"],["5.02","table function"],["5.03","procedure"],["5.04","for loop"],["5.05","if / elsif"],["5.06","procedure + update"],["5.07","row trigger"],["5.08","before trigger"],["5.09","audit trigger"],["5.10","statement trigger"],["5.11","with recursive"],["5.12","transitive closure"],["5.13","recursion + depth"],["5.14","rank"],["5.15","dense_rank"],["5.16","rank without window"],["5.17","partition by"],["5.18","top-n per group"],["5.19","ntile"],["5.20","percent_rank / cume_dist"],["5.21","moving average"],["5.22","running total"],["5.23","range window"],["5.24","cross-tab data"],["5.25","pivot"],["5.26","cube"],["5.27","grouping()"],["5.28","rollup"],["5.29","rollup + hierarchy"],["5.30","multiple rollups"]]}]},{"slug":"part_2","key":"P2","label":"Part 2","title":"Chương 6 và 7","subtitle":"Thiết kế CSDL bằng mô hình E-R · Chuẩn hoá (Normalization)","weeks":"Tuần 9–12","group":"book","storage":"cs4420p2","chapters":[{"key":"ch6","nav":"Chương 6","title":"Thiết kế CSDL bằng mô hình E-R","store":"6","essays":10,"ex":[["6.01","strong entity"],["6.02","composite attribute"],["6.03","multivalued attribute"],["6.04","derived attribute"],["6.05","weak entity"],["6.06","M:N + attribute"],["6.07","many-to-one gộp"],["6.08","one-to-one"],["6.09","total participation"],["6.10","role / recursive"],["6.11","cardinality từ dữ liệu"],["6.12","specialization M1 (DDL)"],["6.13","specialization M1 (query)"],["6.14","overlapping / partial"],["6.15","specialization M2"],["6.16","aggregation (DDL)"],["6.17","aggregation (query)"],["6.18","ternary + arrow"],["6.19","ternary → binary"],["6.20","reduction tổng hợp"]]},{"key":"ch7","nav":"Chương 7","title":"Chuẩn hoá (Relational Database Design)","store":"7","essays":12,"ex":[["7.01","redundancy"],["7.02","update anomaly"],["7.03","test FD"],["7.04","FD violation tuples"],["7.05","test FD"],["7.06","superkey on instance"],["7.07","not a key"],["7.08","lossy decomposition"],["7.09","lossy decomposition"],["7.10","lossless decomposition"],["7.11","BCNF decomposition"],["7.12","BCNF decomposition"],["7.13","test FD (3NF)"],["7.14","lost dependency"],["7.15","enforce FD by trigger"],["7.16","3NF + unique"],["7.17","3NF synthesis"],["7.18","test MVD"],["7.19","4NF decomposition"]]}]},{"slug":"part_3","key":"P3","label":"Part 3","title":"Chương 8 và 9","subtitle":"Kiểu dữ liệu phức tạp (JSON, mảng, kiểu đối tượng, RDF, văn bản, không gian) · Phát triển ứng dụng","weeks":"Ngoài lịch học","group":"book","storage":"cs4420part3","chapters":[{"key":"ch8","nav":"Chương 8","title":"Kiểu dữ liệu phức tạp","store":"8","essays":9,"ex":[["CH8.01","jsonb ->>, #>>"],["CH8.02","jsonb @> containment"],["CH8.03","jsonb_array_length, ?"],["CH8.04","jsonb_array_elements_text"],["CH8.05","jsonb_set / ||"],["CH8.06","PE 8.1a JSON lồng nhau"],["CH8.07","PE 8.1b XML"],["CH8.08","PE 8.1c RDF triples"],["CH8.09","PE 8.2a triple pattern join"],["CH8.10","PE 8.2b shared variable"],["CH8.11","PE 8.2c predicate là biến"],["CH8.12","array any, &&"],["CH8.13","unnest with ordinality"],["CH8.14","composite (col).field"],["CH8.15","PE 8.4 unnest composite array"],["CH8.16","PE 8.4 nested unnest"],["CH8.17","PE 8.4 nest lại"],["CH8.18","PE 8.3 table inheritance"],["CH8.19","PE 8.5 composite types, array, method"],["CH8.20","PE 8.6b group by + all"],["CH8.21","PE 8.7 TF-IDF"],["CH8.22","full-text search tsvector"],["CH8.23","PE 8.8 PageRank một bước"],["CH8.24","PE 8.8 PageRank lặp"],["CH8.25","PE 8.9a point in polygon"],["CH8.26","PE 8.9b within distance"],["CH8.27","PE 8.9c,d nearest neighbor, spatial join"]]},{"key":"ch9","nav":"Chương 9","title":"Phát triển ứng dụng","store":"9","essays":12,"ex":[["CH9.01","PE 9.12 kiểm tra đăng nhập"],["CH9.02","PE 9.12 đăng ký, salt"],["CH9.03","PE 9.3 phát hiện giá bị sửa"],["CH9.04","PE 9.3 tính hoá đơn phía server"],["CH9.05","PE 9.4 request trái quyền"],["CH9.06","PE 9.4 hàm kiểm tra quyền"],["CH9.07","PE 9.8 khai thác injection"],["CH9.08","PE 9.8 sửa injection"],["CH9.09","prepared statement"],["CH9.10","phân trang offset"],["CH9.11","phân trang keyset"],["CH9.12","upsert on conflict"],["CH9.13","giao dịch nguyên tử cho một request"],["CH9.14","row-level security"],["CH9.15","PE 9.6 cache bằng materialized view"],["CH9.16","PE 9.6 chọn truy vấn để cache"],["CH9.17","PE 9.7 netstat, window lag"],["CH9.18","PE 9.11 chuỗi chứng chỉ, recursive"],["CH9.19","PE 9.9 băm tất định vs có salt"],["CH9.20","view + grant cho role ứng dụng"]]}]},{"slug":"part_4","key":"P4","label":"Part 4","title":"Chương 10 và 11","subtitle":"Big Data · Data Analytics (data warehouse, OLAP, data mining)","weeks":"Ngoài lịch học","group":"book","storage":"cs4420part4","chapters":[{"key":"ch10","nav":"Chương 10","title":"Dữ liệu lớn (Big Data)","store":"10","essays":9,"ex":[["CH10.01","MapReduce word count"],["CH10.02","top-k words"],["CH10.03","inverted index"],["CH10.04","PE 10.7 N"],["CH10.05","PE 10.7 word pairs"],["CH10.06","PE 10.5 parallel sum"],["CH10.07","PE 10.2 jsonb access"],["CH10.08","jsonb unnest"],["CH10.09","build a document"],["CH10.10","jsonb containment"],["CH10.11","PE 10.3 composite key"],["CH10.12","PE 10.4 MapReduce join"],["CH10.13","range partitioning"],["CH10.14","hash partitioning"],["CH10.15","PE 10.8 tumbling window"],["CH10.16","stream: 30-min windows"],["CH10.17","sliding window"],["CH10.18","PE 10.9 graph edges"],["CH10.19","degree"],["CH10.20","reachability"],["CH10.21","PageRank iteration"]]},{"key":"ch11","nav":"Chương 11","title":"Phân tích dữ liệu (Data Warehouse, OLAP, Data Mining)","store":"11","essays":6,"ex":[["CH11.01","PE 11.3 cross-tab"],["CH11.02","PE 11.4 rollup hierarchies"],["CH11.03","cube"],["CH11.04","grouping()"],["CH11.05","grouping sets"],["CH11.06","slice & dice"],["CH11.07","pivot"],["CH11.08","rank"],["CH11.09","ntile"],["CH11.10","running total"],["CH11.11","moving average"],["CH11.12","share within group"],["CH11.13","median"],["CH11.14","itemset support"],["CH11.15","association rules"],["CH11.16","PE 11.5 decision tree"],["CH11.17","PE 11.5 rule confidence"],["CH11.18","PE 11.6 metrics"],["CH11.19","PE 11.2 column store"]]}]},{"slug":"part_5","key":"P5","label":"Part 5","title":"Chương 12, 13 và 14","subtitle":"Storage Management and Indexing: lưu trữ vật lý · cấu trúc lưu trữ dữ liệu · index","weeks":"Ngoài lịch học","group":"book","storage":"cs4420part5","chapters":[{"key":"ch12","nav":"Chương 12","title":"Hệ thống lưu trữ vật lý","store":"12","essays":7,"ex":[["CH12.01","access time"],["CH12.02","IOPS"],["CH12.03","sequential vs random"],["CH12.04","RAID capacity"],["CH12.05","MTTF of many disks"],["CH12.06","mean time to data loss"],["CH12.07","PE 12.3b flash table"],["CH12.08","PE 12.3c run mapping"],["CH12.09","PE 12.4 parity placement"],["CH12.10","cost per GB"],["CH12.11","RAID write penalty"]]},{"key":"ch13","nav":"Chương 13","title":"Cấu trúc lưu trữ dữ liệu","store":"13","essays":8,"ex":[["CH13.01","fixed-length records"],["CH13.02","variable-length storage"],["CH13.03","char vs varchar"],["CH13.04","PE 13.2a free list insert"],["CH13.05","PE 13.2 insert, delete, insert"],["CH13.06","walk the free list"],["CH13.07","PE 13.4 2-bit free-space map"],["CH13.08","search with the bitmap"],["CH13.09","LRU simulation"],["CH13.10","buffer size vs hits"],["CH13.11","PE 13.6 partitioning"],["CH13.12","PE 13.3 multitable clustering"],["CH13.13","row vs column store"],["CH13.14","slotted page, ctid"]]},{"key":"ch14","nav":"Chương 14","title":"Index","store":"14","essays":15,"ex":[["CH14.01","create index"],["CH14.02","composite index"],["CH14.03","unique expression index"],["CH14.04","partial index"],["CH14.05","hash index"],["CH14.06","covering index"],["CH14.07","catalog: existing indexes"],["CH14.08","PE 14.2 one clustering index"],["CH14.09","PE 14.13a bitmap on salary"],["CH14.10","PE 14.13b bitmap AND"],["CH14.11","PE 14.13b answer from bitmap"],["CH14.12","sparse index"],["CH14.13","sparse index lookup"],["CH14.14","B+-tree fan-out and height"],["CH14.15","PE 14.3 node occupancy"],["CH14.16","PE 14.8b build cost"],["CH14.17","redundant indexes"],["CH14.18","drop redundant indexes"]]}]},{"slug":"part_6","key":"P6","label":"Part 6","title":"Chương 15 và 16","subtitle":"Xử lý truy vấn (Query Processing) · Tối ưu truy vấn (Query Optimization)","weeks":"Ngoài lịch học","group":"book","storage":"cs4420part6","chapters":[{"key":"ch15","nav":"Chương 15","title":"Xử lý truy vấn","store":"15","essays":16,"ex":[["CH15.01","PE 15.1 tạo run"],["CH15.02","PE 15.1 pass merge"],["CH15.03","chi phí external sort"],["CH15.04","PE 15.3a nested-loop"],["CH15.05","PE 15.3b block nested-loop"],["CH15.06","PE 15.3d hash join"],["CH15.07","PE 15.2 bỏ theta join"],["CH15.08","PE 15.6c phủ định"],["CH15.09","PE 15.10a semijoin"],["CH15.10","PE 15.10b anti-semijoin"],["CH15.11","PE 15.8 division (hash)"],["CH15.12","loại trùng bằng sort"],["CH15.13","PE 15.13 ≥ k keyword"],["CH15.14","top-K với hoà"],["CH15.15","indexed nested-loop"]]},{"key":"ch16","nav":"Chương 16","title":"Tối ưu truy vấn","store":"16","essays":15,"ex":[["CH16.01","PE 16.3a phản ví dụ"],["CH16.02","PE 16.3b phản ví dụ"],["CH16.03","PE 16.3d right outer join"],["CH16.04","PE 16.3e selection & outer join"],["CH16.05","PE 16.3c min vs max"],["CH16.06","PE 16.2b having → where"],["CH16.07","PE 16.6 ước lượng join"],["CH16.08","PE 16.6 chọn join đầu tiên"],["CH16.09","ước lượng σ A ≤ v"],["CH16.10","histogram equi-width"],["CH16.11","ước lượng bằng histogram"],["CH16.12","PE 16.12 số thứ tự join"],["CH16.13","thứ tự join left-deep tốt nhất"],["CH16.14","PE 16.15a truy vấn lồng"],["CH16.15","PE 16.15b khử tương quan"],["CH16.16","not exists → anti-join"],["CH16.17","PE 16.8 join trên upper()"],["CH16.18","expression index"],["CH16.19","PE 16.9 đẩy aggregate qua join"],["CH16.20","bảo trì materialized view"]]}]},{"slug":"part_7","key":"P7","label":"Part 7","title":"Chương 17, 18 và 19","subtitle":"Transactions · Concurrency Control · Recovery System","weeks":"Ngoài lịch học","group":"book","storage":"cs4420part7","chapters":[{"key":"ch17","nav":"Chương 17","title":"Giao tác (Transactions)","store":"17","essays":11,"ex":[["CH17.01","commit"],["CH17.02","atomicity"],["CH17.03","savepoint"],["CH17.04","conflicting operations"],["CH17.05","precedence graph"],["CH17.06","cycle detection"],["CH17.07","topological order"],["CH17.08","reads-from"],["CH17.09","recoverable / cascadeless"],["CH17.10","lost update"],["CH17.11","serial schedule"],["CH17.12","final write"],["CH17.13","cycle members"]]},{"key":"ch18","nav":"Chương 18","title":"Điều khiển đồng thời (Concurrency Control)","store":"18","essays":16,"ex":[["CH18.01","lock compatibility"],["CH18.02","two-phase check"],["CH18.03","lock point"],["CH18.04","strict / rigorous 2PL"],["CH18.05","deadlock detection"],["CH18.06","deadlock victim"],["CH18.07","wait-die / wound-wait"],["CH18.08","timestamp ordering"],["CH18.09","multiversion read"],["CH18.10","TO simulation"],["CH18.11","validation"],["CH18.12","first-committer-wins"],["CH18.13","item W-timestamp"],["CH18.14","phantom"]]},{"key":"ch19","nav":"Chương 19","title":"Phục hồi (Recovery System)","store":"19","essays":13,"ex":[["CH19.01","transaction status"],["CH19.02","values after recovery"],["CH19.03","undo-list from checkpoint"],["CH19.04","redo phase"],["CH19.05","undo phase log"],["CH19.06","undo order"],["CH19.07","logging rollback"],["CH19.08","log truncation"],["CH19.09","deferred modification"],["CH19.10","undo committed txn"],["CH19.11","ARIES analysis"],["CH19.12","ARIES redo"],["CH19.13","ARIES undo"],["CH19.14","savepoint"]]}]},{"slug":"part_8","key":"P8","label":"Part 8","title":"Chương 20 đến 23","subtitle":"Kiến trúc hệ CSDL · Lưu trữ, xử lý truy vấn và giao dịch song song & phân tán","weeks":"Ngoài lịch học","group":"book","storage":"cs4420part8","chapters":[{"key":"ch20","nav":"Chương 20","title":"Kiến trúc hệ CSDL","store":"20","essays":12,"ex":[["CH20.01","speedup"],["CH20.02","linear / sublinear / superlinear"],["CH20.03","scaleup"],["CH20.04","Amdahl"],["CH20.05","Amdahl: giới hạn"],["CH20.06","skew"],["CH20.07","kiến trúc song song"],["CH20.08","NUMA"],["CH20.09","superlinear speedup"]]},{"key":"ch21","nav":"Chương 21","title":"Lưu trữ song song và phân tán","store":"21","essays":8,"ex":[["CH21.01","round-robin"],["CH21.02","hash partitioning"],["CH21.03","attribute-value skew"],["CH21.04","range partitioning"],["CH21.05","skew của range partitioning"],["CH21.06","truy vấn khoảng"],["CH21.07","vector từ histogram"],["CH21.08","partition by range (PostgreSQL)"],["CH21.09","partition by hash (PostgreSQL)"],["CH21.10","replica khi node hỏng"],["CH21.11","master đã đổi"]]},{"key":"ch22","nav":"Chương 22","title":"Xử lý truy vấn song song và phân tán","store":"22","essays":11,"ex":[["CH22.01","repartition: số tuple phải chuyển"],["CH22.02","partitioned join: join cục bộ"],["CH22.03","repartition vs broadcast"],["CH22.04","partial aggregation: avg"],["CH22.05","pre-aggregation giảm truyền"],["CH22.06","skew sau repartition"],["CH22.07","band join"],["CH22.08","Bloom filter"],["CH22.09","outer join song song"],["CH22.10","group by không cần repartition"],["CH22.11","MapReduce word count"]]},{"key":"ch23","nav":"Chương 23","title":"Xử lý giao dịch song song và phân tán","store":"23","essays":13,"ex":[["CH23.01","2PC: quyết định của coordinator"],["CH23.02","2PC: phục hồi participant"],["CH23.03","2PC: blocking"],["CH23.04","quorum consensus"],["CH23.05","đọc quorum: version lớn nhất"],["CH23.06","global wait-for graph"],["CH23.07","phát hiện deadlock"],["CH23.08","Lamport timestamp"],["CH23.09","persistent messaging: sequence number"],["CH23.10","lazy replication: đọc dữ liệu cũ"],["CH23.11","chain replication"],["CH23.12","lease"],["CH23.13","federated: precedence graph"]]}]},{"slug":"part_9","key":"P9","label":"Part 9","title":"Chương 24, 25 và 26","subtitle":"Advanced Indexing · Advanced Application Development · Blockchain Databases","weeks":"Ngoài lịch học","group":"book","storage":"cs4420part9","chapters":[{"key":"ch24","nav":"Chương 24","title":"Kỹ thuật index nâng cao","store":"24","essays":9,"ex":[["CH24.01","Bloom filter: false positive"],["CH24.02","Bloom filter: bật bit"],["CH24.03","Bloom filter: tra cứu"],["CH24.04","LSM tree: tra cứu"],["CH24.05","LSM tree: compaction"],["CH24.06","bitmap index"],["CH24.07","bitmap AND + count"],["CH24.08","bitmap NOT + existence"],["CH24.09","nearest neighbor"],["CH24.10","region query"],["CH24.11","MBR filter vs giao thật"],["CH24.12","extendable hashing: bit"],["CH24.13","extendable hashing: global depth"]]},{"key":"ch25","nav":"Chương 25","title":"Phát triển ứng dụng nâng cao","store":"25","essays":9,"ex":[["CH25.01","tuning: thiếu index"],["CH25.02","tuning: bảng nóng"],["CH25.03","throughput theo mix"],["CH25.04","lock hot spot"],["CH25.05","sequence gaps"],["CH25.06","sequence không rollback"],["CH25.07","test bắt lỗi join"],["CH25.08","regression test"],["CH25.09","materialized view"],["CH25.10","chọn loại index"],["CH25.11","LDAP DN"],["CH25.12","benchmark TPC"]]},{"key":"ch26","nav":"Chương 26","title":"Cơ sở dữ liệu blockchain","store":"26","essays":11,"ex":[["CH26.01","tính hash khối"],["CH26.02","kiểm tra chuỗi bị sửa"],["CH26.03","khối phải đào lại"],["CH26.04","Merkle: lá"],["CH26.05","Merkle root"],["CH26.06","Merkle root, số lá lẻ"],["CH26.07","proof-of-work"],["CH26.08","hash yếu: va chạm"],["CH26.09","số dư từ sổ cái"],["CH26.10","phát hiện tiêu quá số dư"],["CH26.11","append-only bằng trigger"],["CH26.12","điểm fork"],["CH26.13","quy tắc chuỗi dài nhất"]]}]},{"slug":"midterm","key":"GK","label":"Ôn giữa kỳ","title":"Ôn tập giữa kỳ","subtitle":"Chương 1–4 theo Practice Exercises của sách + đề thi thử","weeks":"Tuần 7–8","group":"exam","storage":"cs4420p3","chapters":[{"key":"gk1","nav":"GK1","title":"Practice Exercises Chương 1–2 (Introduction, Relational Model)","store":"gk1","essays":14,"ex":[["GK1.01","PE 2.1 primary key"],["GK1.02","PE 2.2 foreign key"],["GK1.03","PE 2.3 time_slot key"],["GK1.04","PE 2.4 superkey"],["GK1.05","PE 2.5 σ over ×"],["GK1.06","PE 2.5 missing tuples"],["GK1.07","PE 2.6a σ, Π"],["GK1.08","PE 2.6b join"],["GK1.09","PE 2.6c join"],["GK1.10","PE 2.7a σ, Π"],["GK1.11","PE 2.7b θ-join"],["GK1.12","PE 2.8a set difference"],["GK1.13","PE 2.8b rename"],["GK1.14","PE 2.9a division"],["GK1.15","PE 2.9b division by formula"],["GK1.16","PE 2.9 division check"]]},{"key":"gk2","nav":"GK2","title":"Practice Exercises Chương 3 (Introduction to SQL)","store":"gk2","essays":3,"ex":[["GK2.01","PE 3.1a where"],["GK2.02","PE 3.1b join, distinct"],["GK2.03","PE 3.1c max"],["GK2.04","PE 3.1d subquery"],["GK2.05","PE 3.1e scalar subquery"],["GK2.06","PE 3.1e empty section"],["GK2.07","PE 3.1f max of aggregate"],["GK2.08","PE 3.1g with"],["GK2.09","PE 3.2a grade points"],["GK2.10","PE 3.2b GPA"],["GK2.11","PE 3.2c group by"],["GK2.12","PE 3.2c union null"],["GK2.13","PE 3.2d null grade"],["GK2.14","PE 3.3a update"],["GK2.15","PE 3.3b delete"],["GK2.16","PE 3.3c insert select"],["GK2.17","PE 3.4a count distinct"],["GK2.18","PE 3.4b delete in"],["GK2.19","PE 3.5a case"],["GK2.20","PE 3.5b group by case"],["GK2.21","PE 3.6 lower like"],["GK2.22","PE 3.6 lower like"],["GK2.23","PE 3.7 empty relation"],["GK2.24","PE 3.8a except"],["GK2.25","PE 3.8b self join"],["GK2.26","PE 3.8c join"],["GK2.27","PE 3.9a join"],["GK2.28","PE 3.9b in"],["GK2.29","PE 3.9c not in"],["GK2.30","PE 3.9d > all"],["GK2.31","PE 3.9e not exists except"],["GK2.32","PE 3.9f having >= all"],["GK2.33","PE 3.9g having avg"],["GK2.34","PE 3.10a update"],["GK2.35","PE 3.10b update case"],["GK2.36","PE 3.10b two updates"]]},{"key":"gk3","nav":"GK3","title":"Practice Exercises Chương 4 (Intermediate SQL)","store":"gk3","essays":8,"ex":[["GK3.01","PE 4.1 natural join trap"],["GK3.02","PE 4.2a left outer join"],["GK3.03","PE 4.2b scalar subquery"],["GK3.04","PE 4.2c coalesce"],["GK3.05","PE 4.2d count zero"],["GK3.06","PE 4.3a left join rewrite"],["GK3.07","PE 4.3b full join rewrite"],["GK3.08","PE 4.4 outer join order"],["GK3.09","PE 4.5a test data"],["GK3.10","PE 4.6 view with nulls"],["GK3.11","PE 4.7 DDL foreign keys"],["GK3.12","PE 4.8a constraint query"],["GK3.13","PE 4.9 cascade chain"],["GK3.14","PE 4.10 full outer join on"],["GK3.15","PE 4.13 view authorization"],["GK3.16","PE 4.13 invisible insert"]]},{"key":"gk4","nav":"Đề GK","title":"Đề thi thử giữa kỳ — Chương 1–4","store":"gk4","essays":8,"ex":[["GK4.01","outer join + count"],["GK4.02","intersect"],["GK4.03","division (for all)"],["GK4.04","with + max (ties)"],["GK4.05","having + subquery"],["GK4.06","correlated subquery"],["GK4.07","update + case"],["GK4.08","insert ... select"],["GK4.09","view with check option"],["GK4.10","FK self cascade"],["GK4.11","grant on view"],["GK4.12","RA → SQL"]]}]},{"slug":"final","key":"CK","label":"Ôn cuối kỳ","title":"Ôn tập cuối kỳ","subtitle":"Chương 6–7 theo Practice Exercises của sách, ôn lại SQL nền tảng + đề thi thử","weeks":"Tuần 13–15","group":"exam","storage":"cs4420p4","chapters":[{"key":"ck1","nav":"CK1","title":"Practice Exercises Chương 6 (E-R)","store":"ck1","essays":13,"ex":[["CK1.01","PE 6.1 DDL"],["CK1.02","PE 6.2a ternary"],["CK1.03","PE 6.2b binary"],["CK1.04","PE 6.3 derived (view)"],["CK1.05","PE 6.3 derived (query)"],["CK1.06","PE 6.8 many-to-one"],["CK1.07","PE 6.9 one-to-one"],["CK1.08","PE 6.10 not null"],["CK1.09","PE 6.11 deferred trigger"],["CK1.10","PE 6.8/6.11 vi phạm total"],["CK1.11","PE 6.12 multiple inheritance"],["CK1.12","PE 6.13 temporal DDL"],["CK1.13","PE 6.13 query tại thời điểm"],["CK1.14","PE 6.13 lịch sử"],["CK1.15","PE 6.13 snapshot"]]},{"key":"ck2","nav":"CK2","title":"Practice Exercises Chương 7 (Normalization)","store":"ck2","essays":20,"ex":[["CK2.01","PE 7.2 — test FD"],["CK2.02","PE 7.2 — composite FD"],["CK2.03","PE 7.9 — test FD"],["CK2.04","PE 7.9 — enforce FD"],["CK2.05","PE 7.1 — lossless"],["CK2.06","PE 7.6 — keys on data"],["CK2.07","PE 7.13 — lost FD"],["CK2.08","PE 7.10 — nulls"],["CK2.09","PE 7.11 — PK/FK"],["CK2.10","PE 7.12 — u ⊆ join"],["CK2.11","PE 7.17 — 3 BCNF decompositions"],["CK2.12","PE 7.20 — MVD vs FD"],["CK2.13","PE 7.20 — 4NF"],["CK2.14","PE 7.3 — cardinality via FD"]]},{"key":"ck3","nav":"CK3","title":"Ôn nhanh SQL & đại số quan hệ (phòng câu tổng hợp)","store":"ck3","essays":4,"ex":[["CK3.01","join"],["CK3.02","left outer join + count"],["CK3.03","group by / having"],["CK3.04","in subquery"],["CK3.05","not exists"],["CK3.06","> all"],["CK3.07","union"],["CK3.08","with"],["CK3.09","scalar subquery"],["CK3.10","case + group by"],["CK3.11","DDL + constraints"],["CK3.12","create view"],["CK3.13","delete + subquery"],["CK3.14","update + subquery"],["CK3.15","division"]]},{"key":"ck4","nav":"Đề CK","title":"Đề thi thử cuối kỳ — Chương 6–7","store":"ck4","essays":6,"ex":[["CK4.01","weak entity → DDL"],["CK4.02","M:N → DDL"],["CK4.03","1:1 + total"],["CK4.04","multivalued → DDL"],["CK4.05","specialization → DDL"],["CK4.06","FD test (vi phạm)"],["CK4.07","FD test (update anomaly)"],["CK4.08","kiểm tra nhiều FD"],["CK4.09","phân rã BCNF + lossless"],["CK4.10","phân rã lossy"]]}]}],"schedule":[{"week":1,"content":"Introduction, Relational Model (first 2 operators)","note":"","exam":"","links":[{"slug":"part_1","key":"ch1"},{"slug":"part_1","key":"ch2"}]},{"week":2,"content":"Relational Model (last 4 operators)","note":"","exam":"","links":[{"slug":"part_1","key":"ch2"}]},{"week":3,"content":"Introduction to SQL — tới slide 25 & Practice","note":"","exam":"","links":[{"slug":"part_1","key":"ch3"}]},{"week":4,"content":"Introduction to SQL — slide 25–47 & Practice","note":"","exam":"","links":[{"slug":"part_1","key":"ch3"}]},{"week":5,"content":"Introduction to SQL — slide 48–62 & Practice","note":"Project Announcement","exam":"","links":[{"slug":"part_1","key":"ch3"}]},{"week":6,"content":"Intermediate SQL","note":"","exam":"","links":[{"slug":"part_1","key":"ch4"}]},{"week":7,"content":"Intermediate SQL","note":"Bắt đầu ôn giữa kỳ","exam":"","links":[{"slug":"part_1","key":"ch4"},{"slug":"midterm","key":"gk1"}]},{"week":8,"content":"Midterm","note":"Chương 1–4","exam":"midterm","links":[{"slug":"midterm","key":"gk1"},{"slug":"midterm","key":"gk2"},{"slug":"midterm","key":"gk3"},{"slug":"midterm","key":"gk4"}]},{"week":9,"content":"ER design — Chapter 6, tới slide 43","note":"","exam":"","links":[{"slug":"part_2","key":"ch6"}]},{"week":10,"content":"ER design — Chapter 6, slide 44–73","note":"","exam":"","links":[{"slug":"part_2","key":"ch6"}]},{"week":11,"content":"Normalization — Chapter 7, tới slide 21","note":"","exam":"","links":[{"slug":"part_2","key":"ch7"}]},{"week":12,"content":"Normalization — Chapter 7, slide 21–35","note":"","exam":"","links":[{"slug":"part_2","key":"ch7"}]},{"week":13,"content":"Team Project Presentation","note":"Song song: ôn cuối kỳ","exam":"","links":[{"slug":"final","key":"ck1"},{"slug":"final","key":"ck2"}]},{"week":14,"content":"Team Project Presentation","note":"Song song: ôn cuối kỳ","exam":"","links":[{"slug":"final","key":"ck3"}]},{"week":15,"content":"Final Exam","note":"Chương 6–7 (+ SQL nền tảng)","exam":"final","links":[{"slug":"final","key":"ck1"},{"slug":"final","key":"ck2"},{"slug":"final","key":"ck3"},{"slug":"final","key":"ck4"}]}]}</script>
 <script>
-  const app = document.getElementById('app'), btn = document.getElementById('menuBtn');
+(() => {
+  const HUB = JSON.parse(document.getElementById('hubData').textContent);
+  const $ = s => document.querySelector(s);
+  const esc = s => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  const get = (k, d) => { try { const v = localStorage.getItem(k); return v === null ? d : JSON.parse(v); } catch { return d; } };
+  const OPEN = '<svg class="i" viewBox="0 0 16 16" aria-hidden="true"><path d="M3 8h10M9 4l4 4-4 4"/></svg>';
+  const WORD = { pass: 'đã đúng', fail: 'chưa đúng' };
+  const bySlug = Object.fromEntries(HUB.parts.map(p => [p.slug, p]));
+  const status = (p, id) => get(p.storage + ':status:' + id, null);
+  const essaysDone = (p, c) => get(p.storage + ':essay:' + c.store, []).filter(i => i < c.essays).length;
+  const href = (p, hash = '') => p.slug + '/playground.html' + hash;
+  const cells = (p, chapters) => '<div class="lx-cellmap" role="list">' + chapters.map(c => c.ex.map(([id, topic]) => {
+    const s = status(p, id);
+    return '<a role="listitem"' + (s ? ' class="is-' + s + '"' : '') + ' href="' + href(p, '#/' + c.key + '/ex/' + id) + '" title="Bài ' + esc(id) + ' · ' + esc(topic) + '" aria-label="Bài ' + esc(id) + ': ' + (WORD[s] || 'chưa làm') + '"></a>';
+  }).join('')).join('') + '</div>';
+  const tally = (p, chapters) => chapters.reduce((t, c) => {
+    c.ex.forEach(([id]) => { if (status(p, id) === 'pass') t.pass++; });
+    t.total += c.ex.length; t.essays += essaysDone(p, c); t.essayTotal += c.essays; return t;
+  }, { pass: 0, total: 0, essays: 0, essayTotal: 0 });
+  const legend = '<div class="lx-legend" aria-hidden="true"><span><i class="is-pass"></i>Đã đúng</span><span><i class="is-fail"></i>Chưa đúng</span><span><i></i>Chưa làm</span></div>';
+  const head = first => '<div class="hub-row hub-row--head" aria-hidden="true"><span></span><span>' + first + '</span><span>Mỗi ô là một bài SQL</span><span class="r">SQL</span><span class="r hub-ess">Tự luận</span><span></span></div>';
+  const row = (k, p, chapters, title, sub, link) => {
+    const t = tally(p, chapters);
+    return '<div class="hub-row"><span class="lx-row__k">' + esc(k) + '</span><div class="lx-row__t"><a href="' + link + '">' + esc(title) + '</a><div class="lx-row__sub">' + esc(sub) + '</div></div>' +
+      cells(p, chapters) + '<span class="r hub-sql">' + t.pass + '<small>/' + t.total + '</small></span><span class="r hub-ess">' + t.essays + '<small>/' + t.essayTotal + '</small></span>' +
+      '<a class="lx-iconbtn" href="' + link + '" data-tip="Mở" aria-label="Mở ' + esc(title) + '">' + OPEN + '</a></div>';
+  };
+  const partRows = list => list.map(p => row(p.key, p, p.chapters, p.title, [p.label, p.weeks, p.subtitle].filter(Boolean).join(' · '), href(p))).join('');
+  const examWeek = kind => (HUB.schedule.find(w => w.exam === kind) || {}).week;
+  const until = (w, now) => (!w ? '<span class="lx-dash">–</span>' : w === now ? '<span class="hub-word">Tuần này</span>' : w < now ? '<span class="hub-word">Đã thi</span>' : (w - now) + '<span class="lx-kpi__u"> tuần nữa</span>');
+  const short = s => s.replace(/^Chương /, 'Ch ');
+
+  let week = Math.min(15, Math.max(1, Number(get('cs4420:week', 1)) || 1));
+  function render() {
+    const w = HUB.schedule.find(x => x.week === week) || HUB.schedule[0];
+    $('#weekOut').innerHTML = 'Tuần <span class="n">' + week + '</span>';
+    $('#weekPrev').disabled = week <= 1; $('#weekNext').disabled = week >= HUB.schedule.length;
+    const all = HUB.parts.reduce((t, p) => { const x = tally(p, p.chapters); t.pass += x.pass; t.total += x.total; return t; }, { pass: 0, total: 0 });
+    const mid = examWeek('midterm'), fin = examWeek('final');
+    $('#kpis').innerHTML =
+      '<div class="lx-kpi lx-kpi--lead"><div class="lx-kpi__k">Tuần đang học</div><div class="lx-kpi__v">' + week + '<span class="lx-kpi__u"> /' + HUB.schedule.length + '</span></div><div class="lx-meter" aria-hidden="true"><i style="width:' + (100 * week / HUB.schedule.length).toFixed(1) + '%"></i></div></div>' +
+      '<div class="lx-kpi"><div class="lx-kpi__k">Thi giữa kỳ' + (mid ? ' · tuần ' + mid : '') + '</div><div class="lx-kpi__v">' + until(mid, week) + '</div><div class="lx-kpi__n">' + esc((HUB.schedule.find(x => x.week === mid) || {}).note || '') + '</div></div>' +
+      '<div class="lx-kpi"><div class="lx-kpi__k">Thi cuối kỳ' + (fin ? ' · tuần ' + fin : '') + '</div><div class="lx-kpi__v">' + until(fin, week) + '</div><div class="lx-kpi__n">' + esc((HUB.schedule.find(x => x.week === fin) || {}).note || '') + '</div></div>' +
+      '<div class="lx-kpi"><div class="lx-kpi__k">Bài SQL đã đúng, cả khoá</div><div class="lx-kpi__v">' + all.pass + '<span class="lx-kpi__u"> /' + all.total + '</span></div><div class="lx-kpi__n">Lưu trong trình duyệt này</div></div>';
+    const exam = w.exam === 'midterm' ? 'Thi giữa kỳ' : w.exam === 'final' ? 'Thi cuối kỳ' : '';
+    $('#find').innerHTML = 'Tuần ' + week + ': ' + esc(exam || w.content) + (w.note ? ' · ' + esc(w.note) : '') + '.' +
+      (mid && week < mid ? ' Thi giữa kỳ sau <span class="n">' + (mid - week) + '</span> tuần.' : fin && week < fin ? ' Thi cuối kỳ sau <span class="n">' + (fin - week) + '</span> tuần.' : '');
+    const links = w.links.map(l => ({ p: bySlug[l.slug], c: bySlug[l.slug] && bySlug[l.slug].chapters.find(c => c.key === l.key) })).filter(x => x.c);
+    $('#thisWeek').innerHTML = '<div class="lx-card__head"><h2 class="lx-h2">Tuần ' + week + ' · ' + esc(exam || w.content) + '</h2>' + legend + '</div>' +
+      (links.length ? '<div class="hub-rows">' + head('Phần') + links.map(({ p, c }) => row(short(c.nav), p, [c], c.title, p.label + ' · ' + p.title, href(p, '#/' + c.key))).join('') + '</div>'
+        : '<p class="hub-empty">Tuần này không có phần luyện tập gắn sẵn. Chọn tuần khác trên lịch.</p>');
+    $('#weeks').innerHTML = HUB.schedule.map(x => {
+      const ex = x.exam === 'midterm' ? 'Thi giữa kỳ' : x.exam === 'final' ? 'Thi cuối kỳ' : '';
+      return '<button type="button" class="lx-week' + (x.week === week ? ' is-now' : '') + '" data-week="' + x.week + '" aria-pressed="' + (x.week === week) + '" title="Tuần ' + x.week + ': ' + esc(x.content) + (x.note ? ' — ' + esc(x.note) : '') + '">' +
+        '<span class="lx-week__n">T' + x.week + '</span>' + (ex ? '<span class="lx-week__exam">' + ex + '</span>' : '') + '<span class="lx-week__t">' + esc(x.links.map(l => bySlug[l.slug] && (bySlug[l.slug].chapters.find(c => c.key === l.key) || {}).nav).filter(Boolean).map(short).join(' · ') || x.content) + '</span></button>';
+    }).join('');
+    const books = HUB.parts.filter(p => p.group === 'book'), exams = HUB.parts.filter(p => p.group === 'exam');
+    $('#book').innerHTML = '<div class="lx-card__head"><h2 class="lx-h2">Theo sách</h2><span class="lx-card__meta">' + books.length + ' part · học theo chương: tóm tắt, trắc nghiệm, tự luận, bài SQL</span></div><div class="hub-rows">' + head('Part') + partRows(books) + '</div>';
+    if ($('#exam')) $('#exam').innerHTML = '<div class="lx-card__head"><h2 class="lx-h2">Ôn thi</h2><span class="lx-card__meta">Toàn bộ Practice Exercises của các chương thi, kèm đề thi thử</span></div><div class="hub-rows">' + head('Phần') + partRows(exams) + '</div>';
+  }
+  const setWeek = n => { week = Math.min(HUB.schedule.length, Math.max(1, n)); try { localStorage.setItem('cs4420:week', JSON.stringify(week)); } catch {} render(); };
+  $('#weekPrev').addEventListener('click', () => setWeek(week - 1));
+  $('#weekNext').addEventListener('click', () => setWeek(week + 1));
+  $('#weeks').addEventListener('click', e => { const b = e.target.closest('[data-week]'); if (b) setWeek(+b.dataset.week); });
+  render();
+  const app = $('#app'), btn = $('#menuBtn');
   btn.addEventListener('click', () => { const open = !app.classList.contains('is-navopen'); app.classList.toggle('is-navopen', open); btn.setAttribute('aria-expanded', String(open)); });
+})();
 </script>
 </body>
 </html>
