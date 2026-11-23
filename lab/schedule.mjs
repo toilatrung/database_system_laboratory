@@ -8,7 +8,7 @@ export default [
   { week: 5, content: 'Introduction to SQL — slide 48–62 & Practice', note: 'Project Announcement', links: [['part_1', 'ch3']] },
   { week: 6, content: 'Intermediate SQL', links: [['part_1', 'ch4']] },
   { week: 7, content: 'Intermediate SQL', note: 'Bắt đầu ôn giữa kỳ', links: [['part_1', 'ch4'], ['midterm', 'gk1']] },
-  { week: 8, content: 'Midterm', exam: 'midterm', note: 'Chương 1–4', links: [['midterm', 'gk1'], ['midterm', 'gk2'], ['midterm', 'gk3'], ['midterm', 'gk4']] },
+  { week: 8, content: 'Midterm', exam: 'midterm', note: 'Chương 1–4', links: [['midterm', 'gk1'], ['midterm', 'gk2'], ['midterm', 'gk3'], ['midterm', 'gk4'], ['midterm', 'gk5'], ['midterm', 'gk6']] },
   { week: 9, content: 'ER design — Chapter 6, tới slide 43', links: [['part_2', 'ch6']] },
   { week: 10, content: 'ER design — Chapter 6, slide 44–73', links: [['part_2', 'ch6']] },
   { week: 11, content: 'Normalization — Chapter 7, tới slide 21', links: [['part_2', 'ch7']] },

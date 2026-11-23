@@ -8,6 +8,8 @@ Thi giữa kỳ ở **tuần 8**, phạm vi **Chương 1–4** (Introduction, Re
 | [GK2](gk2_pe_ch3/README.md) | PE 3.1–3.10: truy vấn trên University, grade_points/GPA, insert/update/delete, insurance, marks + `case`, bank, employee | 3 | 36 |
 | [GK3](gk3_pe_ch4/README.md) | PE 4.1–4.13: bẫy natural join, outer join, viết lại outer join, view GPA, DDL employee, ràng buộc, cascade, `coalesce`, phân quyền | 8 | 16 |
 | [Đề GK](gk4_mock_midterm/README.md) | Đề thi thử 90 phút: biến thể của Practice Exercises (đổi lược đồ, đổi điều kiện), A. tự luận 8 câu (4đ) + B. SQL 12 bài (6đ), kế hoạch ôn 7 ngày, checklist | 8 | 12 |
+| [GK Nguyên bản](gk5_exam_original/README.md) | **Đề thi từ 4 file Word bài tập của bạn**: Question 1–19 và Exercise 3.1–3.13, giữ nguyên đề | 8 | 61 |
+| [GK Biến tấu](gk6_exam_variants/README.md) | **Biến thể** của các bài trên: đổi điều kiện, nhóm rỗng, NULL, hoà, thứ tự xoá theo FK, DDL mới | 8 | 42 |
 
 ## Cách ôn (tuần 7 → 8)
 1. Mỗi phần GK1–GK3 làm như đi thi: **Tự luận lý thuyết** — đọc đề gốc tiếng Anh, viết câu trả lời ra giấy rồi mới mở gợi ý đáp án và đánh dấu "Đã tự chấm" → **Bài tập SQL** — viết nháp trên giấy, gõ vào để chạy và chấm → **Ghi nhớ nhanh** (cheat sheet + bảng PE → câu/bài + các bẫy hay gặp) để đọc lại trước khi thi.

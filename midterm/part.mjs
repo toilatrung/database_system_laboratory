@@ -14,7 +14,7 @@ export default {
   steps: ['questions', 'ex', 'summary'],
   stepLabels: { questions: 'Tự luận lý thuyết', ex: 'Bài tập SQL', summary: 'Ghi nhớ nhanh' },
   setup: ['university_schema.sql', 'university_data.sql', 'extra_tables.sql', 'practice_datasets.sql'],
-  chapters: ['gk1', 'gk2', 'gk3', 'gk4'],
+  chapters: ['gk1', 'gk2', 'gk3', 'gk4', 'gk5', 'gk6'],
   schemaGroups: [
     { title: 'University database (theo sách)', core: true },
     { title: 'Employee database (Figure 2.17, 3.19, 4.12)', tables: ['employee', 'works', 'company', 'manages'] },
