@@ -1693,6 +1693,10 @@ function viewExercise(ch, id) {
   const ex = EXERCISES.get(id) && EXERCISES.get(id).chapter === ch.key ? EXERCISES.get(id) : EXERCISES.get(ch.exercises[0].id);
   const idx = ch.exercises.findIndex(e => e.id === ex.id);
   const prev = ch.exercises[idx - 1], next = ch.exercises[idx + 1];
+  // Where Ctrl+Shift+Enter goes after a correct check: the next exercise, or the first one of the next chapter that has exercises.
+  const nextCh = next ? null : DATA.chapters.slice(DATA.chapters.indexOf(ch) + 1).find(c => c.exercises.length);
+  const advanceHref = next ? `#/${ch.key}/ex/${next.id}` : nextCh ? `#/${nextCh.key}/ex/${nextCh.exercises[0].id}` : null;
+  const advanceLabel = next ? `bài ${next.id}` : nextCh ? `${esc(nextCh.label)}, bài ${nextCh.exercises[0].id}` : '';
   const code = store.get('code:' + ex.id, '');
   const p = chapterProgress(ch);
 
@@ -1754,7 +1758,15 @@ function viewExercise(ch, id) {
   const busy = on => buttons.forEach(b => (b.disabled = on));
   let saveTimer;
   editor.addEventListener('input', () => { clearTimeout(saveTimer); saveTimer = setTimeout(() => store.set('code:' + ex.id, editor.value), 300); });
-  bindEditorKeys(editor, () => $('#run').click(), () => $('#check').click());
+  let passedCode = null; // the code that just passed; Ctrl+Shift+Enter again on it moves on
+  bindEditorKeys(editor, () => $('#run').click(), () => {
+    if (advanceHref && passedCode !== null && passedCode === editor.value) {
+      store.set('code:' + ex.id, editor.value);
+      focusEditorOnLoad = true;
+      location.hash = advanceHref;
+    } else $('#check').click();
+  });
+  if (focusEditorOnLoad) { focusEditorOnLoad = false; editor.focus(); editor.setSelectionRange(editor.value.length, editor.value.length); }
 
   $('#run').addEventListener('click', async () => {
     if (!editor.value.trim()) return;
@@ -1778,8 +1790,9 @@ function viewExercise(ch, id) {
     try {
       const res = await serial(() => gradeExercise(getDb, ex, editor.value, ex.expected));
       store.set('status:' + ex.id, res.ok ? 'pass' : (exStatus(ex.id) === 'pass' ? 'pass' : 'fail'));
+      passedCode = res.ok ? editor.value : null;
       feedback.innerHTML = res.ok
-        ? callout('success', `<strong>Chính xác.</strong> Kết quả khớp với đáp án.${next ? ` <a href="#/${ch.key}/ex/${next.id}">Sang bài ${next.id}</a>` : ''}`)
+        ? callout('success', `<strong>Chính xác.</strong> Kết quả khớp với đáp án.${advanceHref ? ` <a href="${advanceHref}">Sang ${advanceLabel}</a> (hoặc bấm <kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>Enter</kbd> lần nữa)` : ''}`)
         : callout('warning', `<strong>Chưa đúng.</strong> ${esc(res.reason)}`);
       output.innerHTML = res.actual ? tableHtml(res.actual, ex.check ? 'Câu kiểm tra với code của bạn (đã chuẩn hoá)' : 'Kết quả của bạn (đã chuẩn hoá)') : '';
       $('#exState').innerHTML = exBadge(ex.id);
@@ -1978,6 +1991,7 @@ function viewFd(params) {
 }
 
 // Tab inserts spaces; Ctrl+Enter runs; Ctrl+Shift+Enter checks.
+let focusEditorOnLoad = false; // set when Ctrl+Shift+Enter moves on to the next exercise
 function bindEditorKeys(editor, onRun, onCheck) {
   editor.addEventListener('keydown', e => {
     if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
