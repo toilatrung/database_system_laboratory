@@ -502,6 +502,23 @@
   .lx-dot { width: 8px; height: 8px; border-radius: 2px; background: var(--cell); }
   .lx-dot.is-pass { background: var(--accent); }
   .lx-dot.is-fail { background: transparent; border: 1px solid var(--warning); }
+
+  /* ---------- Review marks: a star on any exercise or question ---------- */
+  .lx-star.is-on { color: var(--warning); }
+  .lx-star.is-on svg.i { fill: currentColor; }
+  .lx-mark-ind { color: var(--warning); margin-right: 4px; }
+  .lx-qhead__end { display: inline-flex; align-items: center; gap: 8px; }
+  .lx-marks { list-style: none; margin: 0; padding: 0 0 8px; }
+  .lx-marks li { display: grid; grid-template-columns: 96px minmax(0, 1fr) auto auto; align-items: center; gap: 4px 12px; padding: 10px 12px 10px 20px; border-top: 1px solid var(--rule); }
+  .lx-marks__k { font: 500 12px/18px var(--mono); color: var(--text-2); }
+  .lx-marks__t a { color: var(--text); text-decoration: none; font-weight: 500; }
+  .lx-marks__t a:hover { text-decoration: underline; }
+  .lx-marks__t p { margin: 2px 0 0; color: var(--muted); font-size: 13px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  @media (max-width: 640px) {
+    .lx-marks li { grid-template-columns: minmax(0, 1fr) auto; padding-left: 16px; }
+    .lx-marks__k { grid-column: 1 / -1; }
+    .lx-marks li > .lx-badge { display: none; }
+  }
   .lx-exhead { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; padding: 18px 20px 14px; }
   .lx-exhead__id { font: 600 18px/24px var(--mono); letter-spacing: -.01em; }
   .lx-exmeta { display: flex; flex-wrap: wrap; gap: 6px; flex: 1; }

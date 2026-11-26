@@ -501,6 +501,23 @@
   .lx-dot { width: 8px; height: 8px; border-radius: 2px; background: var(--cell); }
   .lx-dot.is-pass { background: var(--accent); }
   .lx-dot.is-fail { background: transparent; border: 1px solid var(--warning); }
+
+  /* ---------- Review marks: a star on any exercise or question ---------- */
+  .lx-star.is-on { color: var(--warning); }
+  .lx-star.is-on svg.i { fill: currentColor; }
+  .lx-mark-ind { color: var(--warning); margin-right: 4px; }
+  .lx-qhead__end { display: inline-flex; align-items: center; gap: 8px; }
+  .lx-marks { list-style: none; margin: 0; padding: 0 0 8px; }
+  .lx-marks li { display: grid; grid-template-columns: 96px minmax(0, 1fr) auto auto; align-items: center; gap: 4px 12px; padding: 10px 12px 10px 20px; border-top: 1px solid var(--rule); }
+  .lx-marks__k { font: 500 12px/18px var(--mono); color: var(--text-2); }
+  .lx-marks__t a { color: var(--text); text-decoration: none; font-weight: 500; }
+  .lx-marks__t a:hover { text-decoration: underline; }
+  .lx-marks__t p { margin: 2px 0 0; color: var(--muted); font-size: 13px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  @media (max-width: 640px) {
+    .lx-marks li { grid-template-columns: minmax(0, 1fr) auto; padding-left: 16px; }
+    .lx-marks__k { grid-column: 1 / -1; }
+    .lx-marks li > .lx-badge { display: none; }
+  }
   .lx-exhead { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; padding: 18px 20px 14px; }
   .lx-exhead__id { font: 600 18px/24px var(--mono); letter-spacing: -.01em; }
   .lx-exmeta { display: flex; flex-wrap: wrap; gap: 6px; flex: 1; }
@@ -715,6 +732,7 @@ const ICON = {
   copy: '<path d="M5.5 5.5h8v8h-8z"/><path d="M10.5 5.5v-3h-8v8h3"/>',
   calendar: '<path d="M2.5 4h11v9.5h-11zM2.5 7h11M5.5 2.5v3M10.5 2.5v3"/>',
   menu: '<path d="M2.5 4.5h11M2.5 8h11M2.5 11.5h11"/>',
+  star: '<path d="M8 1.9l1.85 3.85 4.2.55-3.07 2.92.78 4.18L8 11.37l-3.76 2.03.78-4.18L1.95 6.3l4.2-.55z"/>',
 };
 const icon = name => `<svg class="i" viewBox="0 0 16 16" aria-hidden="true">${ICON[name]}</svg>`;
 
@@ -938,6 +956,30 @@ function exBadge(id) {
 }
 const dotClass = id => ({ pass: ' is-pass', fail: ' is-fail' })[exStatus(id)] || '';
 const STATUS_WORD = { pass: 'đã đúng', fail: 'chưa đúng' };
+
+// Review marks: a starred list per part. Refs: "ex:<id>", "quiz:<chapter>:<i>", "essay:<chapter>:<i>".
+const getMarks = () => new Set(store.get('marks', []));
+const isMarked = ref => getMarks().has(ref);
+function toggleMark(ref) {
+  const set = getMarks();
+  if (set.has(ref)) set.delete(ref); else set.add(ref);
+  store.set('marks', [...set]);
+}
+const markTip = on => (on ? 'Bỏ đánh dấu ôn tập' : 'Đánh dấu để ôn lại');
+const starBtn = ref => {
+  const on = isMarked(ref);
+  return `<button type="button" class="lx-iconbtn lx-star${on ? ' is-on' : ''}" data-mark="${ref}" aria-pressed="${on}" data-tip="${markTip(on)}" aria-label="Đánh dấu để ôn lại">${icon('star')}</button>`;
+};
+const markInd = ref => `<span class="lx-mark-ind" data-mark-ind="${ref}" title="Đã đánh dấu ôn tập"${isMarked(ref) ? '' : ' hidden'}>★</span>`;
+function refreshMarks() {
+  const set = getMarks();
+  main.querySelectorAll('[data-mark]').forEach(b => {
+    const on = set.has(b.dataset.mark);
+    b.classList.toggle('is-on', on); b.setAttribute('aria-pressed', String(on)); b.dataset.tip = markTip(on);
+  });
+  main.querySelectorAll('[data-mark-ind]').forEach(el => { el.hidden = !set.has(el.dataset.markInd); });
+}
+const plainText = html => { const d = document.createElement('div'); d.innerHTML = html; return d.textContent.replace(/\s+/g, ' ').trim(); };
 function chapterBadge(p) {
   if (isDone(p)) return '<span class="lx-badge lx-badge--success">Hoàn thành</span>';
   if (p.tried || p.quiz || p.essays) return '<span class="lx-badge lx-badge--info">Đang học</span>';
@@ -983,7 +1025,9 @@ function renderNav(path) {
     }).join('')}</div>`;
   };
   const group = (label, list) => (list.length ? `<div class="lx-nav__group"><div class="lx-nav__label">${label}</div>${list.map(navPart).join('')}</div>` : '');
+  const markCount = getMarks().size;
   const tools = [
+    item('#/marks', `${icon('star')}<span class="lx-nav__t">Đánh dấu ôn tập</span>${markCount ? `<span class="lx-nav__c">${markCount}</span>` : ''}`, path === '/marks'),
     item('#/sandbox', `${icon('terminal')}<span class="lx-nav__t">SQL tự do</span>`, path === '/sandbox'),
     item('#/schema', `${icon('table')}<span class="lx-nav__t">Lược đồ cơ sở dữ liệu</span>`, path === '/schema'),
     DATA.part.fdTool ? item('#/fd', `${icon('key')}<span class="lx-nav__t">Phụ thuộc hàm (FD)</span>`, path === '/fd') : '',
@@ -1097,6 +1141,7 @@ function viewHome() {
         <ul class="lx-prose">
           <li>Mỗi ${unit} có ${PART_STEPS.length} bước: ${PART_STEPS.map(s => s.label.toLowerCase()).join(', ')}.</li>
           <li>Tự luận: viết ra giấy như trong phòng thi, mở gợi ý để so, rồi đánh dấu “Đã tự chấm”.</li>
+          <li>Bấm ngôi sao ở bài SQL hoặc câu hỏi cần xem lại; các mục này nằm trong “Đánh dấu ôn tập” ở sidebar.</li>
           <li>Bài tập chạy trong một transaction rồi <code>rollback</code>, dữ liệu gốc không đổi. Muốn giữ thay đổi, dùng SQL tự do.</li>
           <li>Tiến độ và code được lưu riêng cho từng part trong trình duyệt này, và đồng bộ online khi lưu online được bật (biểu tượng đám mây ở cuối sidebar).</li>
         </ul>
@@ -1104,7 +1149,7 @@ function viewHome() {
     </div>`;
   $('#resetProgress').addEventListener('click', () => {
     if (!confirm(`Xoá toàn bộ tiến độ và code của ${partLabel(DATA.part)} đã lưu trong trình duyệt?`)) return;
-    try { Object.keys(localStorage).filter(k => k.startsWith(STORE_PREFIX)).forEach(k => lxStore.remove(k)); } catch { /* ignore */ }
+    try { Object.keys(localStorage).filter(k => k.startsWith(STORE_PREFIX) && k !== STORE_PREFIX + 'marks').forEach(k => lxStore.remove(k)); } catch { /* ignore */ }
     route();
   });
 }
@@ -1158,7 +1203,7 @@ function viewQuiz(ch) {
   main.innerHTML = chapterPage(ch, 'quiz', `${ch.quiz.length} câu, mỗi câu một đáp án đúng.`) + `<form id="quiz">` +
     split(ch.quiz.map((q, i) => `
       <fieldset class="lx-card" data-i="${i}" style="margin:0;padding:0">
-        <div class="lx-qhead"><legend class="lx-qno" style="float:left;padding:0">Câu ${i + 1}</legend><span class="lx-q__state"></span></div>
+        <div class="lx-qhead"><legend class="lx-qno" style="float:left;padding:0">Câu ${i + 1}</legend><span class="lx-qhead__end"><span class="lx-q__state"></span>${starBtn(`quiz:${ch.key}:${i}`)}</span></div>
         <div class="lx-card__body lx-prose">
           <div>${q.q}</div>
           <div class="lx-q__opts">${q.options.map((o, j) => `
@@ -1224,7 +1269,7 @@ function viewQuestions(ch) {
   main.innerHTML = chapterPage(ch, 'questions', 'Viết câu trả lời ra giấy như trong phòng thi, rồi mở gợi ý đáp án để so và đánh dấu đã tự chấm.') +
     split(ch.questions.map((q, i) => `<div class="lx-card" id="essay-${i}">
       <div class="lx-qhead"><h2 class="lx-qno">Câu ${i + 1}</h2>
-        <label class="lx-check"><input type="checkbox" data-essay="${i}"${done.has(i) ? ' checked' : ''}> Đã tự chấm</label></div>
+        <span class="lx-qhead__end"><label class="lx-check"><input type="checkbox" data-essay="${i}"${done.has(i) ? ' checked' : ''}> Đã tự chấm</label>${starBtn(`essay:${ch.key}:${i}`)}</span></div>
       <div class="lx-card__body lx-prose">${q.en ? `<blockquote class="lx-en" lang="en">${q.en}</blockquote>` : ''}<p style="margin-top:0">${q.q}</p>
       <details><summary>${icon('caret')} Gợi ý đáp án</summary>${q.answer}</details></div></div>`).join('') +
       `<div class="lx-card">${nextStepFoot(ch, 'questions')}</div>`,
@@ -1267,7 +1312,7 @@ function viewExercise(ch, id) {
         <div class="lx-card__head"><h2 class="lx-h2">Bài tập</h2><span class="lx-card__meta" id="exCount">${num(p.passed)}/${num(p.total)} đúng</span></div>
         <ul id="exList">${ch.exercises.map(e => `
           <li${e.id === ex.id ? ' aria-selected="true"' : ''} data-id="${e.id}"><a href="#/${ch.key}/ex/${e.id}"${e.id === ex.id ? ' aria-current="true"' : ''}>
-            <span class="lx-list__id">${e.id}</span><span class="lx-list__t">${esc(e.topic)}</span><span class="lx-dot${dotClass(e.id)}" aria-label="${STATUS_WORD[exStatus(e.id)] || 'chưa làm'}"></span></a></li>`).join('')}
+            <span class="lx-list__id">${e.id}</span><span class="lx-list__t">${markInd('ex:' + e.id)}${esc(e.topic)}</span><span class="lx-dot${dotClass(e.id)}" aria-label="${STATUS_WORD[exStatus(e.id)] || 'chưa làm'}"></span></a></li>`).join('')}
         </ul>
       </aside>
       <section class="lx-stack">
@@ -1282,6 +1327,7 @@ function viewExercise(ch, id) {
               ${ex.ordered ? '<span class="lx-tag" title="Thứ tự dòng được chấm">Chấm thứ tự</span>' : ''}
             </div>
             <span id="exState">${exBadge(ex.id)}</span>
+            ${starBtn('ex:' + ex.id)}
           </div>
           <div class="lx-card__body lx-stack" style="padding-top:0">
             ${ex.en ? `<blockquote class="lx-en" lang="en">${ex.en}</blockquote>` : ''}
@@ -1383,6 +1429,32 @@ function viewExercise(ch, id) {
       <div class="lx-card__foot">Có thể có nhiều cách viết đúng khác.</div></div>`;
     $('#useSolution').addEventListener('click', () => { editor.value = ex.solution; store.set('code:' + ex.id, editor.value); editor.focus(); });
   });
+}
+
+function viewMarks() {
+  const set = getMarks();
+  const KIND = { ex: 'Bài SQL', quiz: 'Trắc nghiệm', essay: 'Tự luận' };
+  const groups = DATA.chapters.map(ch => {
+    const rows = [];
+    for (const st of stepsOf(ch)) {
+      if (st.key === 'ex') ch.exercises.forEach(e => set.has('ex:' + e.id) && rows.push({ ref: 'ex:' + e.id, kind: 'ex', title: `Bài ${e.id} · ${e.topic}`, text: plainText(e.prompt), href: `#/${ch.key}/ex/${e.id}`, badge: exBadge(e.id) }));
+      if (st.key === 'quiz') ch.quiz.forEach((q, i) => set.has(`quiz:${ch.key}:${i}`) && rows.push({ ref: `quiz:${ch.key}:${i}`, kind: 'quiz', title: `Câu ${i + 1}`, text: plainText(q.q), href: `#/${ch.key}/quiz?q=${i}`, badge: '' }));
+      if (st.key === 'questions') ch.questions.forEach((q, i) => set.has(`essay:${ch.key}:${i}`) && rows.push({ ref: `essay:${ch.key}:${i}`, kind: 'essay', title: `Câu ${i + 1}`, text: plainText(q.q), href: `#/${ch.key}/questions?q=${i}`, badge: '' }));
+    }
+    return { ch, rows };
+  }).filter(g => g.rows.length);
+  const total = groups.reduce((n, g) => n + g.rows.length, 0);
+  main.innerHTML = pageHead('Đánh dấu ôn tập', `${esc(partLabel(DATA.part))} · ${num(total)} mục đã đánh dấu`,
+    leadP('Bấm ngôi sao ở bài SQL, câu trắc nghiệm hoặc câu tự luận để đưa vào danh sách này, rồi quay lại ôn trước khi thi.')) +
+    (groups.length ? groups.map(({ ch, rows }) => `<div class="lx-card">
+      <div class="lx-card__head"><h2 class="lx-h2"><a href="#/${ch.key}" style="color:inherit;text-decoration:none">${esc(ch.label)} · ${esc(ch.titleVi)}</a></h2><span class="lx-card__meta">${num(rows.length)} mục</span></div>
+      <ul class="lx-marks">${rows.map(r => `<li>
+        <span class="lx-marks__k">${KIND[r.kind]}</span>
+        <div class="lx-marks__t"><a href="${r.href}">${esc(r.title)}</a><p title="${esc(r.text)}">${esc(r.text)}</p></div>
+        ${r.badge || '<span></span>'}
+        ${starBtn(r.ref)}
+      </li>`).join('')}</ul></div>`).join('')
+    : `<div class="lx-card"><div class="lx-card__body lx-prose"><p style="margin:0">Chưa có mục nào. Bấm biểu tượng ${icon('star')} cạnh một bài SQL, câu trắc nghiệm hoặc câu tự luận để đánh dấu cần ôn lại.</p></div></div>`);
 }
 
 function viewSandbox(initial) {
@@ -1583,6 +1655,9 @@ function route() {
   if (ch) {
     renderContext(ch);
     ({ summary: viewSummary, quiz: viewQuiz, questions: viewQuestions, ex: c => viewExercise(c, m[3]) })[m[2]](ch);
+  } else if (path === '/marks') {
+    renderContext(null);
+    viewMarks();
   } else if (path === '/sandbox') {
     renderContext(null);
     const table = new URLSearchParams(query || '').get('table');
@@ -1598,7 +1673,20 @@ function route() {
     viewHome();
   }
   window.scrollTo(0, 0);
+  // #/ch/quiz?q=3 or #/ch/questions?q=3 (from the review list): open at that question.
+  const q = new URLSearchParams(query || '').get('q');
+  if (ch && q !== null) (m[2] === 'quiz' ? main.querySelector(`[data-i="${CSS.escape(q)}"]`) : document.getElementById('essay-' + q))?.scrollIntoView({ block: 'start' });
 }
+// A star anywhere on the page toggles that item's review mark.
+main.addEventListener('click', e => {
+  const b = e.target.closest('[data-mark]');
+  if (!b) return;
+  e.preventDefault();
+  toggleMark(b.dataset.mark);
+  const path = (location.hash.slice(1) || '/').split('?')[0];
+  if (path === '/marks') { const y = scrollY; viewMarks(); scrollTo(0, y); } else refreshMarks();
+  renderNav(path);
+});
 window.addEventListener('hashchange', route);
 // Progress pulled from another device: redraw, unless the user is typing.
 window.addEventListener('lx:synced', () => {
