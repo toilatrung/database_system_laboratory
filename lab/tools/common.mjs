@@ -33,12 +33,15 @@ export async function databaseProvider(files) {
 // `pe: '3.2a'` on a question or exercise pulls the original statement from lab/pe/ into `en`.
 const withPE = item => item.pe ? { ...item, en: resolvePE(item.pe) } : item;
 
+// `seed: 'file.sql'` (in lab/db/) adds rows that only this chapter's exercises see.
 function normalizeChapter(mod, part) {
   const key = mod.key || `ch${mod.number}`;
+  const seed = mod.seed ? readFileSync(path.join(DB_DIR, mod.seed), 'utf8') : '';
   return {
     ...mod,
+    seed, seedFile: mod.seed ? 'lab/db/' + mod.seed : '',
     questions: (mod.questions || []).map(withPE),
-    exercises: (mod.exercises || []).map(withPE),
+    exercises: (mod.exercises || []).map(withPE).map(ex => (seed ? { ...ex, seed } : ex)),
     key,
     store: mod.key || String(mod.number),
     short: mod.short || String(mod.number),
@@ -89,7 +92,7 @@ export function partFilter(argv) {
   return { filter: p => p.slug === value || (!p.review && String(p.number) === String(value).replace(/^part_?/, '')), rest };
 }
 
-// Accepts a chapter key ("ch3", "3", "gk2"), a chapter folder or a file path.
+// Accepts a chapter key ("ch3", "3", "gk7"), a chapter folder or a file path.
 export function resolveAnswerFile(arg, parts) {
   const want = String(arg).toLowerCase();
   for (const part of parts) {

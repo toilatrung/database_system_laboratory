@@ -45,6 +45,8 @@ function writeChapterFiles(part, ch) {
 
   const tpl = [
     exerciseHeader(ch),
+    ...(ch.seedFile ? [`-- Đề này dùng thêm dữ liệu trong ${ch.seedFile}: khi chấm, file đó được nạp tự động
+-- (trong transaction) trước câu trả lời. Muốn thử trong SQL shell thì chạy file đó trước.`] : []),
     `-- Viết câu trả lời ngay dưới mỗi đề (giữ nguyên dòng "-- @ex ...").
 -- Chấm tự động (trong thư mục lab/):   npm run grade -- ${ch.key}
 -- Bài tự chấm chạy trong một transaction rồi rollback, nên dữ liệu gốc không đổi.
@@ -130,7 +132,7 @@ for (const part of allParts.filter(filter)) {
   const getDb = await databaseProvider(part.setup);
   const expected = {};
   for (const ch of part.chapters) {
-    for (const ex of ch.exercises) expected[ex.id] = await produceTable(await getDb(ex.fresh), ex.solution, ex.check, ex.fresh);
+    for (const ex of ch.exercises) expected[ex.id] = await produceTable(await getDb(ex.fresh), ex.solution, ex.check, ex.fresh, ex.seed);
     writeChapterFiles(part, ch);
   }
 
@@ -149,6 +151,7 @@ for (const part of allParts.filter(filter)) {
       key: ch.key, store: ch.store, short: ch.short, label: ch.label, navLabel: ch.navLabel, kind: ch.kind,
       title: ch.title,
       titleVi: ch.titleVi,
+      seed: ch.seed || '', seedFile: ch.seedFile || '', dbPanel: !!ch.dbPanel,
       summary: block(ch.summary),
       quiz: ch.quiz.map(q => ({ q: inline(q.q), options: q.options.map(inline), answer: q.answer, explain: inline(q.explain) })),
       questions: ch.questions.map(q => ({ q: inline(q.q), en: q.en ? block(q.en) : '', answer: block(q.answer) })),

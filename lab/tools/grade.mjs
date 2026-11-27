@@ -1,6 +1,6 @@
 // Grades an answer file containing `-- @ex <id>` blocks.
 //   npm run grade -- ch3                 -> part_1/ch3_intro_sql/my_answers.sql
-//   npm run grade -- gk2                 -> my_answers.sql of review section gk2
+//   npm run grade -- gk7                 -> my_answers.sql of review section gk7
 //   npm run grade -- path/to/answers.sql
 import { readFileSync, existsSync } from 'node:fs';
 import { loadParts, databaseProvider, resolveAnswerFile } from './common.mjs';

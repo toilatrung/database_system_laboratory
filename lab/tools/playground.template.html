@@ -637,6 +637,51 @@
     .lx-aside, .lx-fdin { position: static; }
     .lx-toc { max-height: none; }
   }
+  /* ---------- Database popup (chapters with dbPanel) ---------- */
+  .lx-dbfab { position: fixed; right: 24px; bottom: 24px; z-index: 30; display: inline-flex; align-items: center; gap: 8px; height: 44px; padding: 0 18px;
+    border: 1px solid var(--accent); border-radius: 999px; background: var(--surface); color: var(--text); font: 600 14px/1 var(--font); cursor: pointer;
+    box-shadow: 0 6px 24px rgba(0, 0, 0, .18); }
+  .lx-dbfab:hover { background: var(--raised); }
+  .lx-dbfab:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .lx-dbfab[aria-expanded="true"] { display: none; }
+  .lx-dbdrawer { position: fixed; top: 0; right: 0; bottom: 0; z-index: 31; width: min(480px, 100vw); display: flex; flex-direction: column;
+    background: var(--surface); border-left: 1px solid var(--border); box-shadow: -8px 0 32px rgba(0, 0, 0, .18); }
+  .lx-dbdrawer[hidden], .lx-dbscrim[hidden], .lx-dbpane[hidden] { display: none; }
+  .lx-dbdrawer > .lx-card__head { gap: 12px; }
+  .lx-dbdrawer > .lx-card__head .lx-card__meta { margin-left: auto; }
+  .lx-dbscrim { position: fixed; inset: 0; z-index: 30; background: rgba(0, 0, 0, .35); }
+  .lx-dbmode { display: flex; gap: 24px; padding: 0 16px; border-bottom: 1px solid var(--rule); }
+  .lx-dbmode .lx-tab { background: none; border: 0; padding: 0; cursor: pointer; font-family: inherit; }
+  .lx-dbpane { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; }
+  .lx-dbpane[data-pane="tables"] { padding-top: 12px; }
+  .lx-dbq { padding: 12px 16px; display: flex; flex-direction: column; gap: 8px; }
+  .lx-dbq .lx-editor { min-height: 140px; border: 1px solid var(--border); border-radius: 8px; }
+  .lx-dbq__bar { display: flex; align-items: center; justify-content: space-between; gap: 12px; font-size: 12px; }
+  /* Wide screens: the popup sits beside the exercise instead of covering it. */
+  @media (min-width: 1280px) {
+    .lx-dbscrim { display: none; }
+    body.is-dbopen .lx-content { padding-right: 480px; }
+  }
+  /* Not enough room for list + exercise + popup: the list steps aside (the pager stays). */
+  @media (min-width: 1280px) and (max-width: 1799px) {
+    body.is-dbopen .lx-work { grid-template-columns: minmax(0, 1fr); }
+    body.is-dbopen .lx-exlist { display: none; }
+  }
+  .lx-dbtabs { display: flex; flex-wrap: wrap; gap: 6px; padding: 0 16px 12px; }
+  .lx-dbtab { font: 500 12px/18px var(--mono); padding: 3px 8px; border: 1px solid var(--border); border-radius: 6px; background: transparent; color: var(--text-2); cursor: pointer; }
+  .lx-dbtab:hover { background: var(--hover); color: var(--text); }
+  .lx-dbtab[aria-selected="true"] { background: var(--raised); color: var(--text); border-color: var(--accent); }
+  .lx-dbtab:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+  .lx-dbcols { padding: 10px 16px; border-top: 1px solid var(--rule); font: 400 12px/18px var(--mono); color: var(--text-2); overflow-wrap: anywhere; }
+  .lx-dbcols b { color: var(--text); font-weight: 600; }
+  .lx-dbcols .is-pk { color: var(--text); text-decoration: underline; text-decoration-color: var(--accent); text-underline-offset: 3px; }
+  .lx-dbdata { flex: 1 1 auto; min-height: 120px; overflow: auto; border-top: 1px solid var(--rule); scrollbar-width: thin; }
+  .lx-dbdata .lx-table--data td, .lx-dbdata .lx-table--data th { padding: 5px 12px; }
+  .lx-dbcount { margin: 0; padding: 8px 12px; font-size: 12px; color: var(--muted); }
+  .lx-dbnote { padding: 10px 16px; border-top: 1px solid var(--rule); font-size: 12px; color: var(--muted); }
+  @media (max-width: 900px) {
+    .lx-dbfab { right: 16px; bottom: 16px; }
+  }
 </style>
 </head>
 <body>
@@ -683,7 +728,9 @@ const loadPGlite = async () => (pgliteModule ||= await import(PGLITE_URL)).PGlit
 // ======================================================================
 const DATA = JSON.parse(document.getElementById('data').textContent);
 const EXERCISES = new Map();
-for (const ch of DATA.chapters) for (const ex of ch.exercises) EXERCISES.set(ex.id, { ...ex, chapter: ch.key });
+for (const ch of DATA.chapters) for (const ex of ch.exercises) EXERCISES.set(ex.id, { ...ex, chapter: ch.key, seed: ch.seed || '' });
+// The book's eleven University tables, for the side panel of chapters with `dbPanel`.
+const DB_TABLES = DATA.schemaGroups.filter(g => g.core).flatMap(g => g.tables);
 const STORE_PREFIX = DATA.part.storage + ':';
 const CORE_COUNT = DATA.schemaGroups.filter(g => g.core).reduce((n, g) => n + g.tables.length, 0);
 const TABLE_COUNT = DATA.schemaGroups.reduce((n, g) => n + g.tables.length, 0);
@@ -732,6 +779,7 @@ const ICON = {
   copy: '<path d="M5.5 5.5h8v8h-8z"/><path d="M10.5 5.5v-3h-8v8h3"/>',
   calendar: '<path d="M2.5 4h11v9.5h-11zM2.5 7h11M5.5 2.5v3M10.5 2.5v3"/>',
   menu: '<path d="M2.5 4.5h11M2.5 8h11M2.5 11.5h11"/>',
+  close: '<path d="M4 4l8 8M12 4l-8 8"/>',
   star: '<path d="M8 1.9l1.85 3.85 4.2.55-3.07 2.92.78 4.18L8 11.37l-3.76 2.03.78-4.18L1.95 6.3l4.2-.55z"/>',
 };
 const icon = name => `<svg class="i" viewBox="0 0 16 16" aria-hidden="true">${ICON[name]}</svg>`;
@@ -864,11 +912,12 @@ async function resetShared() {
 
 // Runs user SQL for display. Exercises never change the shared database:
 // everything happens inside a transaction that is rolled back.
-async function runForDisplay(sql, { check = null, fresh = false, persist = false } = {}) {
+async function runForDisplay(sql, { check = null, fresh = false, persist = false, seed = '' } = {}) {
   const db = await getDb(fresh);
   const out = { results: [], checkResult: null, error: null };
   if (persist || fresh) {
     try {
+      if (seed && fresh) await db.exec(seed);
       out.results = await runScript(db, sql);
       if (check) out.checkResult = lastTable(await runScript(db, check));
     } catch (e) { out.error = e.message; }
@@ -877,6 +926,7 @@ async function runForDisplay(sql, { check = null, fresh = false, persist = false
   }
   await db.exec('begin');
   try {
+    if (seed) await db.exec(seed);
     out.results = await runScript(db, sql);
     if (check) out.checkResult = lastTable(await runScript(db, check));
   } catch (e) {
@@ -1356,9 +1406,11 @@ function viewExercise(ch, id) {
           ${next ? `<a class="lx-btn" href="#/${ch.key}/ex/${next.id}">Bài ${next.id} ${icon('open')}</a>` : `<a class="lx-btn" href="${stepHref(ch, stepsOf(ch)[0].key)}">Về đầu ${esc(ch.label)}</a>`}
         </div>
       </section>
+      ${ch.dbPanel ? dbPanelHtml(ch) : ''}
     </div>`;
 
   $('#exList [aria-selected="true"]')?.scrollIntoView({ block: 'nearest' });
+  if (ch.dbPanel) bindDbPanel(ch);
   const editor = $('#editor');
   const feedback = $('#feedback'), output = $('#output');
   const buttons = ['#run', '#check'].map($);
@@ -1380,7 +1432,7 @@ function viewExercise(ch, id) {
     busy(true);
     feedback.innerHTML = callout('info', 'Đang chạy…');
     try {
-      const out = await serial(() => runForDisplay(editor.value, { check: ex.check, fresh: ex.fresh }));
+      const out = await serial(() => runForDisplay(editor.value, { check: ex.check, fresh: ex.fresh, seed: ex.seed }));
       feedback.innerHTML = ex.fresh ? '' : callout('info', 'Đã chạy trong một transaction và rollback, dữ liệu gốc không đổi.');
       output.innerHTML = resultsHtml(out);
     } catch (e) {
@@ -1429,6 +1481,110 @@ function viewExercise(ch, id) {
       <div class="lx-card__foot">Có thể có nhiều cách viết đúng khác.</div></div>`;
     $('#useSolution').addEventListener('click', () => { editor.value = ex.solution; store.set('code:' + ex.id, editor.value); editor.focus(); });
   });
+}
+
+// Database popup for chapters with `dbPanel`: a floating button beside the exercise
+// opens a drawer with every University table (columns + rows, including the
+// chapter's own seed rows) and a scratch query box. Queries run inside a
+// transaction that is rolled back, so they never change the data.
+const dbRows = new Map(); // "chapter:table" -> query result, kept for the page's lifetime
+const dataTable = r => `<table class="lx-table lx-table--data"><thead><tr>${r.fields.map(f => `<th>${esc(f)}</th>`).join('')}</tr></thead>
+  <tbody>${r.rows.length ? r.rows.map(row => `<tr>${row.map(v => `<td>${cell(v)}</td>`).join('')}</tr>`).join('') : `<tr><td colspan="${Math.max(1, r.fields.length)}" class="lx-subtle">Không có dòng nào</td></tr>`}</tbody></table>
+  <p class="lx-dbcount">${num(r.rows.length)} dòng · ${num(r.fields.length)} cột</p>`;
+function dbPanelHtml(ch) {
+  return `<button type="button" class="lx-dbfab" id="dbFab" aria-controls="dbDrawer" aria-expanded="false">${icon('table')}<span>Database</span></button>
+  <div class="lx-dbscrim" id="dbScrim" hidden></div>
+  <aside class="lx-dbdrawer" id="dbDrawer" role="dialog" aria-modal="false" aria-label="Database: các bảng và truy vấn thử" hidden>
+    <div class="lx-card__head"><h2 class="lx-h2">Database</h2><span class="lx-card__meta">${num(DB_TABLES.length)} bảng</span>
+      <button type="button" class="lx-iconbtn" id="dbClose" aria-label="Đóng (Esc)" data-tip="Đóng (Esc)">${icon('close')}</button></div>
+    <div class="lx-dbmode" role="tablist" aria-label="Chế độ">
+      <button type="button" class="lx-tab" role="tab" data-mode="tables">Bảng</button>
+      <button type="button" class="lx-tab" role="tab" data-mode="query">Truy vấn thử</button>
+    </div>
+    <div class="lx-dbpane" data-pane="tables">
+      <div class="lx-dbtabs" role="tablist" aria-label="Chọn bảng">${DB_TABLES.map(t => `<button type="button" class="lx-dbtab" role="tab" data-t="${esc(t.table)}" aria-selected="false">${esc(t.table)}</button>`).join('')}</div>
+      <div class="lx-dbcols" id="dbCols"></div>
+      <div class="lx-dbdata" id="dbData" role="tabpanel"></div>
+    </div>
+    <div class="lx-dbpane" data-pane="query" hidden>
+      <div class="lx-dbq">
+        <textarea class="lx-editor" id="dbQuery" spellcheck="false" aria-label="Câu truy vấn thử" placeholder="-- Thử truy vấn bất kỳ, ví dụ:&#10;select * from takes where year = 2025;"></textarea>
+        <div class="lx-dbq__bar"><span class="lx-subtle">Ctrl + Enter để chạy · không lưu thay đổi</span><button type="button" class="lx-btn lx-btn--primary" id="dbRun">${icon('play')} Chạy</button></div>
+      </div>
+      <div class="lx-dbdata" id="dbOut"></div>
+    </div>
+    ${ch.seedFile ? `<div class="lx-dbnote">Đã gồm dữ liệu bổ sung của đề (<code class="lx-code">${esc(ch.seedFile)}</code>).</div>` : ''}
+  </aside>`;
+}
+function bindDbPanel(ch) {
+  const fab = $('#dbFab'), drawer = $('#dbDrawer'), scrim = $('#dbScrim');
+  const tabs = drawer.querySelector('.lx-dbtabs');
+  const query = $('#dbQuery'), out = $('#dbOut');
+  const setOpen = open => {
+    drawer.hidden = !open; scrim.hidden = !open;
+    fab.setAttribute('aria-expanded', String(open));
+    document.body.classList.toggle('is-dbopen', open);
+    store.set('dbOpen', open);
+    if (open) (store.get('dbMode', 'tables') === 'query' ? query : drawer.querySelector('.lx-dbtab[aria-selected="true"]') || $('#dbClose')).focus();
+    else fab.focus({ preventScroll: true });
+  };
+  const setMode = mode => {
+    store.set('dbMode', mode);
+    drawer.querySelectorAll('[data-mode]').forEach(b => { b.classList.toggle('is-active', b.dataset.mode === mode); b.setAttribute('aria-selected', String(b.dataset.mode === mode)); });
+    drawer.querySelectorAll('[data-pane]').forEach(p => (p.hidden = p.dataset.pane !== mode));
+  };
+  fab.addEventListener('click', () => setOpen(drawer.hidden));
+  $('#dbClose').addEventListener('click', () => setOpen(false));
+  scrim.addEventListener('click', () => setOpen(false));
+  drawer.addEventListener('keydown', e => { if (e.key === 'Escape') { e.stopPropagation(); setOpen(false); } });
+  drawer.querySelector('.lx-dbmode').addEventListener('click', e => { const b = e.target.closest('[data-mode]'); if (b) setMode(b.dataset.mode); });
+
+  query.value = store.get('dbQuery', '');
+  let saveTimer;
+  query.addEventListener('input', () => { clearTimeout(saveTimer); saveTimer = setTimeout(() => store.set('dbQuery', query.value), 300); });
+  const runQuery = async () => {
+    if (!query.value.trim()) return;
+    store.set('dbQuery', query.value);
+    $('#dbRun').disabled = true;
+    out.innerHTML = '<p class="lx-subtle" style="margin:0;padding:12px 16px">Đang chạy…</p>';
+    const res = await serial(() => runForDisplay(query.value, { seed: ch.seed }));
+    const last = res.results.filter(r => r.fields.length).pop();
+    out.innerHTML = res.error ? callout('danger', `<strong>Lỗi SQL.</strong> ${esc(res.error)}`)
+      : last ? dataTable(last) : '<p class="lx-subtle" style="margin:0;padding:12px 16px">Đã chạy, không có bảng kết quả.</p>';
+    $('#dbRun').disabled = false;
+  };
+  $('#dbRun').addEventListener('click', runQuery);
+  query.addEventListener('keydown', e => { if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) { e.preventDefault(); runQuery(); } });
+
+  const show = async name => {
+    const t = DB_TABLES.find(x => x.table === name) || DB_TABLES[0];
+    store.set('dbTable', t.table);
+    tabs.querySelectorAll('.lx-dbtab').forEach(b => b.setAttribute('aria-selected', String(b.dataset.t === t.table)));
+    $('#dbCols').innerHTML = `<b>${esc(t.table)}</b>(${t.columns.map(c => `<span${c.pk ? ' class="is-pk"' : ''} title="${esc(c.type)}">${esc(c.column)}</span>`).join(', ')})`;
+    const data = $('#dbData');
+    const key = ch.key + ':' + t.table;
+    if (!dbRows.has(key)) {
+      data.innerHTML = '<p class="lx-subtle" style="margin:0;padding:12px 16px">Đang tải…</p>';
+      const res = await serial(() => runForDisplay(`select * from ${t.table}`, { seed: ch.seed }));
+      if (res.error) { data.innerHTML = callout('danger', esc(res.error)); return; }
+      dbRows.set(key, res.results[res.results.length - 1]);
+    }
+    // The reader may have picked another table (or left the page) while this one loaded.
+    if (!data.isConnected || store.get('dbTable', '') !== t.table) return;
+    data.innerHTML = dataTable(dbRows.get(key));
+  };
+  setMode(store.get('dbMode', 'tables'));
+  if (store.get('dbOpen', false)) { drawer.hidden = false; scrim.hidden = false; fab.setAttribute('aria-expanded', 'true'); document.body.classList.add('is-dbopen'); }
+  tabs.addEventListener('click', e => { const b = e.target.closest('[data-t]'); if (b) show(b.dataset.t); });
+  tabs.addEventListener('keydown', e => {
+    if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return;
+    const list = [...tabs.querySelectorAll('.lx-dbtab')];
+    const i = list.findIndex(b => b.getAttribute('aria-selected') === 'true');
+    const next = list[(i + (e.key === 'ArrowRight' ? 1 : list.length - 1)) % list.length];
+    next.focus();
+    show(next.dataset.t);
+  });
+  show(store.get('dbTable', 'takes'));
 }
 
 function viewMarks() {
@@ -1645,6 +1801,7 @@ function bindEditorKeys(editor, onRun, onCheck) {
 function route() {
   const hash = location.hash.slice(1) || '/';
   const [path, query] = hash.split('?');
+  document.body.classList.remove('is-dbopen'); // the database popup belongs to the exercise view
   renderNav(path);
   const bare = path.match(/^\/([\w-]+)$/);
   const bareCh = bare && DATA.chapters.find(c => c.key === bare[1]);

@@ -20,12 +20,12 @@ Part 10 của sách (các chương online 27–32) chưa có.
 
 | Ôn thi | Nội dung | Tuần |
 |---|---|---|
-| [Ôn giữa kỳ](midterm/README.md) | Toàn bộ Practice Exercises chương 1–4 + đề thi thử | 7–8 |
+| [Ôn giữa kỳ](midterm/README.md) | Đề nguyên bản, biến tấu và đề mẫu 20 truy vấn (chương 1–4) | 7–8 |
 | [Ôn cuối kỳ](final/README.md) | Toàn bộ Practice Exercises chương 6–7, ôn nhanh SQL + đề thi thử | 13–15 |
 
 Trang tổng [`index.html`](index.html) liệt kê các part và **lịch học & kế hoạch thi** (tuần 8 thi giữa kỳ, tuần 15 thi cuối kỳ), mỗi tuần có liên kết thẳng tới phần luyện tập tương ứng. Lịch nằm trong [`lab/schedule.mjs`](lab/schedule.mjs).
 
-Nguồn: slide <https://www.db-book.com/slides-dir/index.html> và Practice Exercises <https://www.db-book.com/Practice-Exercises/index-solu.html>. Đề thi chủ yếu lấy từ Practice Exercises, nên hai mục ôn thi đi qua **từng** Practice Exercise (đánh số đúng như sách) và cho chạy được trên dữ liệu mẫu. Đề gốc của mọi Practice Exercise nằm trong [`lab/pe/`](lab/pe/README.md).
+Nguồn: slide <https://www.db-book.com/slides-dir/index.html> và Practice Exercises <https://www.db-book.com/Practice-Exercises/index-solu.html>. Đề thi chủ yếu lấy từ Practice Exercises, nên mục ôn cuối kỳ đi qua **từng** Practice Exercise chương 6–7 (đánh số đúng như sách) và cho chạy được trên dữ liệu mẫu. Đề gốc của mọi Practice Exercise nằm trong [`lab/pe/`](lab/pe/README.md).
 
 ## Chạy cục bộ
 ```bash
@@ -39,7 +39,7 @@ Các lệnh khác (đều chạy trong `lab/`):
 
 | Lệnh | Việc |
 |---|---|
-| `npm run grade -- ch3` | chấm `my_answers.sql` của một chương/phần (`ch1`…`ch26`, `gk1`…`gk4`, `ck1`…`ck4`) |
+| `npm run grade -- ch3` | chấm `my_answers.sql` của một chương/phần (`ch1`…`ch26`, `gk5`…`gk7`, `ck1`…`ck4`) |
 | `npm run sql` | SQL shell có bảng của mọi part (`-- --part 3` chỉ nạp Part 3, `-- --part midterm` chỉ nạp mục ôn giữa kỳ) |
 | `npm run verify` | kiểm tra mọi đáp án (`-- --part 2` hoặc `-- --part final` cho một mục) |
 | `npm run build` | sinh lại `playground.html`, README/SQL của từng chương và `index.html` |

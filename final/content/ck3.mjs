@@ -11,7 +11,7 @@ export default {
 
   summary: `
 ### 0. Vì sao có phần này
-Đề cuối kỳ tập trung Chương 6–7, nhưng câu thiết kế thường kèm "viết DDL" hoặc "viết truy vấn trên lược đồ vừa thiết kế", và chuẩn hoá cần hiểu join/projection. Phần này ôn **thật nhanh** những gì hay ra nhất. Muốn ôn kỹ: Part 1 (Chương 2–4) và Part 3 (GK1–GK3).
+Đề cuối kỳ tập trung Chương 6–7, nhưng câu thiết kế thường kèm "viết DDL" hoặc "viết truy vấn trên lược đồ vừa thiết kế", và chuẩn hoá cần hiểu join/projection. Phần này ôn **thật nhanh** những gì hay ra nhất. Muốn ôn kỹ: Part 1 (Chương 2–4) và mục Ôn giữa kỳ.
 
 ### 1. Đại số quan hệ ↔ SQL
 | Đại số | SQL |

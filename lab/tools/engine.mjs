@@ -107,14 +107,17 @@ export function compareTables(expected, actual, ordered) {
 // Executes `sql` (then `check`, if given) and returns the normalized table
 // used for grading. Unless `fresh`, everything runs inside a transaction
 // that is rolled back, so the shared database is never modified.
-export async function produceTable(db, sql, check, fresh) {
+// `seed` (optional SQL) adds a chapter's own rows first, inside that transaction.
+export async function produceTable(db, sql, check, fresh, seed) {
   if (fresh) {
+    if (seed) await db.exec(seed);
     const results = await runScript(db, sql);
     const table = check ? lastTable(await runScript(db, check)) : lastTable(results);
     return normalizeTable(table);
   }
   await db.exec('begin');
   try {
+    if (seed) await db.exec(seed);
     const results = await runScript(db, sql);
     const table = check ? lastTable(await runScript(db, check)) : lastTable(results);
     return normalizeTable(table);
@@ -133,7 +136,7 @@ export async function gradeExercise(getDb, ex, userSql, expected) {
   // Fresh databases are single-use: close them once the run is done.
   const produce = async sql => {
     const db = await getDb(ex.fresh);
-    try { return await produceTable(db, sql, ex.check, ex.fresh); }
+    try { return await produceTable(db, sql, ex.check, ex.fresh, ex.seed); }
     finally { if (ex.fresh) await db.close(); }
   };
   const exp = expected || await produce(ex.solution);

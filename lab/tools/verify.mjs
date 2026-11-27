@@ -20,7 +20,7 @@ for (const part of parts) {
       ids.add(ex.id);
       let expected;
       try {
-        expected = await produceTable(await getDb(ex.fresh), ex.solution, ex.check, ex.fresh);
+        expected = await produceTable(await getDb(ex.fresh), ex.solution, ex.check, ex.fresh, ex.seed);
       } catch (e) {
         problems++;
         console.log(`  ✗ ${ex.id} solution error: ${e.message}`);
