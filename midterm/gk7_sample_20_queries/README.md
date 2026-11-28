@@ -88,6 +88,8 @@ Nếu chỉ join trên `course_id`: CS-101 được dạy ở Fall 2017 (Sriniva
 
 Khi làm bài, bấm nút **Database** ở góc phải dưới để mở popup: xem cột và dữ liệu của 11 bảng, và chạy thử truy vấn bất kỳ (không làm đổi dữ liệu).
 
+Bấm **Debug** (hoặc <kbd>F10</kbd>) cạnh nút Chạy để chạy câu trả lời **từng bước**: mỗi câu lệnh, và trong một SELECT từng mệnh đề theo thứ tự xử lý (`FROM` → từng `JOIN` → `WHERE` → `GROUP BY` → `HAVING` → `SELECT` → `ORDER BY`, các bảng tạm `WITH` trước). Bảng trung gian hiện ở tab Debug của popup, phần code đang chạy được tô sáng trong ô trả lời; <kbd>F10</kbd> / <kbd>Shift</kbd> + <kbd>F10</kbd> để sang bước sau / trước.
+
 ### 2. Dữ liệu năm 2025
 Dữ liệu mẫu của sách chỉ có năm 2017–2018, còn đề hỏi *Fall 2025* (Q6) và *mọi học kỳ năm 2025* (Q19). Vì vậy đề này nạp thêm [`lab/db/exam_sample_2025.sql`](../../lab/db/exam_sample_2025.sql):
 

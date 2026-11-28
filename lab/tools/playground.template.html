@@ -679,6 +679,41 @@
   .lx-dbdata .lx-table--data td, .lx-dbdata .lx-table--data th { padding: 5px 12px; }
   .lx-dbcount { margin: 0; padding: 8px 12px; font-size: 12px; color: var(--muted); }
   .lx-dbnote { padding: 10px 16px; border-top: 1px solid var(--rule); font-size: 12px; color: var(--muted); }
+  /* Debug: step through the answer, intermediate tables in the popup */
+  .lx-dbg { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; }
+  .lx-dbg__empty { margin: 0; padding: 16px; font-size: 13px; line-height: 1.6; color: var(--muted); }
+  .lx-dbg__bar { display: flex; align-items: center; gap: 8px; padding: 12px 16px 10px; }
+  .lx-dbg__pos { margin: 0 auto; font-size: 13px; color: var(--muted); }
+  .lx-dbg__pos b { color: var(--text); font-weight: 600; font-variant-numeric: tabular-nums; }
+  .lx-dbg__stale { margin: 0 16px 10px; }
+  .lx-dbg__steps { list-style: none; margin: 0; padding: 0 8px 8px; max-height: 32vh; overflow: auto; scrollbar-width: thin; }
+  .lx-dbg__grp { padding: 8px 8px 4px; font: 600 11px/16px var(--font); letter-spacing: .04em; text-transform: uppercase; color: var(--muted); }
+  .lx-dbg__step { width: 100%; display: grid; grid-template-columns: 22px auto minmax(0, 1fr) auto; align-items: baseline; gap: 8px; padding: 5px 8px;
+    border: 1px solid transparent; border-radius: 6px; background: none; color: var(--text-2); font: 400 12px/18px var(--mono); text-align: left; cursor: pointer; }
+  .lx-dbg__step:hover { background: var(--hover); color: var(--text); }
+  .lx-dbg__step[aria-current="step"] { background: var(--raised); border-color: var(--accent); color: var(--text); }
+  .lx-dbg__step:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+  .lx-dbg__no { color: var(--muted); font-variant-numeric: tabular-nums; text-align: right; }
+  .lx-dbg__kw { font-weight: 600; color: var(--accent-ink); white-space: nowrap; }
+  .lx-dbg__src { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--muted); }
+  .lx-dbg__n { color: var(--muted); font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .lx-dbg__step.is-error .lx-dbg__kw, .lx-dbg__step.is-error .lx-dbg__n { color: var(--negative); }
+  .lx-dbg__step.is-note .lx-dbg__n { color: var(--warning); }
+  .lx-dbg__cur { padding: 10px 16px; border-top: 1px solid var(--rule); font-size: 13px; line-height: 1.55; }
+  .lx-dbg__cur p { margin: 0; }
+  .lx-dbg__cur b { font: 600 12.5px/1 var(--mono); color: var(--accent-ink); }
+  .lx-dbg__cur details { margin-top: 6px; font-size: 12px; color: var(--muted); }
+  .lx-dbg__cur summary { cursor: pointer; }
+  .lx-dbg__cur pre.code { margin: 6px 0 0; max-height: 140px; overflow: auto; font-size: 12px; padding: 10px 12px; white-space: pre-wrap; }
+  .lx-dbg .lx-dbdata .lx-callout { margin: 12px 16px; }
+  .lx-dbg__sub { margin: 0; padding: 10px 12px 0; font-size: 12px; color: var(--muted); }
+  /* Highlight behind the answer box: the part of the code the current step runs */
+  .lx-edwrap { position: relative; }
+  .lx-edwrap > .lx-editor { position: relative; z-index: 1; }
+  .lx-edhl { position: absolute; left: 0; top: 0; overflow: hidden; pointer-events: none; padding: 14px 16px;
+    font: 400 13.5px/1.65 var(--mono); tab-size: 2; white-space: pre-wrap; overflow-wrap: break-word; color: transparent; }
+  .lx-edhl[hidden] { display: none; }
+  .lx-edhl mark { color: transparent; background: var(--selection); border-radius: 3px; box-shadow: 0 0 0 2px var(--selection); }
   @media (max-width: 900px) {
     .lx-dbfab { right: 16px; bottom: 16px; }
   }
@@ -780,6 +815,7 @@ const ICON = {
   calendar: '<path d="M2.5 4h11v9.5h-11zM2.5 7h11M5.5 2.5v3M10.5 2.5v3"/>',
   menu: '<path d="M2.5 4.5h11M2.5 8h11M2.5 11.5h11"/>',
   close: '<path d="M4 4l8 8M12 4l-8 8"/>',
+  bug: '<path d="M5.5 5.5V5a2.5 2.5 0 0 1 5 0v.5"/><path d="M4.5 6h7v3.5a3.5 3.5 0 0 1-7 0z"/><path d="M8 7.5v5.5M2 8.5h2.5M11.5 8.5H14M2.5 5l2 1.5M13.5 5l-2 1.5M2.5 13l2-1.5M13.5 13l-2-1.5"/>',
   star: '<path d="M8 1.9l1.85 3.85 4.2.55-3.07 2.92.78 4.18L8 11.37l-3.76 2.03.78-4.18L1.95 6.3l4.2-.55z"/>',
 };
 const icon = name => `<svg class="i" viewBox="0 0 16 16" aria-hidden="true">${ICON[name]}</svg>`;
@@ -1385,7 +1421,9 @@ function viewExercise(ch, id) {
             ${ex.hint ? `<details><summary>${icon('caret')} Gợi ý</summary><div class="lx-prose">${ex.hint}</div></details>` : ''}
             <div class="lx-console">
               <div class="lx-console__bar"><label for="editor">Câu trả lời</label>${KEYS}</div>
+              ${ch.dbPanel ? '<div class="lx-edwrap"><div class="lx-edhl" id="editorHl" aria-hidden="true" hidden></div>' : ''}
               <textarea class="lx-editor" id="editor" spellcheck="false" placeholder="-- Viết câu SQL của bạn ở đây">${esc(code)}</textarea>
+              ${ch.dbPanel ? '</div>' : ''}
             </div>
           </div>
           <div class="lx-runbar">
@@ -1394,6 +1432,7 @@ function viewExercise(ch, id) {
               <button class="lx-btn lx-btn--ghost" id="showSolution">${icon('eye')} Xem đáp án</button>
             </div>
             <div class="lx-actions">
+              ${ch.dbPanel ? `<button class="lx-btn" id="debug" title="Chạy từng bước, xem bảng trung gian ở khung bên phải (F10: bước sau)">${icon('bug')} Debug</button>` : ''}
               <button class="lx-btn" id="run" title="Ctrl + Enter">${icon('play')} Chạy</button>
               <button class="lx-btn lx-btn--primary" id="check" title="Ctrl + Shift + Enter">${icon('check')} Kiểm tra</button>
             </div>
@@ -1410,8 +1449,8 @@ function viewExercise(ch, id) {
     </div>`;
 
   $('#exList [aria-selected="true"]')?.scrollIntoView({ block: 'nearest' });
-  if (ch.dbPanel) bindDbPanel(ch);
   const editor = $('#editor');
+  if (ch.dbPanel) bindDbPanel(ch, { editor, ex });
   const feedback = $('#feedback'), output = $('#output');
   const buttons = ['#run', '#check'].map($);
   const busy = on => buttons.forEach(b => (b.disabled = on));
@@ -1500,6 +1539,7 @@ function dbPanelHtml(ch) {
     <div class="lx-dbmode" role="tablist" aria-label="Chế độ">
       <button type="button" class="lx-tab" role="tab" data-mode="tables">Bảng</button>
       <button type="button" class="lx-tab" role="tab" data-mode="query">Truy vấn thử</button>
+      <button type="button" class="lx-tab" role="tab" data-mode="debug">Debug</button>
     </div>
     <div class="lx-dbpane" data-pane="tables">
       <div class="lx-dbtabs" role="tablist" aria-label="Chọn bảng">${DB_TABLES.map(t => `<button type="button" class="lx-dbtab" role="tab" data-t="${esc(t.table)}" aria-selected="false">${esc(t.table)}</button>`).join('')}</div>
@@ -1513,26 +1553,180 @@ function dbPanelHtml(ch) {
       </div>
       <div class="lx-dbdata" id="dbOut"></div>
     </div>
+    <div class="lx-dbpane" data-pane="debug" hidden><div class="lx-dbg" id="dbg"></div></div>
     ${ch.seedFile ? `<div class="lx-dbnote">Đã gồm dữ liệu bổ sung của đề (<code class="lx-code">${esc(ch.seedFile)}</code>).</div>` : ''}
   </aside>`;
 }
-function bindDbPanel(ch) {
+// What each debug step does, for the line above its table.
+const DBG_WHAT = {
+  cte: 'bảng tạm của WITH; các phần sau dùng nó như một bảng',
+  from: 'lấy mọi dòng của bảng nguồn',
+  join: 'ghép thêm bảng này vào các dòng đang có',
+  cross: 'tích Descartes: ghép mọi cặp dòng',
+  where: 'chỉ giữ các dòng thoả điều kiện',
+  group: 'gom dòng thành nhóm, mỗi nhóm còn một dòng; cột cuối đếm số dòng của nhóm',
+  having: 'chỉ giữ các nhóm thoả điều kiện',
+  select: 'tính các cột cần lấy',
+  distinct: 'tính các cột cần lấy rồi bỏ dòng trùng',
+  order: 'sắp xếp / giới hạn số dòng',
+  setop: 'một vế của phép tập hợp, chạy riêng',
+  final: 'ghép các vế bằng phép tập hợp',
+  stmt: 'chạy câu lệnh',
+};
+const oneLine = (s, n = 56) => { const t = s.replace(/\s+/g, ' ').trim(); return t.length > n ? t.slice(0, n - 1) + '…' : t; };
+
+function bindDbPanel(ch, { editor, ex }) {
   const fab = $('#dbFab'), drawer = $('#dbDrawer'), scrim = $('#dbScrim');
   const tabs = drawer.querySelector('.lx-dbtabs');
   const query = $('#dbQuery'), out = $('#dbOut');
-  const setOpen = open => {
+  const setOpen = (open, focus = true) => {
     drawer.hidden = !open; scrim.hidden = !open;
     fab.setAttribute('aria-expanded', String(open));
     document.body.classList.toggle('is-dbopen', open);
     store.set('dbOpen', open);
-    if (open) (store.get('dbMode', 'tables') === 'query' ? query : drawer.querySelector('.lx-dbtab[aria-selected="true"]') || $('#dbClose')).focus();
+    markEditor();
+    if (!focus) return;
+    const mode = store.get('dbMode', 'tables');
+    if (open) (mode === 'query' ? query : mode === 'debug' ? $('#dbg [aria-current="step"]') || $('#dbClose') : drawer.querySelector('.lx-dbtab[aria-selected="true"]') || $('#dbClose')).focus();
     else fab.focus({ preventScroll: true });
   };
   const setMode = mode => {
     store.set('dbMode', mode);
     drawer.querySelectorAll('[data-mode]').forEach(b => { b.classList.toggle('is-active', b.dataset.mode === mode); b.setAttribute('aria-selected', String(b.dataset.mode === mode)); });
     drawer.querySelectorAll('[data-pane]').forEach(p => (p.hidden = p.dataset.pane !== mode));
+    markEditor();
   };
+
+  // ---------- Debug ----------
+  // One run computes every step (in a transaction that is rolled back); the
+  // buttons then only move between the stored results.
+  const hl = $('#editorHl'), dbg = $('#dbg');
+  let session = null; // { steps, total, sel, code, stale }
+  const debugVisible = () => !drawer.hidden && store.get('dbMode', 'tables') === 'debug';
+  function markEditor() {
+    if (!session || session.stale || !debugVisible()) { hl.hidden = true; return; }
+    const [a, b] = session.steps[session.sel].range;
+    const text = editor.value;
+    hl.innerHTML = `${esc(text.slice(0, a))}<mark>${esc(text.slice(a, b))}</mark>${esc(text.slice(b))}\n`;
+    hl.hidden = false;
+    hl.style.width = editor.clientWidth + 'px';
+    hl.style.height = editor.clientHeight + 'px';
+    // Keep the marked lines in view inside the answer box.
+    const mark = hl.querySelector('mark');
+    const top = mark.offsetTop, bottom = top + mark.offsetHeight;
+    if (top < editor.scrollTop || bottom > editor.scrollTop + editor.clientHeight) editor.scrollTop = Math.max(0, top - 24);
+    hl.scrollTop = editor.scrollTop;
+  }
+  editor.addEventListener('scroll', () => { hl.scrollTop = editor.scrollTop; });
+  new ResizeObserver(() => { if (!hl.hidden) { hl.style.width = editor.clientWidth + 'px'; hl.style.height = editor.clientHeight + 'px'; } }).observe(editor);
+  editor.addEventListener('input', () => {
+    if (!session || session.stale || editor.value === session.code) return;
+    session.stale = true;
+    renderDebug();
+  });
+
+  const rowsWord = s => (s.error ? 'lỗi' : s.note ? '—' : s.table ? `${s.table.rows.length} dòng` : s.after ? `${s.after.rows.length} dòng` : 'OK');
+  function renderDebug() {
+    if (!session) {
+      dbg.innerHTML = `<p class="lx-dbg__empty">Bấm <strong>${icon('bug')} Debug</strong> dưới ô trả lời để chạy câu SQL từng bước. Mỗi câu lệnh là một bước; trong một SELECT, các mệnh đề chạy theo đúng thứ tự PostgreSQL xử lý: <code class="lx-code">FROM</code> (từng <code class="lx-code">JOIN</code>) → <code class="lx-code">WHERE</code> → <code class="lx-code">GROUP BY</code> → <code class="lx-code">HAVING</code> → <code class="lx-code">SELECT</code> → <code class="lx-code">ORDER BY</code>, và bảng trung gian của mỗi bước hiện ở đây. Không bước nào làm đổi dữ liệu.</p>`;
+      markEditor();
+      return;
+    }
+    const { steps, total } = session;
+    let lastStmt = 0;
+    dbg.innerHTML = `
+      <div class="lx-dbg__bar">
+        <button type="button" class="lx-btn lx-btn--ghost" id="dbgPrev" title="Shift + F10">${icon('back')} Trước</button>
+        <span class="lx-dbg__pos" aria-live="polite"></span>
+        <button type="button" class="lx-btn" id="dbgNext" title="F10">Sau ${icon('open')}</button>
+      </div>
+      ${session.stale ? `<div class="lx-dbg__stale">${callout('warning', 'Code đã đổi sau lần debug này. Bấm <strong>Debug</strong> để chạy lại.')}</div>` : ''}
+      <ol class="lx-dbg__steps" id="dbgSteps" aria-label="Các bước">${steps.map((s, i) => {
+        const head = s.stmtCount > 1 && s.stmt !== lastStmt ? `<li class="lx-dbg__grp">Câu lệnh ${s.stmt}</li>` : '';
+        lastStmt = s.stmt;
+        return `${head}<li><button type="button" class="lx-dbg__step${s.error ? ' is-error' : s.note ? ' is-note' : ''}" data-i="${i}">
+          <span class="lx-dbg__no">${i + 1}</span><span class="lx-dbg__kw">${esc(s.label)}</span>
+          <span class="lx-dbg__src">${esc(oneLine(session.code.slice(...s.range).replace(new RegExp('^' + s.label.split(/\s+/).map(w => w.replace(/\W/g, '\\$&')).join('\\s+') + '\\s*', 'i'), '')) || '…')}</span><span class="lx-dbg__n">${rowsWord(s)}</span></button></li>`;
+      }).join('')}
+      ${steps.length < total ? `<li class="lx-dbg__grp">Dừng vì lỗi: ${total - steps.length} bước sau không chạy</li>` : ''}</ol>
+      <div class="lx-dbg__cur" id="dbgCur"></div>
+      <div class="lx-dbdata" id="dbgOut"></div>`;
+    $('#dbgPrev').addEventListener('click', () => selectStep(session.sel - 1));
+    $('#dbgNext').addEventListener('click', () => selectStep(session.sel + 1));
+    $('#dbgSteps').addEventListener('click', e => { const b = e.target.closest('[data-i]'); if (b) selectStep(+b.dataset.i); });
+    selectStep(session.sel, false);
+  }
+  function selectStep(i, focus = true) {
+    if (!session) return;
+    const { steps } = session;
+    session.sel = Math.max(0, Math.min(steps.length - 1, i));
+    const s = steps[session.sel];
+    dbg.querySelector('.lx-dbg__pos').innerHTML = `Bước <b>${session.sel + 1}</b> / ${steps.length}`;
+    $('#dbgPrev').disabled = session.sel === 0;
+    $('#dbgNext').disabled = session.sel === steps.length - 1;
+    dbg.querySelectorAll('.lx-dbg__step').forEach(b => b.toggleAttribute('aria-current', false));
+    const btn = dbg.querySelector(`.lx-dbg__step[data-i="${session.sel}"]`);
+    btn.setAttribute('aria-current', 'step');
+    btn.scrollIntoView({ block: 'nearest' });
+    if (focus && dbg.contains(document.activeElement)) btn.focus();
+
+    const kind = s.label.startsWith(',') ? 'cross' : s.label === 'SELECT DISTINCT' ? 'distinct' : s.kind;
+    const last = s.real && steps.filter(x => x.stmt === s.stmt).pop() === s;
+    $('#dbgCur').innerHTML = `<p><b>${esc(s.label)}</b> — ${DBG_WHAT[kind]}${last ? '. Đây là kết quả của câu lệnh' : ''}.</p>
+      <details${store.get('dbgSql', false) ? ' open' : ''}><summary>Câu SQL chạy ở bước này</summary><pre class="code"><code>${esc(s.sql)}</code></pre></details>`;
+    $('#dbgCur details').addEventListener('toggle', e => store.set('dbgSql', e.target.open));
+
+    const o = $('#dbgOut');
+    if (s.error) o.innerHTML = callout('danger', `<strong>Lỗi SQL.</strong> ${esc(s.error)}`);
+    else if (s.note) o.innerHTML = callout('warning', `Bước này không tách riêng ra chạy được (${esc(s.note)}). Xem bước sau.`);
+    else if (s.table) o.innerHTML = dataTable(s.table);
+    else if (s.after) o.innerHTML = `<p class="lx-dbg__sub">OK, ${num(s.affected)} dòng bị ảnh hưởng. Bảng <code class="lx-code">${esc(s.snapshot)}</code> sau câu lệnh:</p>${dataTable(s.after)}`;
+    else o.innerHTML = `<p class="lx-dbg__sub">OK${s.affected ? `, ${num(s.affected)} dòng bị ảnh hưởng` : ''}.</p>`;
+    markEditor();
+  }
+  async function startDebug() {
+    const code = editor.value;
+    if (!code.trim()) return;
+    store.set('code:' + ex.id, code);
+    setMode('debug');
+    if (drawer.hidden) setOpen(true, false);
+    dbg.innerHTML = '<p class="lx-dbg__empty">Đang chạy từng bước…</p>';
+    $('#debug').disabled = true;
+    try {
+      const res = await serial(async () => {
+        const db = await getDb(ex.fresh);
+        try { return await runDebug(db, code, { seed: ex.seed, fresh: ex.fresh }); }
+        finally { if (ex.fresh) await db.close(); }
+      });
+      // Open on the failing step, otherwise on the first one.
+      const failed = res.steps.findIndex(s => s.error);
+      session = { ...res, code, stale: editor.value !== code, sel: failed >= 0 ? failed : 0 };
+      if (!res.steps.length) { session = null; dbg.innerHTML = '<p class="lx-dbg__empty">Không có câu lệnh nào để chạy.</p>'; return; }
+      renderDebug();
+      dbg.querySelector('[aria-current="step"]')?.focus({ preventScroll: true });
+    } catch (e) {
+      dbg.innerHTML = callout('danger', esc(e.message));
+    } finally {
+      $('#debug').disabled = false;
+    }
+  }
+  $('#debug').addEventListener('click', startDebug);
+  // Arrow keys in the step list; F10 / Shift+F10 anywhere on the exercise.
+  dbg.addEventListener('keydown', e => {
+    const d = { ArrowDown: 1, ArrowRight: 1, ArrowUp: -1, ArrowLeft: -1 }[e.key];
+    if (!d || !session || !e.target.closest('.lx-dbg__steps, .lx-dbg__bar')) return;
+    e.preventDefault();
+    selectStep(session.sel + d);
+    dbg.querySelector('[aria-current="step"]')?.focus();
+  });
+  drawer.closest('.lx-work').addEventListener('keydown', e => {
+    if (e.key !== 'F10') return;
+    e.preventDefault();
+    if (!session) { if (!e.shiftKey) startDebug(); return; }
+    if (!debugVisible()) { setMode('debug'); if (drawer.hidden) setOpen(true, false); }
+    selectStep(session.sel + (e.shiftKey ? -1 : 1));
+  });
+  renderDebug();
   fab.addEventListener('click', () => setOpen(drawer.hidden));
   $('#dbClose').addEventListener('click', () => setOpen(false));
   scrim.addEventListener('click', () => setOpen(false));
