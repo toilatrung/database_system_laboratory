@@ -707,6 +707,21 @@
   .lx-dbg__cur pre.code { margin: 6px 0 0; max-height: 140px; overflow: auto; font-size: 12px; padding: 10px 12px; white-space: pre-wrap; }
   .lx-dbg .lx-dbdata .lx-callout { margin: 12px 16px; }
   .lx-dbg__sub { margin: 0; padding: 10px 12px 0; font-size: 12px; color: var(--muted); }
+  /* SQL autocomplete */
+  .lx-acmenu { position: fixed; z-index: 60; min-width: 240px; max-width: min(420px, calc(100vw - 16px)); margin: 0; padding: 4px; list-style: none;
+    background: var(--surface); border: 1px solid var(--border); border-radius: 8px; box-shadow: var(--shadow-menu); font: 400 12.5px/18px var(--mono); }
+  .lx-acmenu[hidden] { display: none; }
+  .lx-acmenu li[data-i] { display: flex; align-items: baseline; justify-content: space-between; gap: 16px; padding: 4px 8px; border-radius: 5px; cursor: pointer; color: var(--text-2); }
+  .lx-acmenu li[data-i]:hover { background: var(--hover); }
+  .lx-acmenu li[aria-selected="true"] { background: var(--selection); color: var(--text); }
+  .lx-acmenu__t { white-space: nowrap; }
+  .lx-acmenu__k { font: 400 11px/16px var(--font); color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .lx-acmenu__hint { padding: 4px 8px 2px; border-top: 1px solid var(--rule); margin-top: 4px; font: 400 11px/16px var(--font); color: var(--muted); }
+  .lx-acopt { display: inline-flex; align-items: center; gap: 6px; font: 400 12px/18px var(--font); color: var(--muted); cursor: pointer; }
+  .lx-acopt input { margin: 0; accent-color: var(--accent); }
+  .lx-acnorm { height: 22px; padding: 0 8px; border: 1px solid var(--border); border-radius: 5px; background: none; }
+  .lx-acnorm:hover { color: var(--text); background: var(--hover); }
+  .lx-console__bar > label[for] { white-space: nowrap; }
   /* Highlight behind the answer box: the part of the code the current step runs */
   .lx-edwrap { position: relative; }
   .lx-edwrap > .lx-editor { position: relative; z-index: 1; }
@@ -765,7 +780,11 @@ const DATA = JSON.parse(document.getElementById('data').textContent);
 const EXERCISES = new Map();
 for (const ch of DATA.chapters) for (const ex of ch.exercises) EXERCISES.set(ex.id, { ...ex, chapter: ch.key, seed: ch.seed || '' });
 // The book's eleven University tables, for the side panel of chapters with `dbPanel`.
-const DB_TABLES = DATA.schemaGroups.filter(g => g.core).flatMap(g => g.tables);
+// `dbPanel: true` shows them; `dbPanel: 'sh_'` shows the tables whose names start with that prefix.
+const ALL_TABLES = DATA.schemaGroups.flatMap(g => g.tables);
+const dbTablesOf = ch => (typeof ch.dbPanel === 'string'
+  ? ALL_TABLES.filter(t => t.table.startsWith(ch.dbPanel))
+  : DATA.schemaGroups.filter(g => g.core).flatMap(g => g.tables));
 const STORE_PREFIX = DATA.part.storage + ':';
 const CORE_COUNT = DATA.schemaGroups.filter(g => g.core).reduce((n, g) => n + g.tables.length, 0);
 const TABLE_COUNT = DATA.schemaGroups.reduce((n, g) => n + g.tables.length, 0);
@@ -1379,7 +1398,7 @@ function viewQuestions(ch) {
   });
 }
 
-const KEYS = '<span class="lx-console__keys"><span><kbd>Ctrl</kbd> + <kbd>Enter</kbd> chạy</span><span><kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>Enter</kbd> kiểm tra</span></span>';
+const KEYS = () => `<span class="lx-console__keys">${AC_TOGGLE()}<span><kbd>Ctrl</kbd> + <kbd>Enter</kbd> chạy</span><span><kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>Enter</kbd> kiểm tra</span></span>`;
 
 function viewExercise(ch, id) {
   const ex = EXERCISES.get(id) && EXERCISES.get(id).chapter === ch.key ? EXERCISES.get(id) : EXERCISES.get(ch.exercises[0].id);
@@ -1420,7 +1439,7 @@ function viewExercise(ch, id) {
             <div class="lx-prose">${ex.prompt}</div>
             ${ex.hint ? `<details><summary>${icon('caret')} Gợi ý</summary><div class="lx-prose">${ex.hint}</div></details>` : ''}
             <div class="lx-console">
-              <div class="lx-console__bar"><label for="editor">Câu trả lời</label>${KEYS}</div>
+              <div class="lx-console__bar"><label for="editor">Câu trả lời</label>${KEYS()}</div>
               ${ch.dbPanel ? '<div class="lx-edwrap"><div class="lx-edhl" id="editorHl" aria-hidden="true" hidden></div>' : ''}
               <textarea class="lx-editor" id="editor" spellcheck="false" placeholder="-- Viết câu SQL của bạn ở đây">${esc(code)}</textarea>
               ${ch.dbPanel ? '</div>' : ''}
@@ -1463,7 +1482,7 @@ function viewExercise(ch, id) {
       focusEditorOnLoad = true;
       location.hash = advanceHref;
     } else $('#check').click();
-  });
+  }, ch.dbPanel ? dbTablesOf(ch) : ALL_TABLES);
   if (focusEditorOnLoad) { focusEditorOnLoad = false; editor.focus(); editor.setSelectionRange(editor.value.length, editor.value.length); }
 
   $('#run').addEventListener('click', async () => {
@@ -1531,6 +1550,7 @@ const dataTable = r => `<table class="lx-table lx-table--data"><thead><tr>${r.fi
   <tbody>${r.rows.length ? r.rows.map(row => `<tr>${row.map(v => `<td>${cell(v)}</td>`).join('')}</tr>`).join('') : `<tr><td colspan="${Math.max(1, r.fields.length)}" class="lx-subtle">Không có dòng nào</td></tr>`}</tbody></table>
   <p class="lx-dbcount">${num(r.rows.length)} dòng · ${num(r.fields.length)} cột</p>`;
 function dbPanelHtml(ch) {
+  const DB_TABLES = dbTablesOf(ch);
   return `<button type="button" class="lx-dbfab" id="dbFab" aria-controls="dbDrawer" aria-expanded="false">${icon('table')}<span>Database</span></button>
   <div class="lx-dbscrim" id="dbScrim" hidden></div>
   <aside class="lx-dbdrawer" id="dbDrawer" role="dialog" aria-modal="false" aria-label="Database: các bảng và truy vấn thử" hidden>
@@ -1576,6 +1596,7 @@ const DBG_WHAT = {
 const oneLine = (s, n = 56) => { const t = s.replace(/\s+/g, ' ').trim(); return t.length > n ? t.slice(0, n - 1) + '…' : t; };
 
 function bindDbPanel(ch, { editor, ex }) {
+  const DB_TABLES = dbTablesOf(ch);
   const fab = $('#dbFab'), drawer = $('#dbDrawer'), scrim = $('#dbScrim');
   const tabs = drawer.querySelector('.lx-dbtabs');
   const query = $('#dbQuery'), out = $('#dbOut');
@@ -1749,10 +1770,11 @@ function bindDbPanel(ch, { editor, ex }) {
   };
   $('#dbRun').addEventListener('click', runQuery);
   query.addEventListener('keydown', e => { if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) { e.preventDefault(); runQuery(); } });
+  attachAutocomplete(query, DB_TABLES);
 
   const show = async name => {
     const t = DB_TABLES.find(x => x.table === name) || DB_TABLES[0];
-    store.set('dbTable', t.table);
+    store.set('dbTable:' + ch.key, t.table);
     tabs.querySelectorAll('.lx-dbtab').forEach(b => b.setAttribute('aria-selected', String(b.dataset.t === t.table)));
     $('#dbCols').innerHTML = `<b>${esc(t.table)}</b>(${t.columns.map(c => `<span${c.pk ? ' class="is-pk"' : ''} title="${esc(c.type)}">${esc(c.column)}</span>`).join(', ')})`;
     const data = $('#dbData');
@@ -1764,7 +1786,7 @@ function bindDbPanel(ch, { editor, ex }) {
       dbRows.set(key, res.results[res.results.length - 1]);
     }
     // The reader may have picked another table (or left the page) while this one loaded.
-    if (!data.isConnected || store.get('dbTable', '') !== t.table) return;
+    if (!data.isConnected || store.get('dbTable:' + ch.key, '') !== t.table) return;
     data.innerHTML = dataTable(dbRows.get(key));
   };
   setMode(store.get('dbMode', 'tables'));
@@ -1778,7 +1800,7 @@ function bindDbPanel(ch, { editor, ex }) {
     next.focus();
     show(next.dataset.t);
   });
-  show(store.get('dbTable', 'takes'));
+  show(store.get('dbTable:' + ch.key, DB_TABLES.some(t => t.table === 'takes') ? 'takes' : DB_TABLES[0].table));
 }
 
 function viewMarks() {
@@ -1814,7 +1836,7 @@ function viewSandbox(initial) {
     `<button class="lx-btn" id="reset">${icon('reset')} Nạp lại dữ liệu gốc</button>`) + `
     <div class="lx-card">
       <div class="lx-card__body" style="padding-bottom:0"><div class="lx-console">
-        <div class="lx-console__bar"><label for="editor">Câu lệnh SQL</label><span class="lx-console__keys"><span><kbd>Ctrl</kbd> + <kbd>Enter</kbd> chạy</span></span></div>
+        <div class="lx-console__bar"><label for="editor">Câu lệnh SQL</label><span class="lx-console__keys">${AC_TOGGLE()}<span><kbd>Ctrl</kbd> + <kbd>Enter</kbd> chạy</span></span></div>
         <textarea class="lx-editor" id="editor" spellcheck="false" style="min-height:260px">${esc(code)}</textarea></div></div>
       <div class="lx-runbar">
         <div class="lx-actions"><button class="lx-btn lx-btn--ghost" id="tables">${icon('table')} Liệt kê bảng</button></div>
@@ -1975,7 +1997,215 @@ function viewFd(params) {
 
 // Tab inserts spaces; Ctrl+Enter runs; Ctrl+Shift+Enter checks.
 let focusEditorOnLoad = false; // set when Ctrl+Shift+Enter moves on to the next exercise
-function bindEditorKeys(editor, onRun, onCheck) {
+// ======================================================================
+// SQL autocomplete: keywords, functions, tables, aliases and columns
+// ======================================================================
+// Typing two letters ("se") suggests SELECT, SET…; `alias.` or `table.` suggests
+// that table's columns. Tab or Enter accepts, ↑/↓ move, Esc closes,
+// Ctrl+Space opens the list at any time. Keywords are inserted in UPPER CASE
+// and, when "Viết hoa từ khoá" is on, a keyword typed in full is upper-cased
+// as soon as it is followed by a space, newline, comma, ( or ;.
+const AC_KEYWORDS = ['SELECT', 'FROM', 'WHERE', 'GROUP BY', 'ORDER BY', 'HAVING', 'JOIN', 'LEFT JOIN', 'RIGHT JOIN', 'INNER JOIN',
+  'FULL OUTER JOIN', 'CROSS JOIN', 'NATURAL JOIN', 'ON', 'USING', 'AND', 'OR', 'NOT', 'AS', 'DISTINCT', 'IN', 'NOT IN', 'EXISTS',
+  'NOT EXISTS', 'BETWEEN', 'LIKE', 'ILIKE', 'IS NULL', 'IS NOT NULL', 'NULL', 'CASE', 'WHEN', 'THEN', 'ELSE', 'END', 'UNION',
+  'UNION ALL', 'INTERSECT', 'EXCEPT', 'WITH', 'RECURSIVE', 'LIMIT', 'OFFSET', 'ASC', 'DESC', 'ALL', 'ANY', 'SOME', 'VALUES',
+  'INSERT INTO', 'UPDATE', 'SET', 'DELETE FROM', 'CREATE TABLE', 'CREATE VIEW', 'DROP TABLE', 'ALTER TABLE', 'PRIMARY KEY',
+  'FOREIGN KEY', 'REFERENCES', 'CHECK', 'UNIQUE', 'DEFAULT', 'BEGIN', 'COMMIT', 'ROLLBACK', 'TRUE', 'FALSE'];
+const AC_FUNCS = ['COUNT', 'SUM', 'AVG', 'MIN', 'MAX', 'COALESCE', 'NULLIF', 'EXTRACT', 'CAST', 'ROUND', 'LOWER', 'UPPER',
+  'LENGTH', 'SUBSTRING', 'TRIM', 'CONCAT', 'ABS', 'NOW', 'DATE_PART'];
+// Words upper-cased as they are typed: reserved words only, never likely column names.
+const AC_UPPER = new Set(['select', 'from', 'where', 'group', 'by', 'order', 'having', 'join', 'left', 'right', 'inner', 'outer',
+  'full', 'cross', 'natural', 'on', 'using', 'and', 'or', 'not', 'as', 'distinct', 'in', 'exists', 'between', 'like', 'ilike',
+  'is', 'null', 'case', 'when', 'then', 'else', 'end', 'union', 'intersect', 'except', 'with', 'recursive', 'limit', 'offset',
+  'asc', 'desc', 'all', 'any', 'some', 'values', 'insert', 'into', 'update', 'set', 'delete', 'create', 'drop', 'alter', 'table',
+  'view', 'primary', 'foreign', 'references', 'unique', 'default', 'true', 'false', 'count', 'sum', 'avg', 'min', 'max',
+  'coalesce', 'nullif', 'extract', 'cast', 'round', 'lower', 'upper']);
+const acUpperOn = () => store.get('autoUpper', true);
+// Toggle in the editor bar; one delegated listener serves every page.
+const AC_TOGGLE = () => `<label class="lx-acopt" title="Tự đổi từ khoá SQL sang chữ hoa khi gõ xong"><input type="checkbox" data-autoupper${acUpperOn() ? ' checked' : ''}> Viết hoa từ khoá</label><button type="button" class="lx-acopt lx-acnorm" data-normalize title="Viết hoa mọi từ khoá trong ô (Shift + Alt + F)">Chuẩn hoá</button>`;
+// Upper-cases every keyword outside strings, comments and qualified names (t.name).
+function normalizeSql(text) {
+  const code = maskSql(text).code;
+  return text.replace(/[A-Za-z_][\w$]*/g, (w, i) => (AC_UPPER.has(w.toLowerCase()) && code.slice(i, i + w.length) === w
+    && !/[.\w$]$/.test(text.slice(0, i)) && text[i + w.length] !== '.' ? w.toUpperCase() : w));
+}
+function normalizeEditor(ta) {
+  const next = normalizeSql(ta.value);
+  if (next === ta.value) return;
+  const a = ta.selectionStart, b = ta.selectionEnd;
+  ta.focus();
+  ta.setSelectionRange(0, ta.value.length);
+  if (!document.execCommand('insertText', false, next)) { ta.value = next; ta.dispatchEvent(new Event('input')); }
+  ta.setSelectionRange(a, b);
+}
+document.addEventListener('click', e => {
+  const ta = e.target.closest('[data-normalize]')?.closest('.lx-console')?.querySelector('textarea');
+  if (ta) normalizeEditor(ta);
+});
+document.addEventListener('change', e => { if (e.target.matches('[data-autoupper]')) store.set('autoUpper', e.target.checked); });
+
+const acMenu = document.createElement('ul');
+acMenu.className = 'lx-acmenu';
+acMenu.setAttribute('role', 'listbox');
+acMenu.hidden = true;
+document.body.appendChild(acMenu);
+
+// Pixel position of the caret inside a textarea, through a mirror element.
+function caretRect(ta) {
+  const cs = getComputedStyle(ta);
+  const mirror = document.createElement('div');
+  for (const p of ['boxSizing', 'width', 'paddingTop', 'paddingRight', 'paddingBottom', 'paddingLeft', 'borderTopWidth',
+    'borderRightWidth', 'borderBottomWidth', 'borderLeftWidth', 'fontFamily', 'fontSize', 'fontWeight', 'lineHeight',
+    'letterSpacing', 'tabSize', 'textTransform']) mirror.style[p] = cs[p];
+  Object.assign(mirror.style, { position: 'absolute', visibility: 'hidden', top: '0', left: '-9999px', whiteSpace: 'pre-wrap', overflowWrap: 'break-word' });
+  mirror.textContent = ta.value.slice(0, ta.selectionEnd);
+  const mark = document.createElement('span');
+  mark.textContent = '​';
+  mirror.appendChild(mark);
+  document.body.appendChild(mirror);
+  const box = ta.getBoundingClientRect();
+  const r = { left: box.left + mark.offsetLeft - ta.scrollLeft, top: box.top + mark.offsetTop - ta.scrollTop, height: parseFloat(cs.lineHeight) || 20 };
+  mirror.remove();
+  return r;
+}
+
+// Table names and aliases of the statement around the caret: alias -> table.
+function acAliases(text, caret, tables) {
+  const stmt = splitStatements(text).find(s => caret >= s.start && caret <= s.end + 1) || { text, start: 0 };
+  const known = new Map(tables.map(t => [t.table.toLowerCase(), t]));
+  const map = new Map();
+  const re = /(?:\bfrom|\bjoin|\bupdate|\binto|,)\s*([A-Za-z_][\w$]*)(?:\s+(?:as\s+)?([A-Za-z_][\w$]*))?/gi;
+  const stop = /^(on|where|join|left|right|inner|outer|full|cross|natural|group|order|using|having|limit|set|values|union|except|intersect)$/i;
+  let m;
+  while ((m = re.exec(stmt.text))) {
+    const t = known.get(m[1].toLowerCase());
+    if (!t) continue;
+    map.set(t.table.toLowerCase(), t);
+    if (m[2] && !stop.test(m[2])) map.set(m[2].toLowerCase(), t);
+  }
+  return map;
+}
+
+function attachAutocomplete(ta, tables = ALL_TABLES) {
+  let items = [], sel = 0, from = 0;
+  const close = () => { if (acMenu.owner === ta) { acMenu.hidden = true; acMenu.owner = null; } items = []; };
+  // Inside a string literal or a comment nothing is suggested or upper-cased.
+  const inCode = pos => {
+    const before = ta.value.slice(0, pos);
+    const m = maskSql(before + 'x');
+    return m.code[before.length] === 'x';
+  };
+  function suggest(force) {
+    const pos = ta.selectionEnd;
+    if (pos !== ta.selectionStart || !inCode(pos)) return close();
+    const before = ta.value.slice(0, pos);
+    const word = /[A-Za-z_][\w$]*$/.exec(before)?.[0] || '';
+    const dot = /([A-Za-z_][\w$]*)\.([A-Za-z_][\w$]*)?$/.exec(before);
+    const aliases = acAliases(ta.value, pos, tables);
+    const low = word.toLowerCase();
+    let list = [];
+    if (dot) {
+      const t = aliases.get(dot[1].toLowerCase()) || tables.find(x => x.table.toLowerCase() === dot[1].toLowerCase());
+      if (!t) return close();
+      list = t.columns.filter(c => c.column.toLowerCase().startsWith(low))
+        .map(c => ({ text: c.column, kind: c.type.replace(/^(integer|bigint|smallint)\(.*\)$/, '$1') + (c.pk ? ' · khoá' : '') }));
+    } else {
+      if (!force && word.length < 2) return close();
+      const prev = /([A-Za-z_]+)\s+[A-Za-z_]*$/.exec(maskSql(before).code)?.[1]?.toLowerCase();
+      const wantTable = ['from', 'join', 'into', 'update', 'table'].includes(prev);
+      const starts = s => s.toLowerCase().startsWith(low);
+      const kws = AC_KEYWORDS.filter(starts).map(k => ({ text: k, insert: k + ' ', kind: 'từ khoá' }));
+      const fns = AC_FUNCS.filter(starts).map(f => ({ text: f + '()', insert: f + '(', kind: 'hàm' }));
+      const tbls = tables.filter(t => starts(t.table)).map(t => ({ text: t.table, kind: `bảng · ${t.columns.length} cột` }));
+      const used = [...new Set(aliases.values())];
+      const als = [...aliases].filter(([a, t]) => a !== t.table.toLowerCase() && a.startsWith(low)).map(([a, t]) => ({ text: a, kind: `alias của ${t.table}` }));
+      const cols = [];
+      for (const t of [...used, ...tables.filter(t => !used.includes(t))]) for (const c of t.columns) {
+        if (starts(c.column) && !cols.some(x => x.text === c.column)) cols.push({ text: c.column, kind: `cột · ${t.table}`, rank: used.includes(t) ? 0 : 1 });
+      }
+      cols.sort((a, b) => a.rank - b.rank);
+      list = wantTable ? [...tbls, ...als, ...kws, ...cols] : [...als, ...kws, ...fns, ...cols.filter(c => c.rank === 0), ...tbls, ...cols.filter(c => c.rank)];
+    }
+    // Nothing left to complete: the word is already exactly the only choice.
+    list = list.filter(it => !(list.length === 1 && (it.insert || it.text).trim().toLowerCase() === low && word === (it.insert || it.text).trim()));
+    if (!list.length) return close();
+    items = list.slice(0, 8);
+    sel = 0;
+    from = pos - (dot ? (dot[2] || '').length : word.length);
+    render();
+  }
+  function render() {
+    acMenu.owner = ta;
+    acMenu.innerHTML = items.map((it, i) => `<li role="option" data-i="${i}"${i === sel ? ' aria-selected="true"' : ''}><span class="lx-acmenu__t">${esc(it.text)}</span><span class="lx-acmenu__k">${esc(it.kind)}</span></li>`).join('')
+      + '<li class="lx-acmenu__hint" aria-hidden="true">Tab / Enter chọn · Esc đóng</li>';
+    acMenu.hidden = false;
+    const r = caretRect(ta);
+    const w = acMenu.offsetWidth, h = acMenu.offsetHeight;
+    acMenu.style.left = Math.max(8, Math.min(r.left, innerWidth - w - 8)) + 'px';
+    acMenu.style.top = (r.top + r.height + h > innerHeight - 8 ? r.top - h - 4 : r.top + r.height + 2) + 'px';
+  }
+  // execCommand keeps the browser's undo history; setRangeText is the fallback.
+  const replace = (a, b, text) => {
+    ta.setSelectionRange(a, b);
+    if (!document.execCommand('insertText', false, text)) ta.setRangeText(text, a, b, 'end');
+  };
+  function accept(i = sel) {
+    const it = items[i];
+    if (!it) return;
+    let text = it.insert || it.text;
+    const after = ta.value.slice(ta.selectionEnd);
+    if (text.endsWith(' ') && /^\s/.test(after)) text = text.trimEnd();
+    if (text.endsWith('(') && after.startsWith('(')) text = text.slice(0, -1);
+    replace(from, ta.selectionEnd, text);
+    close();
+  }
+  ta.addEventListener('keydown', e => {
+    if (e.key === ' ' && e.ctrlKey) { e.preventDefault(); suggest(true); return; }
+    if (e.code === 'KeyF' && e.shiftKey && e.altKey) { e.preventDefault(); close(); normalizeEditor(ta); return; }
+    if (acMenu.hidden || acMenu.owner !== ta) return;
+    if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+      e.preventDefault();
+      sel = (sel + (e.key === 'ArrowDown' ? 1 : items.length - 1)) % items.length;
+      render();
+    } else if ((e.key === 'Tab' && !e.shiftKey) || (e.key === 'Enter' && !e.ctrlKey && !e.metaKey && !e.shiftKey)) {
+      e.preventDefault();
+      e.stopImmediatePropagation();
+      accept();
+    } else if (e.key === 'Escape') {
+      e.preventDefault();
+      e.stopPropagation();
+      close();
+    }
+  });
+  ta.addEventListener('input', e => {
+    // Upper-case a keyword the moment it is finished.
+    if (acUpperOn() && (e.inputType === 'insertText' || e.inputType === 'insertLineBreak') && /^[\s,(;)]?$/.test(e.data ?? '\n')) {
+      const end = ta.selectionEnd - 1;
+      const m = /([A-Za-z_]+)$/.exec(ta.value.slice(0, end));
+      if (m && AC_UPPER.has(m[1].toLowerCase()) && m[1] !== m[1].toUpperCase() && inCode(end - m[1].length)
+          && !/[\w$."]$/.test(ta.value.slice(0, end - m[1].length))) {
+        const caret = ta.selectionEnd;
+        replace(end - m[1].length, end, m[1].toUpperCase());
+        ta.setSelectionRange(caret, caret);
+      }
+    }
+    if (e.inputType && (e.inputType.startsWith('insert') || e.inputType.startsWith('delete'))) suggest(false);
+    else close();
+  });
+  ta.addEventListener('blur', () => setTimeout(close, 120));
+  ta.addEventListener('scroll', close);
+  ta.addEventListener('click', close);
+  acMenu.addEventListener('mousedown', e => {
+    if (acMenu.owner !== ta) return;
+    const li = e.target.closest('[data-i]');
+    if (li) { e.preventDefault(); accept(+li.dataset.i); }
+  });
+}
+window.addEventListener('hashchange', () => { acMenu.hidden = true; acMenu.owner = null; });
+window.addEventListener('resize', () => { acMenu.hidden = true; });
+
+function bindEditorKeys(editor, onRun, onCheck, tables) {
+  attachAutocomplete(editor, tables);
   editor.addEventListener('keydown', e => {
     if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
       e.preventDefault();

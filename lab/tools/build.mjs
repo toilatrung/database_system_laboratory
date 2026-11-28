@@ -151,7 +151,7 @@ for (const part of allParts.filter(filter)) {
       key: ch.key, store: ch.store, short: ch.short, label: ch.label, navLabel: ch.navLabel, kind: ch.kind,
       title: ch.title,
       titleVi: ch.titleVi,
-      seed: ch.seed || '', seedFile: ch.seedFile || '', dbPanel: !!ch.dbPanel,
+      seed: ch.seed || '', seedFile: ch.seedFile || '', dbPanel: ch.dbPanel || false,
       summary: block(ch.summary),
       quiz: ch.quiz.map(q => ({ q: inline(q.q), options: q.options.map(inline), answer: q.answer, explain: inline(q.explain) })),
       questions: ch.questions.map(q => ({ q: inline(q.q), en: q.en ? block(q.en) : '', answer: block(q.answer) })),
